@@ -9,7 +9,7 @@ import {
   Printer, 
   Handshake, 
   Database,
-  SlidersHorizontal,
+  ShieldCheck,
   X
 } from 'lucide-react';
 
@@ -23,6 +23,7 @@ export const Navbar = ({
   onOpenLabels,
   onOpenExcel,
   onOpenFirebaseConfig,
+  onOpenBackup,
   isFirebaseActive,
   cautelasCount = 0
 }) => {
@@ -118,6 +119,16 @@ export const Navbar = ({
             >
               <Printer className="w-4 h-4 text-cyan-400" />
               <span className="hidden lg:inline">Etiquetas</span>
+            </button>
+
+            {/* Backup Tríplice Button */}
+            <button
+              onClick={onOpenBackup}
+              title="Central de Backups (Local, Firebase e Google Drive)"
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 transition-all shadow-sm"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span className="hidden md:inline">Backup</span>
             </button>
 
             {/* Excel Import/Export */}

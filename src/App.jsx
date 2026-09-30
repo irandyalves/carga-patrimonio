@@ -45,6 +45,9 @@ import {
 import { 
   TransferModal 
 } from './components/TransferModal';
+import { 
+  BackupModal 
+} from './components/BackupModal';
 
 import { 
   loadLocalData, 
@@ -103,6 +106,7 @@ export function App() {
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
@@ -483,6 +487,14 @@ export function App() {
     setIsExcelModalOpen(false);
   };
 
+  // Restore Backup Payload
+  const handleRestoreBackup = (backupPayload) => {
+    if (backupPayload.assets) setAssets(backupPayload.assets);
+    if (backupPayload.sectors) setSectors(backupPayload.sectors);
+    if (backupPayload.cautelas) setCautelas(backupPayload.cautelas);
+    showToast('Base de dados restaurada com sucesso!');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       
@@ -512,6 +524,7 @@ export function App() {
         }}
         onOpenCautelas={() => setIsCautelaListOpen(true)}
         onOpenLabels={() => setIsLabelsModalOpen(true)}
+        onOpenBackup={() => setIsBackupModalOpen(true)}
         onOpenExcel={() => setIsExcelModalOpen(true)}
         onOpenFirebaseConfig={() => setIsFirebaseModalOpen(true)}
         isFirebaseActive={isFirebaseActive}
@@ -751,6 +764,16 @@ export function App() {
         isOpen={isFirebaseModalOpen}
         onClose={() => setIsFirebaseModalOpen(false)}
         onConfigUpdated={(active) => setIsFirebaseActive(active)}
+      />
+
+      <BackupModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        assets={assets}
+        sectors={sectors}
+        cautelas={cautelas}
+        isFirebaseActive={isFirebaseActive}
+        onRestoreBackup={handleRestoreBackup}
       />
 
     </div>
