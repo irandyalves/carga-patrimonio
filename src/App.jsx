@@ -39,12 +39,18 @@ import {
 import { 
   FirebaseSettingsModal 
 } from './components/FirebaseSettingsModal';
+import { 
+  SectorsManagementModal 
+} from './components/SectorsManagementModal';
+import { 
+  TransferModal 
+} from './components/TransferModal';
 
-import { SECTORS } from './constants/sectors';
 import { 
   loadLocalData, 
   saveLocalAssets, 
   saveLocalCautelas, 
+  saveLocalSectors,
   initFirebase 
 } from './services/firebase';
 import { 
@@ -65,6 +71,7 @@ import {
 
 export function App() {
   // Main Data States
+  const [sectors, setSectors] = useState([]);
   const [assets, setAssets] = useState([]);
   const [cautelas, setCautelas] = useState([]);
   const [isFirebaseActive, setIsFirebaseActive] = useState(false);
@@ -78,6 +85,7 @@ export function App() {
   // Modal States
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assetToEdit, setAssetToEdit] = useState(null);
   
@@ -88,6 +96,10 @@ export function App() {
   const [isBaixaModalOpen, setIsBaixaModalOpen] = useState(false);
   const [assetForBaixa, setAssetForBaixa] = useState(null);
   
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [assetForTransfer, setAssetForTransfer] = useState(null);
+
+  const [isManageSectorsOpen, setIsManageSectorsOpen] = useState(false);
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
@@ -105,12 +117,23 @@ export function App() {
     const { isConfigured } = initFirebase();
     setIsFirebaseActive(isConfigured);
 
-    const { assets: initialAssets, cautelas: initialCautelas } = loadLocalData();
+    const { assets: initialAssets, cautelas: initialCautelas, sectors: initialSectors } = loadLocalData();
+    setSectors(initialSectors);
     setAssets(initialAssets);
     setCautelas(initialCautelas);
+
+    if (initialSectors.length > 0) {
+      setActiveSectorId(initialSectors[0].id);
+    }
   }, []);
 
-  // Save to persistence whenever assets or cautelas change
+  // Save to persistence whenever assets, cautelas or sectors change
+  useEffect(() => {
+    if (sectors.length > 0) {
+      saveLocalSectors(sectors);
+    }
+  }, [sectors]);
+
   useEffect(() => {
     if (assets.length > 0) {
       saveLocalAssets(assets);
@@ -124,12 +147,16 @@ export function App() {
   }, [cautelas]);
 
   const activeSector = useMemo(() => {
-    return SECTORS.find(s => s.id === activeSectorId) || SECTORS[0];
-  }, [activeSectorId]);
+    return sectors.find(s => s.id === activeSectorId) || sectors[0] || {
+      id: 'sec-ti',
+      name: 'Setor Geral',
+      responsavel: 'Responsável',
+      sala: 'Sala 01'
+    };
+  }, [sectors, activeSectorId]);
 
   // Conference Statistics Calculation
   const stats = useMemo(() => {
-    // Current sector assets
     const sectorAssets = assets.filter(a => a.setorId === activeSectorId);
     const total = sectorAssets.length;
     const conferidos = sectorAssets.filter(a => a.status === 'CONFERIDO').length;
@@ -244,29 +271,38 @@ export function App() {
     }
   };
 
-  // Handle Transferring Asset Sector
-  const handleTransferSector = (asset) => {
-    if (confirm(`Deseja transferir o bem ${asset.numeroPatrimonio} para a sua seção (${activeSector.name}) sob a responsabilidade de ${activeSector.responsavel}?`)) {
-      const nowStr = new Date().toLocaleString('pt-BR');
-      const updated = assets.map(item => {
-        if (item.id === asset.id) {
-          return {
-            ...item,
-            setorId: activeSector.id,
-            setorNome: activeSector.name,
-            responsavel: activeSector.responsavel,
-            localizacao: activeSector.sala,
-            historico: [
-              ...(item.historico || []),
-              { data: nowStr, acao: `Transferido de ${item.setorNome} para ${activeSector.name}`, usuario: activeSector.responsavel }
-            ]
-          };
-        }
-        return item;
-      });
-      setAssets(updated);
-      showToast(`Bem ${asset.numeroPatrimonio} transferido com sucesso para ${activeSector.name}!`);
-    }
+  // Open Transfer Modal for an asset
+  const handleOpenTransferModal = (asset) => {
+    setAssetForTransfer(asset);
+    setIsTransferModalOpen(true);
+  };
+
+  // Confirm Transfer
+  const handleConfirmTransfer = (assetId, transferDetails) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const updated = assets.map(item => {
+      if (item.id === assetId) {
+        return {
+          ...item,
+          setorId: transferDetails.setorId,
+          setorNome: transferDetails.setorNome,
+          responsavel: transferDetails.responsavel,
+          localizacao: transferDetails.localizacao,
+          historico: [
+            ...(item.historico || []),
+            { 
+              data: nowStr, 
+              acao: `Transferência de Carga: de ${item.setorNome} para ${transferDetails.setorNome}. Motivo: ${transferDetails.motivo}`, 
+              usuario: activeSector.responsavel 
+            }
+          ]
+        };
+      }
+      return item;
+    });
+
+    setAssets(updated);
+    showToast(`Bem transferido com sucesso para ${transferDetails.setorNome}!`);
   };
 
   // Save New or Edited Asset
@@ -292,6 +328,72 @@ export function App() {
       showToast('Novo patrimônio cadastrado com sucesso!');
     }
     setAssetToEdit(null);
+  };
+
+  // Delete Asset
+  const handleDeleteAsset = (assetId) => {
+    const target = assets.find(a => a.id === assetId);
+    setAssets(prev => prev.filter(a => a.id !== assetId));
+    setCautelas(prev => prev.filter(c => c.assetId !== assetId));
+    showToast(`Patrimônio ${target ? target.numeroPatrimonio : ''} excluído permanentemente.`, 'info');
+  };
+
+  // Sectors CRUD: Save (Create or Update)
+  const handleSaveSector = (sectorData) => {
+    const exists = sectors.some(s => s.id === sectorData.id);
+    let updatedSectors = [];
+
+    if (exists) {
+      updatedSectors = sectors.map(s => s.id === sectorData.id ? { ...s, ...sectorData } : s);
+      // Update any asset referencing this sector name/responsible
+      setAssets(prev => prev.map(a => {
+        if (a.setorId === sectorData.id) {
+          return {
+            ...a,
+            setorNome: sectorData.name,
+            responsavel: sectorData.responsavel
+          };
+        }
+        return a;
+      }));
+      showToast(`Setor "${sectorData.name}" atualizado com sucesso!`);
+    } else {
+      updatedSectors = [...sectors, sectorData];
+      showToast(`Setor "${sectorData.name}" cadastrado com sucesso!`);
+    }
+
+    setSectors(updatedSectors);
+  };
+
+  // Sectors CRUD: Delete Sector
+  const handleDeleteSector = (sectorIdToDelete, reassignSectorId) => {
+    const targetSector = sectors.find(s => s.id === sectorIdToDelete);
+    const newTarget = sectors.find(s => s.id === reassignSectorId);
+
+    // Reassign assets if any
+    if (newTarget) {
+      setAssets(prev => prev.map(a => {
+        if (a.setorId === sectorIdToDelete) {
+          return {
+            ...a,
+            setorId: newTarget.id,
+            setorNome: newTarget.name,
+            responsavel: newTarget.responsavel,
+            localizacao: newTarget.sala || a.localizacao
+          };
+        }
+        return a;
+      }));
+    }
+
+    const updatedSectors = sectors.filter(s => s.id !== sectorIdToDelete);
+    setSectors(updatedSectors);
+
+    if (activeSectorId === sectorIdToDelete && updatedSectors.length > 0) {
+      setActiveSectorId(updatedSectors[0].id);
+    }
+
+    showToast(`Setor "${targetSector?.name}" excluído. Bens reatribuídos para "${newTarget?.name}".`, 'info');
   };
 
   // Save Loan / Cautela
@@ -421,10 +523,12 @@ export function App() {
         
         {/* Sector Selection Header */}
         <SectorSelector
+          sectors={sectors}
           activeSectorId={activeSectorId}
           onSelectSector={setActiveSectorId}
           filterMode={filterMode}
           onToggleFilterMode={setFilterMode}
+          onOpenManageSectors={() => setIsManageSectorsOpen(true)}
         />
 
         {/* Real-time Conference Stats Bar */}
@@ -546,7 +650,8 @@ export function App() {
                   setIsBaixaModalOpen(true);
                 }}
                 onPrintSingleLabel={handlePrintSingleLabel}
-                onTransferSector={handleTransferSector}
+                onTransferSector={handleOpenTransferModal}
+                onDeleteAsset={handleDeleteAsset}
               />
             ))}
           </div>
@@ -576,6 +681,27 @@ export function App() {
         onSave={handleSaveAsset}
         assetToEdit={assetToEdit}
         defaultSectorId={activeSectorId}
+        sectors={sectors}
+      />
+
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => {
+          setIsTransferModalOpen(false);
+          setAssetForTransfer(null);
+        }}
+        asset={assetForTransfer}
+        sectors={sectors}
+        onConfirmTransfer={handleConfirmTransfer}
+      />
+
+      <SectorsManagementModal
+        isOpen={isManageSectorsOpen}
+        onClose={() => setIsManageSectorsOpen(false)}
+        sectors={sectors}
+        assets={assets}
+        onSaveSector={handleSaveSector}
+        onDeleteSector={handleDeleteSector}
       />
 
       <CautelaModal
@@ -585,6 +711,7 @@ export function App() {
           setAssetForCautela(null);
         }}
         asset={assetForCautela}
+        sectors={sectors}
         onSaveCautela={handleSaveCautela}
       />
 

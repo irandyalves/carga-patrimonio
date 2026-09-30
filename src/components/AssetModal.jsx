@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Save, Building2, DollarSign, Calendar, MapPin, Tag, Image, Sparkles } from 'lucide-react';
-import { SECTORS, CATEGORIES } from '../constants/sectors';
+import { CATEGORIES } from '../constants/sectors';
 
 export const AssetModal = ({
   isOpen,
   onClose,
   onSave,
   assetToEdit,
-  defaultSectorId
+  defaultSectorId,
+  sectors = []
 }) => {
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
     descricao: '',
     categoria: CATEGORIES[0],
-    setorId: defaultSectorId || 'sec-ti',
+    setorId: defaultSectorId || sectors[0]?.id || 'sec-ti',
     setorNome: '',
     localizacao: '',
     responsavel: '',
@@ -29,7 +30,7 @@ export const AssetModal = ({
         numeroPatrimonio: assetToEdit.numeroPatrimonio || '',
         descricao: assetToEdit.descricao || '',
         categoria: assetToEdit.categoria || CATEGORIES[0],
-        setorId: assetToEdit.setorId || 'sec-ti',
+        setorId: assetToEdit.setorId || sectors[0]?.id || 'sec-ti',
         setorNome: assetToEdit.setorNome || '',
         localizacao: assetToEdit.localizacao || '',
         responsavel: assetToEdit.responsavel || '',
@@ -39,32 +40,32 @@ export const AssetModal = ({
         foto: assetToEdit.foto || ''
       });
     } else {
-      const selectedSec = SECTORS.find(s => s.id === (defaultSectorId || 'sec-ti')) || SECTORS[0];
+      const selectedSec = sectors.find(s => s.id === (defaultSectorId || sectors[0]?.id)) || sectors[0] || { id: 'sec-ti', name: 'Geral', sala: 'Sala 01', responsavel: 'Responsável' };
       setFormData({
         numeroPatrimonio: `PAT-${Math.floor(1000 + Math.random() * 9000)}`,
         descricao: '',
         categoria: CATEGORIES[0],
         setorId: selectedSec.id,
         setorNome: selectedSec.name,
-        localizacao: selectedSec.sala,
-        responsavel: selectedSec.responsavel,
+        localizacao: selectedSec.sala || '',
+        responsavel: selectedSec.responsavel || '',
         anoAquisicao: new Date().getFullYear(),
         valorOriginal: '',
         valorAtual: '',
         foto: ''
       });
     }
-  }, [assetToEdit, defaultSectorId, isOpen]);
+  }, [assetToEdit, defaultSectorId, isOpen, sectors]);
 
   const handleSectorChange = (secId) => {
-    const sec = SECTORS.find(s => s.id === secId);
+    const sec = sectors.find(s => s.id === secId);
     if (sec) {
       setFormData(prev => ({
         ...prev,
         setorId: sec.id,
         setorNome: sec.name,
         responsavel: sec.responsavel,
-        localizacao: prev.localizacao || sec.sala
+        localizacao: prev.localizacao || sec.sala || ''
       }));
     }
   };
@@ -191,7 +192,7 @@ export const AssetModal = ({
                 onChange={(e) => handleSectorChange(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
-                {SECTORS.map((s) => (
+                {sectors.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>

@@ -1,14 +1,19 @@
 import React from 'react';
-import { Building2, UserCheck, MapPin, ChevronDown, CheckCircle2 } from 'lucide-react';
-import { SECTORS } from '../constants/sectors';
+import { Building2, UserCheck, MapPin, ChevronDown, Settings, CheckCircle2 } from 'lucide-react';
 
 export const SectorSelector = ({
+  sectors = [],
   activeSectorId,
   onSelectSector,
   filterMode, // 'MY_SECTOR' | 'ALL_SECTORS'
-  onToggleFilterMode
+  onToggleFilterMode,
+  onOpenManageSectors
 }) => {
-  const currentSector = SECTORS.find(s => s.id === activeSectorId) || SECTORS[0];
+  const currentSector = sectors.find(s => s.id === activeSectorId) || sectors[0] || {
+    name: 'Setor Geral',
+    responsavel: 'Responsável',
+    sala: 'Sala 01'
+  };
 
   return (
     <div className="bg-slate-850 border border-slate-800 rounded-2xl p-4 shadow-sm">
@@ -26,7 +31,7 @@ export const SectorSelector = ({
                 Seção / Setor Atual Selecionado
               </span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                1 de 10 Setores
+                {sectors.length} Setores Ativos
               </span>
             </div>
 
@@ -41,10 +46,12 @@ export const SectorSelector = ({
                 <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
                 Responsável: <strong className="text-white">{currentSector.responsavel}</strong>
               </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                {currentSector.sala}
-              </span>
+              {currentSector.sala && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                  {currentSector.sala}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -53,13 +60,13 @@ export const SectorSelector = ({
         <div className="flex flex-wrap items-center gap-2.5">
           
           {/* Sector Select Dropdown */}
-          <div className="relative min-w-[220px]">
+          <div className="relative min-w-[200px]">
             <select
               value={activeSectorId}
               onChange={(e) => onSelectSector(e.target.value)}
               className="w-full appearance-none bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-medium rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer transition-all"
             >
-              {SECTORS.map((sec) => (
+              {sectors.map((sec) => (
                 <option key={sec.id} value={sec.id} className="bg-slate-900 text-slate-200">
                   {sec.name} ({sec.responsavel})
                 </option>
@@ -69,6 +76,15 @@ export const SectorSelector = ({
               <ChevronDown className="w-4 h-4" />
             </div>
           </div>
+
+          {/* Manage Sectors Button */}
+          <button
+            onClick={onOpenManageSectors}
+            title="Cadastrar, Editar ou Excluir Setores e Responsáveis"
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
 
           {/* Filter Mode Toggle (Minha Carga vs Todos os Bens) */}
           <div className="flex items-center p-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium">
@@ -80,7 +96,7 @@ export const SectorSelector = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Minha Carga ({currentSector.responsavel.split(' ')[0]})
+              Minha Carga ({currentSector.responsavel?.split(' ')[0] || 'Setor'})
             </button>
             <button
               onClick={() => onToggleFilterMode('ALL_SECTORS')}
@@ -90,7 +106,7 @@ export const SectorSelector = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Todos os 10 Setores
+              Todos os Setores
             </button>
           </div>
 

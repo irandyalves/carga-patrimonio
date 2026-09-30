@@ -16,7 +16,8 @@ import {
   Copy, 
   ExternalLink,
   ShieldAlert,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -29,10 +30,12 @@ export const AssetCard = ({
   onOpenCautela,
   onOpenBaixa,
   onPrintSingleLabel,
-  onTransferSector
+  onTransferSector,
+  onDeleteAsset
 }) => {
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Check if asset belongs to another sector (Sobra / Fora da seção)
   const isOutOfPlace = activeSector && asset.setorId !== activeSector.id;
@@ -78,15 +81,15 @@ export const AssetCard = ({
       {/* 1. TOP NOTICE / MESSAGE: Out of place item warning */}
       {isOutOfPlace && (
         <div className="bg-amber-500/15 border-b border-amber-500/30 px-3.5 py-2 text-xs text-amber-300 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center gap-1.5 font-medium truncate">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>
+            <span className="truncate">
               Carga oficial de: <strong className="text-amber-200">{asset.setorNome}</strong> ({asset.responsavel})
             </span>
           </div>
           <button
             onClick={() => onTransferSector(asset)}
-            className="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-500/30 hover:bg-amber-500 text-amber-100 hover:text-slate-950 transition-colors flex items-center gap-1"
+            className="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-500/30 hover:bg-amber-500 text-amber-100 hover:text-slate-950 transition-colors flex items-center gap-1 shrink-0"
           >
             <ArrowRightLeft className="w-3 h-3" />
             <span>Transferir</span>
@@ -97,13 +100,13 @@ export const AssetCard = ({
       {/* 2. TOP NOTICE / MESSAGE: Conference confirmation status */}
       {isConferido && !isOutOfPlace && (
         <div className="bg-blue-500/15 border-b border-blue-500/30 px-3.5 py-1.5 text-xs text-blue-300 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center gap-1.5 font-medium truncate">
             <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            <span>
+            <span className="truncate">
               Conferido em: <strong className="text-blue-200">{asset.conferidoEm || 'Data recente'}</strong> {asset.conferidoPor ? `por ${asset.conferidoPor}` : ''}
             </span>
           </div>
-          <span className="text-[10px] font-mono uppercase bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-300">
+          <span className="text-[10px] font-mono uppercase bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-300 shrink-0">
             Auditado
           </span>
         </div>
@@ -112,13 +115,13 @@ export const AssetCard = ({
       {/* 3. TOP NOTICE / MESSAGE: Cautela status */}
       {isEmCautela && (
         <div className="bg-purple-500/15 border-b border-purple-500/30 px-3.5 py-1.5 text-xs text-purple-300 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center gap-1.5 font-medium truncate">
             <Handshake className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-            <span>
+            <span className="truncate">
               Em Cautela com: <strong className="text-purple-200">{asset.cautelaAtual?.responsavelRetirada || 'Retirado'}</strong>
             </span>
           </div>
-          <span className="text-[10px] text-purple-300 font-mono">
+          <span className="text-[10px] text-purple-300 font-mono shrink-0">
             Devolução: {asset.cautelaAtual?.dataPrevistaDevolucao?.split(' ')[0] || 'A definir'}
           </span>
         </div>
@@ -127,9 +130,9 @@ export const AssetCard = ({
       {/* 4. TOP NOTICE / MESSAGE: Baixa status */}
       {isBaixado && (
         <div className="bg-rose-500/15 border-b border-rose-500/30 px-3.5 py-1.5 text-xs text-rose-300 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center gap-1.5 font-medium truncate">
             <Archive className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-            <span>
+            <span className="truncate">
               BEM BAIXADO / DESINCORPORADO ({asset.dadosBaixa?.motivo?.substring(0, 35)}...)
             </span>
           </div>
@@ -282,57 +285,104 @@ export const AssetCard = ({
             </div>
           ) : null}
 
+          {/* Delete Asset Inline Confirmation */}
+          {showDeleteConfirm && (
+            <div className="bg-rose-950/40 border border-rose-500/50 rounded-xl p-2.5 text-center animate-in fade-in">
+              <span className="text-xs text-rose-200 font-semibold block mb-1">
+                Excluir definitivamente o patrimônio {asset.numeroPatrimonio}?
+              </span>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    onDeleteAsset(asset.id);
+                  }}
+                  className="flex-1 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium"
+                >
+                  Confirmar Exclusão
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Secondary Action Icons */}
-          <div className="flex items-center justify-between gap-1 text-slate-400 pt-1">
-            <div className="flex items-center gap-1">
-              
-              {/* Cautela Action */}
-              {!isBaixado && (
-                <button
-                  onClick={() => onOpenCautela(asset)}
-                  title={isEmCautela ? "Ver / Finalizar Cautela" : "Emitir Termo de Cautela / Empréstimo"}
-                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-purple-300 text-xs flex items-center gap-1 transition-colors"
-                >
-                  <Handshake className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">{isEmCautela ? 'Cautela' : 'Emprestar'}</span>
-                </button>
-              )}
+          {!showDeleteConfirm && (
+            <div className="flex items-center justify-between gap-1 text-slate-400 pt-1">
+              <div className="flex items-center gap-1">
+                
+                {/* Cautela Action */}
+                {!isBaixado && (
+                  <button
+                    onClick={() => onOpenCautela(asset)}
+                    title={isEmCautela ? "Ver / Finalizar Cautela" : "Emitir Termo de Cautela / Empréstimo"}
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-purple-300 text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <Handshake className="w-3.5 h-3.5" />
+                    <span className="text-[11px]">{isEmCautela ? 'Cautela' : 'Emprestar'}</span>
+                  </button>
+                )}
 
-              {/* Baixa Action */}
-              {!isBaixado && (
+                {/* Transfer Action */}
                 <button
-                  onClick={() => onOpenBaixa(asset)}
-                  title="Registrar Baixa Patrimonial (Obsolescência, Descarte, Doação)"
-                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-300 text-xs flex items-center gap-1 transition-colors"
+                  onClick={() => onTransferSector(asset)}
+                  title="Transferir para outro setor / responsável"
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-indigo-300 text-xs flex items-center gap-1 transition-colors"
                 >
-                  <Archive className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">Baixar</span>
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Transferir</span>
                 </button>
-              )}
+
+                {/* Baixa Action */}
+                {!isBaixado && (
+                  <button
+                    onClick={() => onOpenBaixa(asset)}
+                    title="Registrar Baixa Patrimonial (Obsolescência, Descarte, Doação)"
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-300 text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span className="text-[11px]">Baixar</span>
+                  </button>
+                )}
+
+              </div>
+
+              <div className="flex items-center gap-1">
+                {/* Print Label */}
+                <button
+                  onClick={() => onPrintSingleLabel(asset)}
+                  title="Imprimir Etiqueta com QR Code"
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Edit Asset */}
+                <button
+                  onClick={() => onOpenEdit(asset)}
+                  title="Editar informações do patrimônio"
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Delete Asset */}
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Excluir patrimônio do sistema"
+                  className="p-1.5 rounded-lg hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
             </div>
-
-            <div className="flex items-center gap-1">
-              {/* Print Label */}
-              <button
-                onClick={() => onPrintSingleLabel(asset)}
-                title="Imprimir Etiqueta com QR Code"
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition-colors"
-              >
-                <Printer className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Edit Asset */}
-              <button
-                onClick={() => onOpenEdit(asset)}
-                title="Editar informações do patrimônio"
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-          </div>
+          )}
 
         </div>
 

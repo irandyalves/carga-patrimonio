@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { X, Handshake, Calendar, User, Phone, FileText, Download, CheckCircle } from 'lucide-react';
-import { SECTORS } from '../constants/sectors';
 import { generateCautelaPDF } from '../services/pdfGenerator';
 
 export const CautelaModal = ({
   isOpen,
   onClose,
   asset,
+  sectors = [],
   onSaveCautela
 }) => {
   const [formData, setFormData] = useState({
     responsavelRetirada: '',
     documento: '',
     telefone: '',
-    setorDestino: SECTORS[1]?.name || 'Administrativo',
+    setorDestino: sectors[1]?.name || sectors[0]?.name || 'Geral',
     dataRetirada: new Date().toISOString().slice(0, 16).replace('T', ' '),
     dataPrevistaDevolucao: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' '),
     finalidade: '',
@@ -153,7 +153,7 @@ export const CautelaModal = ({
                 onChange={(e) => setFormData({ ...formData, setorDestino: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               >
-                {SECTORS.map((s) => (
+                {sectors.map((s) => (
                   <option key={s.id} value={s.name}>{s.name}</option>
                 ))}
               </select>

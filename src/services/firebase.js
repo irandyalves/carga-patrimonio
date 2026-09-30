@@ -16,10 +16,12 @@ import {
   getDownloadURL 
 } from 'firebase/storage';
 import { INITIAL_ASSETS, INITIAL_CAUTELAS } from '../constants/sampleData';
+import { SECTORS as DEFAULT_SECTORS } from '../constants/sectors';
 
 const STORAGE_KEY_CONFIG = 'carga_patrimonio_firebase_config';
 const STORAGE_KEY_ASSETS = 'carga_patrimonio_local_assets';
 const STORAGE_KEY_CAUTELAS = 'carga_patrimonio_local_cautelas';
+const STORAGE_KEY_SECTORS = 'carga_patrimonio_local_sectors';
 
 // Get stored Firebase config or null
 export const getStoredFirebaseConfig = () => {
@@ -67,8 +69,16 @@ export const initFirebase = (customConfig = null) => {
 export const loadLocalData = () => {
   let assets = INITIAL_ASSETS;
   let cautelas = INITIAL_CAUTELAS;
+  let sectors = DEFAULT_SECTORS;
 
   try {
+    const storedSectors = localStorage.getItem(STORAGE_KEY_SECTORS);
+    if (storedSectors) {
+      sectors = JSON.parse(storedSectors);
+    } else {
+      localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
+    }
+
     const storedAssets = localStorage.getItem(STORAGE_KEY_ASSETS);
     if (storedAssets) {
       assets = JSON.parse(storedAssets);
@@ -86,7 +96,7 @@ export const loadLocalData = () => {
     console.error('Error loading local data:', e);
   }
 
-  return { assets, cautelas };
+  return { assets, cautelas, sectors };
 };
 
 export const saveLocalAssets = (assets) => {
@@ -102,6 +112,14 @@ export const saveLocalCautelas = (cautelas) => {
     localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(cautelas));
   } catch (e) {
     console.error('Error saving local cautelas:', e);
+  }
+};
+
+export const saveLocalSectors = (sectors) => {
+  try {
+    localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(sectors));
+  } catch (e) {
+    console.error('Error saving local sectors:', e);
   }
 };
 
