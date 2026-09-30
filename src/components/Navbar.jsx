@@ -10,6 +10,10 @@ import {
   Handshake, 
   Database,
   ShieldCheck,
+  Users,
+  LogOut,
+  Crown,
+  Shield,
   X
 } from 'lucide-react';
 
@@ -24,9 +28,15 @@ export const Navbar = ({
   onOpenExcel,
   onOpenFirebaseConfig,
   onOpenBackup,
+  onOpenUsers,
+  currentUser,
+  userRole,
+  onLogout,
   isFirebaseActive,
   cautelasCount = 0
 }) => {
+  const isAdmin = userRole === 'admin';
+
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,7 +76,7 @@ export const Navbar = ({
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-20 text-slate-400 hover:text-slate-200 p-1"
+                  className="absolute right-20 text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -77,7 +87,7 @@ export const Navbar = ({
                 <button
                   onClick={onOpenVoiceSearch}
                   title="Busca por Voz (Falar número ou descrição)"
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-indigo-600 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-indigo-600 transition-colors cursor-pointer"
                 >
                   <Mic className="w-4 h-4" />
                 </button>
@@ -85,7 +95,7 @@ export const Navbar = ({
                 <button
                   onClick={onOpenQrScanner}
                   title="Escanear QR Code / Código de Barras pela Câmera"
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-blue-600 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-blue-600 transition-colors cursor-pointer"
                 >
                   <QrCode className="w-4 h-4" />
                 </button>
@@ -100,7 +110,7 @@ export const Navbar = ({
             <button
               onClick={onOpenCautelas}
               title="Módulo de Empréstimos & Cautelas"
-              className="relative px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors"
+              className="relative px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Handshake className="w-4 h-4 text-amber-400" />
               <span className="hidden md:inline">Cautelas</span>
@@ -115,7 +125,7 @@ export const Navbar = ({
             <button
               onClick={onOpenLabels}
               title="Gerar Etiquetas com QR Code em PDF"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4 text-cyan-400" />
               <span className="hidden lg:inline">Etiquetas</span>
@@ -125,7 +135,7 @@ export const Navbar = ({
             <button
               onClick={onOpenBackup}
               title="Central de Backups (Local, Firebase e Google Drive)"
-              className="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 transition-all shadow-sm"
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span className="hidden md:inline">Backup</span>
@@ -135,17 +145,29 @@ export const Navbar = ({
             <button
               onClick={onOpenExcel}
               title="Importar / Exportar Planilha Excel"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <span className="hidden lg:inline">Excel</span>
             </button>
 
+            {/* Admin: Users Management */}
+            {isAdmin && (
+              <button
+                onClick={onOpenUsers}
+                title="Gerenciar Usuários e Permissões de Acesso"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/40 text-xs font-semibold text-indigo-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              >
+                <Users className="w-4 h-4 text-indigo-400" />
+                <span className="hidden lg:inline">Usuários</span>
+              </button>
+            )}
+
             {/* Firebase Status & Config Button */}
             <button
               onClick={onOpenFirebaseConfig}
               title={isFirebaseActive ? "Conectado ao Firebase Firestore" : "Configurar Conexão com Firebase"}
-              className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isFirebaseActive 
                   ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20' 
                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
@@ -158,11 +180,50 @@ export const Navbar = ({
             {/* New Asset Button */}
             <button
               onClick={onOpenNewAsset}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Novo Bem</span>
             </button>
+
+            {/* User Profile & Logout */}
+            {currentUser && (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-800 ml-1">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer group"
+                  title={`${currentUser.displayName || currentUser.email} (${isAdmin ? 'Administrador' : 'Operador'})`}
+                >
+                  {currentUser.photoURL ? (
+                    <img 
+                      src={currentUser.photoURL} 
+                      alt="Avatar" 
+                      className="w-8 h-8 rounded-full ring-2 ring-indigo-500/50 object-cover" 
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                      {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="hidden xl:block text-left">
+                    <p className="text-xs font-medium text-white truncate max-w-[100px]">
+                      {currentUser.displayName || currentUser.email.split('@')[0]}
+                    </p>
+                    <p className="text-[10px] text-indigo-400 uppercase font-semibold flex items-center gap-0.5">
+                      {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline" />}
+                      {isAdmin ? 'Admin' : 'Operador'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={onLogout}
+                  title="Sair / Fazer Logout"
+                  className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
           </div>
 

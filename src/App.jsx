@@ -48,13 +48,23 @@ import {
 import { 
   BackupModal 
 } from './components/BackupModal';
+import { 
+  UserManagementModal 
+} from './components/UserManagementModal';
+import LoginScreen from './components/LoginScreen';
 
 import { 
   loadLocalData, 
   saveLocalAssets, 
   saveLocalCautelas, 
   saveLocalSectors,
-  initFirebase 
+  initFirebase,
+  subscribeToAuth,
+  logoutUser,
+  loadAuthorizedUsers,
+  saveAuthorizedUserToCloud,
+  deleteAuthorizedUserFromCloud,
+  checkUserAuthorization
 } from './services/firebase';
 import { 
   generateLabelsPDF, 
@@ -69,10 +79,21 @@ import {
   AlertTriangle,
   RotateCcw,
   SlidersHorizontal,
-  PackageSearch
+  PackageSearch,
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 
 export function App() {
+  // Authentication and Authorization States
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(null); // 'admin' | 'operador'
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+  const [authorizedUsers, setAuthorizedUsers] = useState([]);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+
   // Main Data States
   const [sectors, setSectors] = useState([]);
   const [assets, setAssets] = useState([]);
@@ -116,7 +137,7 @@ export function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1. Initial Load
+  // 1. Initial Load & Auth Listener
   useEffect(() => {
     const { isConfigured } = initFirebase();
     setIsFirebaseActive(isConfigured);
@@ -129,6 +150,40 @@ export function App() {
     if (initialSectors.length > 0) {
       setActiveSectorId(initialSectors[0].id);
     }
+
+    // Load authorized users and subscribe to Firebase Auth
+    let unsubscribe = () => {};
+    loadAuthorizedUsers().then(usersList => {
+      setAuthorizedUsers(usersList);
+
+      unsubscribe = subscribeToAuth(async (user) => {
+        if (user && user.email) {
+          const authCheck = checkUserAuthorization(user.email, usersList);
+          if (authCheck && authCheck.authorized) {
+            setCurrentUser(user);
+            setUserRole(authCheck.role);
+            setIsAuthorized(true);
+            setAuthError(null);
+          } else {
+            await logoutUser();
+            setCurrentUser(null);
+            setUserRole(null);
+            setIsAuthorized(false);
+            setAuthError(`O e-mail ${user.email} não possui autorização de acesso. Solicite inclusão ao Administrador.`);
+          }
+        } else {
+          setCurrentUser(null);
+          setUserRole(null);
+          setIsAuthorized(false);
+        }
+        setAuthLoading(false);
+      });
+    }).catch(err => {
+      console.error('Erro ao inicializar autenticação:', err);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Save to persistence whenever assets, cautelas or sectors change
@@ -149,6 +204,43 @@ export function App() {
       saveLocalCautelas(cautelas);
     }
   }, [cautelas]);
+
+  // Auth Handlers
+  const handleLoginSuccess = (user) => {
+    const authCheck = checkUserAuthorization(user.email, authorizedUsers);
+    if (authCheck && authCheck.authorized) {
+      setCurrentUser(user);
+      setUserRole(authCheck.role);
+      setIsAuthorized(true);
+      setAuthError(null);
+      showToast(`Bem-vindo, ${user.displayName || user.email}!`);
+    } else {
+      logoutUser();
+      setCurrentUser(null);
+      setIsAuthorized(false);
+      setAuthError(`O e-mail ${user.email} não está na lista de usuários autorizados.`);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+    setUserRole(null);
+    setIsAuthorized(false);
+    showToast('Sessão encerrada com sucesso.');
+  };
+
+  const handleAddUser = async (newUserData) => {
+    const saved = await saveAuthorizedUserToCloud(newUserData);
+    setAuthorizedUsers(prev => [saved, ...prev.filter(u => u.email.toLowerCase() !== saved.email.toLowerCase())]);
+    showToast(`Usuário ${saved.email} autorizado com sucesso!`);
+  };
+
+  const handleDeleteUser = async (email) => {
+    await deleteAuthorizedUserFromCloud(email);
+    setAuthorizedUsers(prev => prev.filter(u => u.email.toLowerCase() !== email.toLowerCase()));
+    showToast(`Acesso de ${email} revogado.`);
+  };
 
   const activeSector = useMemo(() => {
     return sectors.find(s => s.id === activeSectorId) || sectors[0] || {
@@ -198,55 +290,49 @@ export function App() {
         const q = searchTerm.toLowerCase().trim();
         const matchesNumber = item.numeroPatrimonio.toLowerCase().includes(q);
         const matchesDesc = item.descricao.toLowerCase().includes(q);
-        const matchesCat = (item.categoria || '').toLowerCase().includes(q);
-        const matchesLoc = (item.localizacao || '').toLowerCase().includes(q);
-        const matchesResp = (item.responsavel || '').toLowerCase().includes(q);
-        const matchesSetor = (item.setorNome || '').toLowerCase().includes(q);
-
-        return matchesNumber || matchesDesc || matchesCat || matchesLoc || matchesResp || matchesSetor;
+        const matchesSerial = item.numeroSerie && item.numeroSerie.toLowerCase().includes(q);
+        const matchesSector = item.setorNome && item.setorNome.toLowerCase().includes(q);
+        const matchesResp = item.responsavel && item.responsavel.toLowerCase().includes(q);
+        
+        return matchesNumber || matchesDesc || matchesSerial || matchesSector || matchesResp;
       }
 
       return true;
     });
   }, [assets, activeSectorId, filterMode, statusFilter, searchTerm]);
 
-  // Handle Conference Toggle with safety
-  const handleToggleConference = (assetId, shouldConfer) => {
+  // Toggle Conference Status
+  const handleToggleConference = (assetId) => {
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        if (shouldConfer) {
-          const nowStr = new Date().toLocaleString('pt-BR');
-          return {
-            ...item,
-            status: 'CONFERIDO',
-            conferidoEm: nowStr,
-            conferidoPor: `${activeSector.responsavel} (${activeSector.name.split(' ')[0]})`,
-            historico: [
-              ...(item.historico || []),
-              { data: nowStr, acao: 'Conferido durante auditoria', usuario: activeSector.responsavel }
-            ]
-          };
-        } else {
-          return {
-            ...item,
-            status: 'ATIVO',
-            conferidoEm: null,
-            conferidoPor: null
-          };
-        }
+        const isNowConferido = item.status !== 'CONFERIDO';
+        const nowStr = new Date().toLocaleString('pt-BR');
+        
+        return {
+          ...item,
+          status: isNowConferido ? 'CONFERIDO' : 'PENDENTE',
+          dataConferencia: isNowConferido ? nowStr : null,
+          historico: [
+            ...(item.historico || []),
+            {
+              data: nowStr,
+              acao: isNowConferido ? 'Conferência de Carga Realizada' : 'Conferência Desmarcada',
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel
+            }
+          ]
+        };
       }
       return item;
     });
 
     setAssets(updated);
-
-    if (shouldConfer) {
-      showToast('Patrimônio conferido e auditado com sucesso!');
-
-      // Check if this completed 100% of current sector
-      const currentSecItems = updated.filter(a => a.setorId === activeSectorId && !a.baixado);
-      const allConferred = currentSecItems.every(a => a.status === 'CONFERIDO');
-      if (allConferred && currentSecItems.length > 0) {
+    
+    // Check if whole sector reached 100%
+    const itemChecked = updated.find(a => a.id === assetId);
+    if (itemChecked.status === 'CONFERIDO') {
+      showToast(`Bem ${itemChecked.numeroPatrimonio} conferido com sucesso!`);
+      const sectorRemaining = updated.filter(a => a.setorId === activeSectorId && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO');
+      if (sectorRemaining.length === 0) {
         confetti({
           particleCount: 120,
           spread: 80,
@@ -297,7 +383,7 @@ export function App() {
             { 
               data: nowStr, 
               acao: `Transferência de Carga: de ${item.setorNome} para ${transferDetails.setorNome}. Motivo: ${transferDetails.motivo}`, 
-              usuario: activeSector.responsavel 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
             }
           ]
         };
@@ -318,135 +404,161 @@ export function App() {
     } else {
       const newAsset = {
         ...assetData,
-        id: `pat-${Date.now()}`,
-        status: 'ATIVO',
-        baixado: false,
-        conferidoEm: null,
-        conferidoPor: null,
-        cautelaAtual: null,
+        id: `ast-${Date.now()}`,
+        status: 'PENDENTE',
+        dataConferencia: null,
+        dataCriacao: new Date().toISOString(),
         historico: [
-          { data: new Date().toLocaleString('pt-BR'), acao: 'Cadastro Inicial', usuario: activeSector.responsavel }
+          {
+            data: new Date().toLocaleString('pt-BR'),
+            acao: 'Cadastro de Patrimônio no Sistema',
+            usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel
+          }
         ]
       };
       setAssets([newAsset, ...assets]);
-      showToast('Novo patrimônio cadastrado com sucesso!');
+      showToast('Novo bem cadastrado com sucesso!');
     }
+    setIsAssetModalOpen(false);
     setAssetToEdit(null);
   };
 
   // Delete Asset
   const handleDeleteAsset = (assetId) => {
-    const target = assets.find(a => a.id === assetId);
-    setAssets(prev => prev.filter(a => a.id !== assetId));
-    setCautelas(prev => prev.filter(c => c.assetId !== assetId));
-    showToast(`Patrimônio ${target ? target.numeroPatrimonio : ''} excluído permanentemente.`, 'info');
+    if (confirm('Tem certeza que deseja excluir este patrimônio do sistema?')) {
+      setAssets(assets.filter(a => a.id !== assetId));
+      showToast('Patrimônio excluído com sucesso.', 'info');
+    }
   };
 
-  // Sectors CRUD: Save (Create or Update)
+  // Save Sector
   const handleSaveSector = (sectorData) => {
-    const exists = sectors.some(s => s.id === sectorData.id);
-    let updatedSectors = [];
-
-    if (exists) {
-      updatedSectors = sectors.map(s => s.id === sectorData.id ? { ...s, ...sectorData } : s);
-      // Update any asset referencing this sector name/responsible
-      setAssets(prev => prev.map(a => {
-        if (a.setorId === sectorData.id) {
-          return {
-            ...a,
-            setorNome: sectorData.name,
-            responsavel: sectorData.responsavel
-          };
-        }
-        return a;
-      }));
-      showToast(`Setor "${sectorData.name}" atualizado com sucesso!`);
+    if (sectorData.id) {
+      setSectors(sectors.map(s => s.id === sectorData.id ? sectorData : s));
+      showToast('Setor atualizado com sucesso!');
     } else {
-      updatedSectors = [...sectors, sectorData];
-      showToast(`Setor "${sectorData.name}" cadastrado com sucesso!`);
+      const newSector = {
+        ...sectorData,
+        id: `sec-${Date.now()}`
+      };
+      setSectors([...sectors, newSector]);
+      showToast('Novo setor cadastrado!');
     }
-
-    setSectors(updatedSectors);
   };
 
-  // Sectors CRUD: Delete Sector
-  const handleDeleteSector = (sectorIdToDelete, reassignSectorId) => {
-    const targetSector = sectors.find(s => s.id === sectorIdToDelete);
-    const newTarget = sectors.find(s => s.id === reassignSectorId);
-
-    // Reassign assets if any
-    if (newTarget) {
-      setAssets(prev => prev.map(a => {
-        if (a.setorId === sectorIdToDelete) {
-          return {
-            ...a,
-            setorId: newTarget.id,
-            setorNome: newTarget.name,
-            responsavel: newTarget.responsavel,
-            localizacao: newTarget.sala || a.localizacao
-          };
-        }
-        return a;
-      }));
+  // Delete Sector
+  const handleDeleteSector = (sectorId) => {
+    const count = assets.filter(a => a.setorId === sectorId).length;
+    if (count > 0) {
+      alert(`Não é possível excluir este setor porque existem ${count} bens vinculados a ele.`);
+      return;
     }
-
-    const updatedSectors = sectors.filter(s => s.id !== sectorIdToDelete);
-    setSectors(updatedSectors);
-
-    if (activeSectorId === sectorIdToDelete && updatedSectors.length > 0) {
-      setActiveSectorId(updatedSectors[0].id);
+    setSectors(sectors.filter(s => s.id !== sectorId));
+    if (activeSectorId === sectorId) {
+      const remaining = sectors.filter(s => s.id !== sectorId);
+      if (remaining.length > 0) setActiveSectorId(remaining[0].id);
     }
-
-    showToast(`Setor "${targetSector?.name}" excluído. Bens reatribuídos para "${newTarget?.name}".`, 'info');
+    showToast('Setor removido com sucesso.', 'info');
   };
 
-  // Save Loan / Cautela
-  const handleSaveCautela = (newCautela, targetAsset) => {
+  // Open Cautela creation for an asset
+  const handleOpenCautela = (asset) => {
+    setAssetForCautela(asset);
+    setIsCautelaModalOpen(true);
+  };
+
+  // Save Cautela
+  const handleSaveCautela = (cautelaData) => {
+    const newCautela = {
+      ...cautelaData,
+      id: `caut-${Date.now()}`,
+      dataEmissao: new Date().toISOString().split('T')[0],
+      status: 'EM_ANDAMENTO'
+    };
+
     setCautelas([newCautela, ...cautelas]);
+
+    // Update asset status
     const updated = assets.map(a => {
-      if (a.id === targetAsset.id) {
+      if (a.id === cautelaData.assetId) {
         return {
           ...a,
           status: 'EM_CAUTELA',
-          cautelaAtual: newCautela
+          cautelaAtual: {
+            id: newCautela.id,
+            responsavel: cautelaData.nomeResponsavel,
+            matricula: cautelaData.matricula,
+            dataPrevisaoDevolucao: cautelaData.dataPrevisaoDevolucao
+          },
+          historico: [
+            ...(a.historico || []),
+            { 
+              data: new Date().toLocaleString('pt-BR'), 
+              acao: `Empréstimo (Cautela) emitido para ${cautelaData.nomeResponsavel} (${cautelaData.matricula})`, 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
+          ]
         };
       }
       return a;
     });
+
     setAssets(updated);
-    showToast(`Cautela emitida para ${newCautela.responsavelRetirada}. Termo PDF gerado!`);
+    setIsCautelaModalOpen(false);
+    setAssetForCautela(null);
+    showToast(`Cautela para ${cautelaData.nomeResponsavel} gerada com sucesso!`);
   };
 
-  // Return Loan / Cautela
-  const handleReturnCautela = (cautelaId, assetId) => {
+  // Return Cautela
+  const handleReturnCautela = (cautelaId, observacoesDevolucao) => {
+    const cautela = cautelas.find(c => c.id === cautelaId);
+    if (!cautela) return;
+
     const nowStr = new Date().toLocaleString('pt-BR');
-    const updatedCautelas = cautelas.map(c => {
+
+    // Update cautela
+    setCautelas(cautelas.map(c => {
       if (c.id === cautelaId) {
         return {
           ...c,
           status: 'DEVOLVIDO',
-          dataDevolucao: nowStr
+          dataDevolucaoReal: nowStr,
+          observacoesDevolucao
         };
       }
       return c;
-    });
-    setCautelas(updatedCautelas);
+    }));
 
-    const updatedAssets = assets.map(a => {
-      if (a.id === assetId) {
+    // Update asset
+    setAssets(assets.map(a => {
+      if (a.id === cautela.assetId) {
         return {
           ...a,
-          status: 'ATIVO',
-          cautelaAtual: null
+          status: 'PENDENTE',
+          cautelaAtual: null,
+          historico: [
+            ...(a.historico || []),
+            { 
+              data: nowStr, 
+              acao: `Devolução de Cautela confirmada. Observação: ${observacoesDevolucao || 'Sem observações'}`, 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
+          ]
         };
       }
       return a;
-    });
-    setAssets(updatedAssets);
-    showToast('Devolução do bem registrada com sucesso!');
+    }));
+
+    showToast('Devolução de cautela registrada com sucesso!');
   };
 
-  // Confirm Asset Baixa
+  // Open Baixa Modal
+  const handleOpenBaixa = (asset) => {
+    setAssetForBaixa(asset);
+    setIsBaixaModalOpen(true);
+  };
+
+  // Confirm Baixa
   const handleConfirmBaixa = (assetId, dadosBaixa) => {
     const updated = assets.map(a => {
       if (a.id === assetId) {
@@ -454,10 +566,17 @@ export function App() {
           ...a,
           status: 'BAIXADO',
           baixado: true,
-          dadosBaixa,
+          dadosBaixa: {
+            ...dadosBaixa,
+            dataHoraRegistro: new Date().toISOString()
+          },
           historico: [
             ...(a.historico || []),
-            { data: dadosBaixa.data, acao: `Baixa Patrimonial: ${dadosBaixa.motivo}`, usuario: activeSector.responsavel }
+            { 
+              data: dadosBaixa.data, 
+              acao: `Baixa Patrimonial: ${dadosBaixa.motivo}`, 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
           ]
         };
       }
@@ -495,6 +614,29 @@ export function App() {
     showToast('Base de dados restaurada com sucesso!');
   };
 
+  // If initial auth check is loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+        <div className="flex items-center gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+          <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+          <span className="text-sm font-medium text-slate-300">Autenticando sessão com o Google...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If not logged in or unauthorized, show Login Screen
+  if (!currentUser || !isAuthorized) {
+    return (
+      <LoginScreen 
+        onLoginSuccess={handleLoginSuccess}
+        authError={authError}
+        isConfigured={isFirebaseActive}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       
@@ -526,7 +668,11 @@ export function App() {
         onOpenLabels={() => setIsLabelsModalOpen(true)}
         onOpenBackup={() => setIsBackupModalOpen(true)}
         onOpenExcel={() => setIsExcelModalOpen(true)}
+        onOpenUsers={() => setIsUserManagementOpen(true)}
         onOpenFirebaseConfig={() => setIsFirebaseModalOpen(true)}
+        currentUser={currentUser}
+        userRole={userRole}
+        onLogout={handleLogout}
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
       />
@@ -551,132 +697,119 @@ export function App() {
           onExportReportPDF={handleExportReportPDF}
         />
 
-        {/* Filter Pills & View Counters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-2xl border border-slate-800">
+        {/* Filter and View Controls Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
           
-          {/* Status Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium">
-            <button
-              onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                statusFilter === 'ALL'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Todos ({filteredAssets.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('PENDENTES')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                statusFilter === 'PENDENTES'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Pendentes ({filteredAssets.filter(a => a.status !== 'CONFERIDO' && !a.baixado).length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('CONFERIDOS')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                statusFilter === 'CONFERIDOS'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Conferidos ({filteredAssets.filter(a => a.status === 'CONFERIDO').length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('CAUTELAS')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                statusFilter === 'CAUTELAS'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Em Cautela ({filteredAssets.filter(a => a.status === 'EM_CAUTELA').length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('BAIXADOS')}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                statusFilter === 'BAIXADOS'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Baixados ({filteredAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length})
-            </button>
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            {[
+              { id: 'ALL', label: 'Todos os Bens', count: assets.filter(a => filterMode === 'ALL_SECTORS' || a.setorId === activeSectorId).length },
+              { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400' },
+              { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400' },
+              { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400' },
+              { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400' },
+            ].map(tab => {
+              const isActive = statusFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' 
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                    isActive 
+                      ? 'bg-indigo-700/80 text-white' 
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Quick Context Summary */}
-          <div className="text-xs text-slate-400 flex items-center gap-2">
-            {searchTerm && (
-              <span className="bg-indigo-950/60 text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-800/50 flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5" />
-                Busca: <strong>"{searchTerm}"</strong>
-              </span>
+          {/* Quick Actions (Reset Filter / Results count) */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 text-xs text-slate-400">
+            <span>
+              Mostrando <strong className="text-white">{filteredAssets.length}</strong> {filteredAssets.length === 1 ? 'item' : 'itens'}
+            </span>
+            {(statusFilter !== 'ALL' || searchTerm || filterMode !== 'MY_SECTOR') && (
+              <button
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setSearchTerm('');
+                  setFilterMode('MY_SECTOR');
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-xs cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Limpar Filtros
+              </button>
             )}
-            <span>Exibindo <strong>{filteredAssets.length}</strong> itens</span>
           </div>
 
         </div>
 
-        {/* Asset Cards Grid */}
-        {filteredAssets.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center mb-3">
-              <PackageSearch className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-1">Nenhum patrimônio encontrado</h3>
-            <p className="text-xs text-slate-400 max-w-sm mb-4">
-              Não encontramos nenhum item com os filtros ou termo de busca informados.
-            </p>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Limpar Busca</span>
-              </button>
-            )}
-          </div>
-        ) : (
+        {/* Asset Cards Grid or Empty State */}
+        {filteredAssets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAssets.map(asset => (
               <AssetCard
                 key={asset.id}
                 asset={asset}
-                activeSector={activeSector}
-                currentUserName={activeSector.responsavel}
+                activeSectorId={activeSectorId}
                 onToggleConference={handleToggleConference}
-                onOpenEdit={(item) => {
-                  setAssetToEdit(item);
+                onOpenTransfer={handleOpenTransferModal}
+                onOpenCautela={handleOpenCautela}
+                onOpenBaixa={handleOpenBaixa}
+                onPrintLabel={handlePrintSingleLabel}
+                onEditAsset={(a) => {
+                  setAssetToEdit(a);
                   setIsAssetModalOpen(true);
                 }}
-                onOpenCautela={(item) => {
-                  setAssetForCautela(item);
-                  setIsCautelaModalOpen(true);
-                }}
-                onOpenBaixa={(item) => {
-                  setAssetForBaixa(item);
-                  setIsBaixaModalOpen(true);
-                }}
-                onPrintSingleLabel={handlePrintSingleLabel}
-                onTransferSector={handleOpenTransferModal}
                 onDeleteAsset={handleDeleteAsset}
               />
             ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-12 bg-slate-900/40 border border-slate-800/80 rounded-3xl text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500">
+              <PackageSearch className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-200">Nenhum patrimônio encontrado</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                {searchTerm 
+                  ? `Nenhum bem corresponde ao termo de busca "${searchTerm}".`
+                  : `Nenhum bem com o status selecionado neste setor.`}
+              </p>
+            </div>
+            {(searchTerm || statusFilter !== 'ALL') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('ALL');
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              >
+                Ver todos os bens do setor
+              </button>
+            )}
           </div>
         )}
 
       </main>
 
-      {/* Modals Container */}
+      {/* Modals */}
       <VoiceSearchModal
         isOpen={isVoiceOpen}
         onClose={() => setIsVoiceOpen(false)}
-        onSearch={(text) => setSearchTerm(text)}
+        onResult={(spokenText) => setSearchTerm(spokenText)}
       />
 
       <QrScannerModal
@@ -774,6 +907,16 @@ export function App() {
         cautelas={cautelas}
         isFirebaseActive={isFirebaseActive}
         onRestoreBackup={handleRestoreBackup}
+      />
+
+      {/* Admin User Management Modal */}
+      <UserManagementModal
+        isOpen={isUserManagementOpen}
+        onClose={() => setIsUserManagementOpen(false)}
+        users={authorizedUsers}
+        currentUser={currentUser}
+        onAddUser={handleAddUser}
+        onDeleteUser={handleDeleteUser}
       />
 
     </div>
