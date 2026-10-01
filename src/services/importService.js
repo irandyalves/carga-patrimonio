@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
-import { parseCleanNumber, formatPatrimonio, formatDisplayDate } from '../utils/formatters';
+import { parseCleanNumber, formatPatrimonio, formatDisplayDate } from '../utils/formatters.js';
 
 // Dicionário Semântico de Campos do Sistema com Sinônimos e Variações
 export const DB_FIELDS = [
@@ -53,7 +53,7 @@ export const DB_FIELDS = [
     label: 'Setor / Área',
     required: false,
     synonyms: [
-      'setor', 'área', 'area', 'departamento', 'dep', 'depto', 'unidade', 'orgao', 'órgão',
+      'setor', 'área', 'area', 'departamento', 'depto', 'unidade', 'orgao', 'órgão',
       'divisao', 'divisão', 'lotacao', 'lotação', 'centro de custo', 'unidade gestora'
     ]
   },
@@ -89,8 +89,8 @@ export const DB_FIELDS = [
     label: 'Data de Aquisição',
     required: false,
     synonyms: [
-      'data aquisicao', 'data aquisição', 'data de aquisicao', 'data de aquisição', 'dt aquisicao',
-      'dt_aquisicao', 'data compra', 'data de compra', 'data', 'dt_compra', 'ano aquisicao', 'ano compra'
+      'data de aquisicao', 'data de aquisição', 'data aquisicao', 'data aquisição', 'dt aquisicao',
+      'dt_aquisicao', 'data compra', 'data de compra', 'dt compra', 'dt de compra', 'ano de aquisicao', 'ano aquisicao'
     ]
   },
   {
@@ -98,9 +98,10 @@ export const DB_FIELDS = [
     label: 'Valor Original (R$)',
     required: false,
     synonyms: [
-      'valor original', 'valor de aquisicao', 'valor de aquisição', 'valor aquisicao', 'valor aquisição',
-      'aquisicao', 'aquisição', 'valor', 'preco', 'preço', 'custo', 'custo de aquisicao',
-      'vlr original', 'vl_original', 'vlr_aquisicao', 'vlr_original_bruto', 'valor histórico'
+      'valor de aquisicao', 'valor de aquisição', 'valor aquisicao', 'valor aquisição',
+      'valor original', 'vlr original', 'vl original', 'vlr aquisicao', 'vl aquisicao',
+      'custo de aquisicao', 'vlr_aquisicao', 'valor historico', 'valor histórico',
+      'custo original', 'preco original', 'preço original', 'valor inicial'
     ]
   },
   {
@@ -108,8 +109,9 @@ export const DB_FIELDS = [
     label: 'Valor Atual (R$)',
     required: false,
     synonyms: [
-      'valor atual', 'valor residual', 'valor liquido', 'valor líquido', 'vlr atual',
-      'vl_atual', 'valor presente', 'valor contabil', 'valor contábil', 'liquido'
+      'valor atual', 'valor atualizado', 'valor residual', 'valor liquido', 'valor líquido',
+      'vlr atual', 'vl atual', 'vlr atualizado', 'vl atualizado', 'valor presente',
+      'valor contabil', 'valor contábil', 'saldo contabil', 'saldo atual'
     ]
   },
   {
@@ -117,8 +119,9 @@ export const DB_FIELDS = [
     label: 'Depreciação',
     required: false,
     synonyms: [
-      'depreciacao', 'depreciação', 'deprec', 'taxa depreciacao', 'taxa de depreciacao',
-      'valor depreciacao', 'depreciacao acumulada', 'depr', 'depr.', 'deprec acumulada'
+      'depreciacao', 'depreciação', 'deprec', 'depr', 'taxa depreciacao', 'taxa de depreciacao',
+      'valor depreciacao', 'valor depreciação', 'depreciacao acumulada', 'depreciação acumulada',
+      'deprec acumulada'
     ]
   },
   {
@@ -155,7 +158,7 @@ export const autoMatchColumns = (detectedHeaders = []) => {
     }
 
     let bestMatch = null;
-    let highestConfidence = 0;
+    let highestScore = 0;
 
     for (const field of DB_FIELDS) {
       const fieldNorm = normalizeHeader(field.label);
@@ -164,22 +167,24 @@ export const autoMatchColumns = (detectedHeaders = []) => {
       // Match exato com label ou key
       if (norm === fieldNorm || norm === keyNorm) {
         bestMatch = field.key;
-        highestConfidence = 100;
+        highestScore = 100;
         break;
       }
 
-      // Match exato com algum sinônimo
+      // Match com sinônimos
       for (const syn of field.synonyms) {
         const synNorm = normalizeHeader(syn);
         if (norm === synNorm) {
-          bestMatch = field.key;
-          highestConfidence = 95;
-          break;
-        }
-        if (norm.includes(synNorm) || synNorm.includes(norm)) {
-          if (highestConfidence < 75) {
+          if (highestScore < 95) {
             bestMatch = field.key;
-            highestConfidence = 75;
+            highestScore = 95;
+          }
+        } else if (norm.includes(synNorm) || synNorm.includes(norm)) {
+          // Score ponderado pelo comprimento do sinônimo para priorizar termos mais específicos
+          const matchScore = 75 + Math.min(18, synNorm.length);
+          if (matchScore > highestScore) {
+            bestMatch = field.key;
+            highestScore = matchScore;
           }
         }
       }
@@ -187,8 +192,8 @@ export const autoMatchColumns = (detectedHeaders = []) => {
 
     mapping[header] = {
       targetField: bestMatch,
-      isAccepted: highestConfidence >= 70,
-      confidence: highestConfidence
+      isAccepted: highestScore >= 70,
+      confidence: highestScore
     };
   });
 

@@ -516,8 +516,8 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Linha Principal (Linha debaixo da slidebar, colunas alinhadas com cabeçalho) */}
-      <div className="pl-10 pr-9 py-0.5 sm:py-1 flex items-center gap-2 text-[11px] w-full">
+      {/* Linha Principal (Linha debaixo da slidebar, colunas perfeitamente alinhadas com cabeçalho até a borda direita) */}
+      <div className="pl-6 pr-2 py-0.5 sm:py-1 flex items-center gap-2 text-[11px] w-full">
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
@@ -794,7 +794,7 @@ export const AssetTableRowCard = ({
                     if (e.key === 'Escape') closeObsEdit();
                   }}
                   placeholder="Ex: Está no Studio..."
-                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[180px] pr-6 shadow-xl"
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[135px] pr-6 shadow-xl"
                   autoFocus
                 />
                 <button
@@ -811,12 +811,12 @@ export const AssetTableRowCard = ({
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showObsListbox ? 'rotate-180 text-emerald-400' : ''}`} />
                 </button>
 
-                {/* Listbox customizado de 10 opções visíveis com SOMENTE o setor em verdinho */}
+                {/* Listbox customizado reduzido em 25% com 10 opções visíveis */}
                 {showObsListbox && (
-                  <div className="absolute left-0 top-full mt-1.5 w-72 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
-                      <span>Sugestões de Observação</span>
-                      <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
+                  <div className="absolute left-0 top-full mt-1.5 w-[216px] bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1.5 py-1 border-b border-slate-800 flex items-center justify-between">
+                      <span>Sugestões</span>
+                      <span className="text-[8.5px] text-emerald-400 font-mono">10 visíveis</span>
                     </div>
                     <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
                       {sectors.map((s) => (
@@ -1048,8 +1048,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 8: Valor Original */}
         {visibleColumns?.valorOriginal !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-semibold text-slate-200 text-[11px]">
+          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
+            <span className="font-semibold text-slate-200 text-[11px] whitespace-nowrap">
               {formatCurrency(asset.valorOriginal)}
             </span>
           </div>
@@ -1057,8 +1057,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 11: Valor Atual */}
         {visibleColumns?.valorAtual !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-bold text-emerald-400 text-[11px]">
+          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
+            <span className="font-bold text-emerald-400 text-[11px] whitespace-nowrap">
               {formatCurrency(asset.valorAtual || asset.valorOriginal)}
             </span>
           </div>
@@ -1066,8 +1066,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 12: Depreciação */}
         {visibleColumns?.depreciacao !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-semibold text-amber-400 text-[11px]" title={String(asset.depreciacao || '')}>
+          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
+            <span className="font-semibold text-amber-400 text-[11px] whitespace-nowrap" title={String(asset.depreciacao || '')}>
               {formatDepreciacao(
                 asset.depreciacao || 
                 (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
@@ -1078,8 +1078,8 @@ export const AssetTableRowCard = ({
           </div>
         )}
 
-        {/* Coluna 13: Ações & Conferência */}
-        <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
+        {/* Coluna 13: Ações & Conferência movidos para o limite da borda direita */}
+        <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-0.5">
           
           {/* Bloqueado / Conferência / Pedido */}
           {!canManageAsset ? (

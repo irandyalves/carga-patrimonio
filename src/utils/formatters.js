@@ -108,19 +108,35 @@ export const parseCleanNumber = (val) => {
   let str = String(val).trim().replace(/[R$\s]/g, '');
   if (!str) return 0;
 
+  // Se tiver vírgula E ponto
   if (str.includes(',') && str.includes('.')) {
-    // Ex: 1.234,56 -> 1234.56
-    str = str.replace(/\./g, '').replace(',', '.');
+    const lastComma = str.lastIndexOf(',');
+    const lastDot = str.lastIndexOf('.');
+    if (lastComma > lastDot) {
+      // Padrão Brasileiro: 1.234,56 ou 1.234.567,89 (pontos = milhar, vírgula = decimal)
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else {
+      // Padrão Internacional / Excel: 1,234.56 ou 1,234,567.89 (vírgulas = milhar, ponto = decimal)
+      str = str.replace(/,/g, '');
+    }
   } else if (str.includes(',')) {
-    // Ex: 1234,56 -> 1234.56
-    str = str.replace(',', '.');
+    // Apenas vírgula: ex: 1234,56
+    const parts = str.split(',');
+    if (parts.length > 2) {
+      // Múltiplas vírgulas (milhares americano): 1,234,567
+      str = str.replace(/,/g, '');
+    } else {
+      str = str.replace(',', '.');
+    }
   } else if (str.includes('.')) {
+    // Apenas ponto: ex: 1234.56 ou 1.234.567
     const parts = str.split('.');
     if (parts.length > 2) {
-      // Ex: 1.234.567 -> 1234567
+      // Múltiplos pontos (milhares brasileiro): 1.234.567
       str = str.replace(/\./g, '');
     }
   }
+
   const num = parseFloat(str);
   return isNaN(num) ? 0 : Math.round(num * 100) / 100;
 };

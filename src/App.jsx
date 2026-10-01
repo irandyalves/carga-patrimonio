@@ -218,9 +218,9 @@ export function App() {
     if (visibleColumns.modelo) base += 112;
     if (visibleColumns.responsavel) base += 112;
     if (visibleColumns.dataAquisicao) base += 96;
-    if (visibleColumns.valorOriginal) base += 96;
-    if (visibleColumns.valorAtual) base += 96;
-    if (visibleColumns.depreciacao) base += 96;
+    if (visibleColumns.valorOriginal) base += 112;
+    if (visibleColumns.valorAtual) base += 112;
+    if (visibleColumns.depreciacao) base += 112;
     return `${base}px`;
   }, [visibleColumns]);
 
@@ -1422,8 +1422,8 @@ export function App() {
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
             <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
-              <div className="px-4 w-full">
-                <div className="px-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+              <div className="w-full">
+                <div className="pl-6 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Coluna 1: Patrimônio */}
                   <button
@@ -1652,11 +1652,11 @@ export function App() {
 
                   {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
                   {visibleColumns.valorOriginal && (
-                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('valorOriginal')}
                         title="Clique para ordenar por valor original"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
                           sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
@@ -1685,11 +1685,11 @@ export function App() {
 
                   {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
                   {visibleColumns.valorAtual && (
-                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('valorAtual')}
                         title="Clique para ordenar por valor atual"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
                           sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
@@ -1718,11 +1718,11 @@ export function App() {
 
                   {/* Coluna 12: Depreciação com Olhinho para Ocultar */}
                   {visibleColumns.depreciacao && (
-                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('depreciacao')}
                         title="Clique para ordenar por depreciação"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
                           sortField === 'depreciacao' ? 'text-amber-400 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
@@ -1750,7 +1750,7 @@ export function App() {
                   )}
 
                   {/* Coluna 13: Ações + Botão de Gerenciamento e Restauração de Colunas */}
-                  <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1 relative" ref={columnDropdownRef}>
+                  <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-0.5 relative" ref={columnDropdownRef}>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1886,7 +1886,7 @@ export function App() {
 
             {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
-              <div className="w-full flex-1 pb-8 border-t border-slate-800/80 -ml-1">
+              <div className="w-full flex-1 pb-8 border-t border-slate-800/80">
                 {sortedAssets.map((asset, index) => {
                   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
                   const isConferido = asset.status === 'CONFERIDO' && !isBaixado;
