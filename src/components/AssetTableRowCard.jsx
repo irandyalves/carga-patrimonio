@@ -32,7 +32,7 @@ import { STATUS } from '../constants/sectors';
 const COLOR_OPTIONS = [
   { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
   { id: 'emerald', label: 'Verde Esmeralda', bg: 'bg-emerald-500', border: 'border-emerald-400' },
-  { id: 'blue', label: 'Azul Real', bg: 'bg-blue-500', border: 'border-blue-400' },
+  { id: 'blue', label: 'Azul Real', bg: 'bg-sky-500', border: 'border-sky-400' },
   { id: 'amber', label: 'Amarelo / Dourado', bg: 'bg-amber-500', border: 'border-amber-400' },
   { id: 'rose', label: 'Vermelho / Rosa', bg: 'bg-rose-500', border: 'border-rose-400' },
   { id: 'purple', label: 'Roxo / Violeta', bg: 'bg-purple-500', border: 'border-purple-400' },
@@ -41,13 +41,51 @@ const COLOR_OPTIONS = [
 ];
 
 const CARD_COLOR_CLASSES = {
-  emerald: 'bg-emerald-950/25 border-l-4 border-l-emerald-400 hover:bg-emerald-950/40',
-  blue: 'bg-blue-950/25 border-l-4 border-l-blue-400 hover:bg-blue-950/40',
-  amber: 'bg-amber-950/25 border-l-4 border-l-amber-400 hover:bg-amber-950/40',
-  rose: 'bg-rose-950/25 border-l-4 border-l-rose-400 hover:bg-rose-950/40',
-  purple: 'bg-purple-950/25 border-l-4 border-l-purple-400 hover:bg-purple-950/40',
-  cyan: 'bg-cyan-950/25 border-l-4 border-l-cyan-400 hover:bg-cyan-950/40',
-  orange: 'bg-orange-950/25 border-l-4 border-l-orange-400 hover:bg-orange-950/40'
+  emerald: 'bg-emerald-950/20 border-l-4 border-l-emerald-400 hover:bg-emerald-950/30',
+  blue: 'bg-sky-950/20 border-l-4 border-l-sky-400 hover:bg-sky-950/30',
+  amber: 'bg-amber-950/20 border-l-4 border-l-amber-400 hover:bg-amber-950/30',
+  rose: 'bg-rose-950/20 border-l-4 border-l-rose-400 hover:bg-rose-950/30',
+  purple: 'bg-purple-950/20 border-l-4 border-l-purple-400 hover:bg-purple-950/30',
+  cyan: 'bg-cyan-950/20 border-l-4 border-l-cyan-400 hover:bg-cyan-950/30',
+  orange: 'bg-orange-950/20 border-l-4 border-l-orange-400 hover:bg-orange-950/30'
+};
+
+const FONT_COLOR_MAP = {
+  emerald: {
+    patrimonio: 'text-emerald-400 font-black drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]',
+    descricao: 'text-emerald-300 font-bold hover:text-emerald-200 drop-shadow-[0_0_4px_rgba(52,211,153,0.3)]',
+    quantidade: 'text-emerald-300'
+  },
+  blue: {
+    patrimonio: 'text-sky-400 font-black drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]',
+    descricao: 'text-sky-300 font-bold hover:text-sky-200 drop-shadow-[0_0_4px_rgba(56,189,248,0.3)]',
+    quantidade: 'text-sky-300'
+  },
+  amber: {
+    patrimonio: 'text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]',
+    descricao: 'text-amber-300 font-bold hover:text-amber-200 drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]',
+    quantidade: 'text-amber-300'
+  },
+  rose: {
+    patrimonio: 'text-rose-400 font-black drop-shadow-[0_0_8px_rgba(251,113,133,0.6)]',
+    descricao: 'text-rose-300 font-bold hover:text-rose-200 drop-shadow-[0_0_4px_rgba(251,113,133,0.3)]',
+    quantidade: 'text-rose-300'
+  },
+  purple: {
+    patrimonio: 'text-purple-400 font-black drop-shadow-[0_0_8px_rgba(192,132,252,0.6)]',
+    descricao: 'text-purple-300 font-bold hover:text-purple-200 drop-shadow-[0_0_4px_rgba(192,132,252,0.3)]',
+    quantidade: 'text-purple-300'
+  },
+  cyan: {
+    patrimonio: 'text-cyan-400 font-black drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]',
+    descricao: 'text-cyan-300 font-bold hover:text-cyan-200 drop-shadow-[0_0_4px_rgba(34,211,238,0.3)]',
+    quantidade: 'text-cyan-300'
+  },
+  orange: {
+    patrimonio: 'text-orange-400 font-black drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]',
+    descricao: 'text-orange-300 font-bold hover:text-orange-200 drop-shadow-[0_0_4px_rgba(251,146,60,0.3)]',
+    quantidade: 'text-orange-300'
+  }
 };
 
 export const AssetTableRowCard = ({
@@ -447,7 +485,7 @@ export const AssetTableRowCard = ({
         <div className="w-28 shrink-0 flex items-center gap-1">
           <div className="flex flex-col">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
-              isConferido ? 'text-emerald-400' : 'text-indigo-400'
+              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
             }`}>
               {formattedXX}
             </span>
@@ -474,7 +512,9 @@ export const AssetTableRowCard = ({
         <div className="w-12 shrink-0 flex items-center justify-center">
           <div className="flex items-baseline gap-0.5">
             <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
-            <span className="font-black text-sm sm:text-[15px] text-cyan-300 leading-none">
+            <span className={`font-black text-sm sm:text-[15px] leading-none ${
+              FONT_COLOR_MAP[asset.cardColor]?.quantidade || 'text-cyan-300'
+            }`}>
               {asset.quantidade || 1}
             </span>
             <span className="text-[8.5px] font-medium text-slate-400">un</span>
@@ -488,7 +528,9 @@ export const AssetTableRowCard = ({
               e.stopPropagation();
               setIsDescModalOpen(true);
             }}
-            className="text-xs sm:text-[12.5px] font-semibold text-slate-100 group-hover:text-white transition-colors truncate whitespace-nowrap cursor-pointer hover:text-indigo-300"
+            className={`text-xs sm:text-[12.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
+              FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'
+            }`}
             title="Clique para ver a descrição completa no modal"
           >
             {asset.descricao}
@@ -509,7 +551,7 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 4: Localização */}
+        {/* Coluna 4: Localização (Mostra SOMENTE os setores) */}
         <div className="w-56 shrink-0 flex items-center justify-start text-left">
           {isEditingLocation ? (
             <div 
@@ -536,8 +578,8 @@ export const AssetTableRowCard = ({
                     if (e.key === 'Enter') handleSaveLocation(e);
                     if (e.key === 'Escape') closeLocEdit();
                   }}
-                  placeholder="Ex: Sala de reuniões..."
-                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-blue-400 min-w-[140px] pr-6 shadow-xl"
+                  placeholder="Selecione ou digite o setor..."
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[140px] pr-6 shadow-xl"
                   autoFocus
                 />
                 <button
@@ -549,16 +591,16 @@ export const AssetTableRowCard = ({
                     resetLocTimer();
                   }}
                   className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
-                  title="Mostrar opções de localização"
+                  title="Mostrar setores"
                 >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-blue-400' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-emerald-400' : ''}`} />
                 </button>
 
-                {/* Listbox customizado com 10 opções visíveis e setor em verdinho */}
+                {/* Listbox customizado com 10 opções visíveis contendo SOMENTE os setores */}
                 {showLocListbox && (
                   <div className="absolute left-0 top-full mt-1.5 w-64 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
-                      <span>Sugestões de Localização</span>
+                      <span>Setores</span>
                       <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
                     </div>
                     <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
@@ -567,36 +609,22 @@ export const AssetTableRowCard = ({
                           key={`loc-sec-${s.id}`}
                           type="button"
                           onClick={(e) => {
-                            const val = `Está no ${s.name}`;
-                            setLocationValue(val);
-                            handleSaveLocation(e, val);
+                            setLocationValue(s.name);
+                            handleSaveLocation(e, s.name);
                           }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-[11px] hover:bg-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
                         >
-                          <span className="text-slate-300">Está no</span>
-                          <span className="text-emerald-400 font-bold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">{s.name}</span>
-                        </button>
-                      ))}
-                      {[
-                        'Sala de Reuniões',
-                        'Copa Cozinha Térreo',
-                        'Copa 1º Piso',
-                        'Auditório Principal',
-                        'Foyer',
-                        'Recepção',
-                        'Laboratório de Inovação',
-                        'Almoxarifado'
-                      ].map((loc) => (
-                        <button
-                          key={`loc-preset-${loc}`}
-                          type="button"
-                          onClick={(e) => {
-                            setLocationValue(loc);
-                            handleSaveLocation(e, loc);
-                          }}
-                          className="w-full text-left px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                        >
-                          {loc}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">
+                              {s.name}
+                            </span>
+                            {s.responsavel && (
+                              <span className="text-[10px] text-slate-400 truncate">
+                                ({s.responsavel})
+                              </span>
+                            )}
+                          </div>
+                          <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       ))}
                     </div>
