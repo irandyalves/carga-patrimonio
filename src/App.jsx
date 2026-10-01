@@ -1006,6 +1006,32 @@ export function App() {
     showToast('Baixa patrimonial realizada com sucesso!');
   };
 
+  // Cancel Baixa (Reativar bem)
+  const handleCancelBaixa = (assetId) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const updated = assets.map(a => {
+      if (a.id === assetId) {
+        return {
+          ...a,
+          status: 'PENDENTE',
+          baixado: false,
+          dadosBaixa: null,
+          historico: [
+            ...(a.historico || []),
+            { 
+              data: nowStr, 
+              acao: 'Cancelamento de Baixa: Bem reativado no setor', 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
+          ]
+        };
+      }
+      return a;
+    });
+    setAssets(updated);
+    showToast('Baixa cancelada e bem reativado com sucesso!');
+  };
+
   // Single label print
   const handlePrintSingleLabel = async (asset) => {
     await generateLabelsPDF([asset]);
@@ -1341,6 +1367,7 @@ export function App() {
                         }}
                         onOpenCautela={handleOpenCautela}
                         onOpenBaixa={handleOpenBaixa}
+                        onCancelBaixa={handleCancelBaixa}
                         onPrintSingleLabel={handlePrintSingleLabel}
                         onTransferSector={handleOpenTransferModal}
                         onDeleteAsset={handleDeleteAsset}

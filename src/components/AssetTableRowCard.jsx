@@ -26,7 +26,8 @@ import {
   Sparkles,
   Building2,
   Palette,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -101,6 +102,7 @@ export const AssetTableRowCard = ({
   onOpenEdit,
   onOpenCautela,
   onOpenBaixa,
+  onCancelBaixa,
   onPrintSingleLabel,
   onTransferSector,
   onDeleteAsset,
@@ -114,6 +116,7 @@ export const AssetTableRowCard = ({
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCancelBaixaConfirm, setShowCancelBaixaConfirm] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
@@ -1219,17 +1222,19 @@ export const AssetTableRowCard = ({
                     </button>
                   )}
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsActionsOpen(false);
-                      onOpenCautela(asset);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <Handshake className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Emitir Cautela</span>
-                  </button>
+                  {!isBaixado && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        onOpenCautela(asset);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                    >
+                      <Handshake className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Emitir Cautela</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={(e) => {
@@ -1243,17 +1248,59 @@ export const AssetTableRowCard = ({
                     <span>Imprimir Etiqueta</span>
                   </button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsActionsOpen(false);
-                      onOpenBaixa(asset);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <Archive className="w-3.5 h-3.5 text-purple-400" />
-                    <span>Baixa Patrimonial</span>
-                  </button>
+                  {isBaixado ? (
+                    showCancelBaixaConfirm ? (
+                      <div className="p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center my-1">
+                        <p className="text-[11px] text-emerald-300 font-medium mb-1.5">Cancelar baixa e reativar bem?</p>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsActionsOpen(false);
+                              setShowCancelBaixaConfirm(false);
+                              onCancelBaixa && onCancelBaixa(asset.id);
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold cursor-pointer"
+                          >
+                            Reativar
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCancelBaixaConfirm(false);
+                            }}
+                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCancelBaixaConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left font-semibold"
+                        title="Cancelar a baixa patrimonial e reativar o bem no setor"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Cancelar Baixa</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        onOpenBaixa(asset);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                    >
+                      <Archive className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Baixa Patrimonial</span>
+                    </button>
+                  )}
 
                   <div className="h-px bg-slate-800 my-1" />
 
@@ -1655,7 +1702,23 @@ export const AssetTableRowCard = ({
             </div>
 
             {/* Rodapé */}
-            <div className="flex items-center justify-end gap-2 mt-5 pt-3.5 border-t border-slate-800">
+            <div className="flex items-center justify-between gap-2 mt-5 pt-3.5 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm('Deseja realmente cancelar a baixa deste patrimônio e reativá-lo no setor?')) {
+                    setIsBaixaResumoOpen(false);
+                    onCancelBaixa && onCancelBaixa(asset.id);
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Cancelar o processo de baixa e reativar este bem no balanço do setor"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Cancelar Baixa (Reativar)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setIsBaixaResumoOpen(false)}
