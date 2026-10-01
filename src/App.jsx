@@ -1017,7 +1017,7 @@ export function App() {
           {filteredAssets.length > 0 ? (
             /* ================= VISUALIZAÇÃO EM CARDS TIPO LINHA DE TABELA ================= */
             <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
-              <div className="min-w-[980px] space-y-2">
+              <div className="min-w-[1100px] space-y-2">
                 
                 {/* Table Header Bar com Títulos Centralizados, Divisores Verticais e Ordenação */}
                 <div className="hidden lg:flex items-center justify-between px-3 sm:px-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none shadow-sm w-full divide-x divide-slate-750">
@@ -1059,11 +1059,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (ESPAÇO MÁXIMO) */}
+                  {/* Coluna 3: Descrição do Bem (AMPLIADA EM 40%) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`flex-1 min-w-[280px] flex items-center justify-start gap-1.5 px-3 transition-colors cursor-pointer group ${
+                    className={`flex-1 min-w-[400px] flex items-center justify-start gap-1.5 px-3 transition-colors cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >

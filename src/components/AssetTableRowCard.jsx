@@ -83,10 +83,10 @@ export const AssetTableRowCard = ({
   const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
   const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
 
-  // Truncamento inteligente para descrições longas com hint bonito
-  const isDescLong = (asset.descricao || '').length > 42;
+  // Truncamento inteligente para descrições longas com hint bonito (ampliado em 40%)
+  const isDescLong = (asset.descricao || '').length > 60;
   const shortDesc = isDescLong 
-    ? `${asset.descricao.slice(0, 39).trim()}...` 
+    ? `${asset.descricao.slice(0, 57).trim()}...` 
     : asset.descricao;
 
   const handleCopyTag = (e) => {
@@ -325,8 +325,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (ESPAÇO MÁXIMO) + Hint Bonito para Descrição Longa */}
-        <div className="flex-1 min-w-[280px]">
+        {/* Coluna 3: Descrição do Bem (AMPLIADA EM 40%) + Hint Bonito para Descrição Longa */}
+        <div className="flex-1 min-w-[400px]">
           <div className="flex items-center gap-1.5 flex-wrap">
             <h4 
               className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
