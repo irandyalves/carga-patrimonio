@@ -4,10 +4,7 @@ import {
   Clock, 
   Handshake, 
   Archive, 
-  FileText, 
-  Sparkles,
-  TrendingUp,
-  AlertCircle
+  FileText
 } from 'lucide-react';
 
 export const ConferenceStats = ({

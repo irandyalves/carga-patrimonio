@@ -10,9 +10,6 @@ import {
   ConferenceStats 
 } from './components/ConferenceStats';
 import { 
-  AssetCard 
-} from './components/AssetCard';
-import { 
   AssetTableRowCard 
 } from './components/AssetTableRowCard';
 import { 
@@ -82,21 +79,9 @@ import {
   formatLast5Patrimonio 
 } from './utils/formatters';
 import { 
-  Search, 
-  Filter, 
-  Layers, 
-  CheckCircle2, 
   Sparkles, 
-  AlertTriangle, 
-  RotateCcw, 
-  SlidersHorizontal, 
   PackageSearch, 
-  ShieldCheck, 
-  Loader2,
-  List,
-  LayoutGrid,
-  Hash,
-  RefreshCw,
+  Hash, 
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
