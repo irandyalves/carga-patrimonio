@@ -72,6 +72,10 @@ import {
   generateInventoryReportPDF 
 } from './services/pdfGenerator';
 import { 
+  formatPatrimonio, 
+  formatLast5Patrimonio 
+} from './utils/formatters';
+import { 
   Search, 
   Filter, 
   Layers, 
@@ -297,12 +301,21 @@ export function App() {
       if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
       if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
 
-      // Text search filter
+      // Text search filter (suporta com ponto, sem ponto, XX.XXX e texto livre)
       if (searchTerm) {
         const q = searchTerm.toLowerCase().trim();
+        const qDigits = q.replace(/\D/g, '');
         const numStr = String(item.numeroPatrimonio || '').toLowerCase();
-        const last5 = numStr.length >= 5 ? numStr.slice(-5) : numStr;
-        const matchesNumber = numStr.includes(q) || last5.includes(q);
+        const numDigits = numStr.replace(/\D/g, '');
+        const last5 = numDigits.length >= 5 ? numDigits.slice(-5) : numDigits;
+        const formatted5 = last5.length === 5 ? `${last5.slice(0, 2)}.${last5.slice(2)}` : last5;
+        const formattedFull = formatPatrimonio(item.numeroPatrimonio).toLowerCase();
+
+        const matchesNumber = numStr.includes(q) || 
+                              formattedFull.includes(q) ||
+                              formatted5.includes(q) ||
+                              (qDigits && numDigits.includes(qDigits)) || 
+                              (qDigits && last5.includes(qDigits));
         const matchesDesc = item.descricao.toLowerCase().includes(q);
         const matchesSerial = item.numeroSerie && item.numeroSerie.toLowerCase().includes(q);
         const matchesSector = item.setorNome && item.setorNome.toLowerCase().includes(q);
@@ -419,7 +432,7 @@ export function App() {
     const digitsOnly = rawClean.replace(/\D/g, '');
     const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : rawClean;
 
-    setSearchTerm(last5 || rawClean);
+    setSearchTerm(last5 ? formatLast5Patrimonio(last5) : rawClean);
     const found = assets.find(a => {
       const aNum = String(a.numeroPatrimonio || '').toLowerCase();
       const aLast5 = aNum.length >= 5 ? aNum.slice(-5) : aNum;
@@ -428,9 +441,9 @@ export function App() {
 
     if (found) {
       if (found.setorId === activeSectorId) {
-        showToast(`Item ${found.numeroPatrimonio} (${found.descricao}) localizado!`);
+        showToast(`Item ${formatLast5Patrimonio(found.numeroPatrimonio)} (${found.descricao}) localizado!`);
       } else {
-        showToast(`⚠️ Atenção: Item ${found.numeroPatrimonio} pertence ao setor ${found.setorNome} (${found.responsavel})!`, 'warning');
+        showToast(`⚠️ Atenção: Item ${formatLast5Patrimonio(found.numeroPatrimonio)} pertence ao setor ${found.setorNome} (${found.responsavel})!`, 'warning');
       }
     } else {
       showToast(`Código ${rawClean} lido. Não encontrado na base atual.`, 'info');
@@ -469,12 +482,12 @@ export function App() {
       // Se estiver em outro setor, comuta automaticamente para a aba do setor correspondente
       if (found.setorId !== activeSectorId) {
         setActiveSectorId(found.setorId);
-        showToast(`🎯 Encontrado no setor "${found.setorNome}" (${found.responsavel}): ${found.numeroPatrimonio} - ${found.descricao}`, 'success');
+        showToast(`🎯 Encontrado no setor "${found.setorNome}" (${found.responsavel}): ${formatLast5Patrimonio(found.numeroPatrimonio)} - ${found.descricao}`, 'success');
       } else {
-        showToast(`🎯 Encontrado: ${found.numeroPatrimonio} - ${found.descricao}`, 'success');
+        showToast(`🎯 Encontrado: ${formatLast5Patrimonio(found.numeroPatrimonio)} - ${found.descricao}`, 'success');
       }
-      // Filtra diretamente pelo patrimônio ou últimos 5 dígitos
-      setSearchTerm(last5 || found.numeroPatrimonio);
+      // Filtra diretamente pelo patrimônio formatado no formato XX.XXX
+      setSearchTerm(formatLast5Patrimonio(found.numeroPatrimonio));
     } else {
       setSearchTerm(rawClean);
       showToast(`🎙️ Pesquisando por: "${rawClean}"`, 'info');
@@ -797,8 +810,8 @@ export function App() {
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
       />
 
-      {/* Main Content Area (Largura total até os limites da tela) */}
-      <main className="flex-1 w-full max-w-[99%] mx-auto px-2 sm:px-4 py-4 space-y-4">
+      {/* Main Content Area (Largura total preenchendo toda a tela de ponta a ponta) */}
+      <main className="flex-1 w-full px-2 sm:px-4 py-3 space-y-3">
         
         {/* Sector Tabs Dashboard (Abas por Setor: Nome do Setor - Responsável) */}
         <SectorTabs
@@ -926,7 +939,7 @@ export function App() {
             <div className="space-y-2">
               
               {/* Table Header Bar com Ordenação e Ícones */}
-              <div className="hidden lg:flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none shadow-sm">
+              <div className="hidden lg:flex items-center justify-between px-4 sm:px-5 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none shadow-sm w-full">
                 
                 {/* Coluna 1: Patrimônio */}
                 <button

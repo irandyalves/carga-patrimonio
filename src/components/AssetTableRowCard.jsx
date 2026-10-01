@@ -44,14 +44,16 @@ export const AssetTableRowCard = ({
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
 
-  // Extrair os últimos 5 dígitos para destaque visual
+  // Extrair os últimos 5 dígitos para formato amigável XX.XXX (facilita a leitura)
   const rawNum = String(asset.numeroPatrimonio || '');
-  const last5 = rawNum.length >= 5 ? rawNum.slice(-5) : rawNum.padStart(5, '0');
-  const prefix = rawNum.length > 5 ? rawNum.slice(0, -5) : '';
+  const digitsOnly = rawNum.replace(/\D/g, '');
+  const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : digitsOnly.padStart(5, '0');
+  const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
+  const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
 
   const handleCopyTag = (e) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(asset.numeroPatrimonio);
+    navigator.clipboard.writeText(formattedXX);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -116,7 +118,7 @@ export const AssetTableRowCard = ({
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-indigo-400 select-all leading-none">
-                {last5}
+                {formattedXX}
               </span>
               <button
                 onClick={handleCopyTag}

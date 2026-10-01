@@ -43,9 +43,16 @@ export const AssetCard = ({
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
 
+  // Extrair os últimos 5 dígitos para formato XX.XXX (facilita a leitura)
+  const rawNum = String(asset.numeroPatrimonio || '');
+  const digitsOnly = rawNum.replace(/\D/g, '');
+  const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : digitsOnly.padStart(5, '0');
+  const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
+  const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
+
   const handleCopyTag = (e) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(asset.numeroPatrimonio);
+    navigator.clipboard.writeText(formattedXX);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -154,11 +161,11 @@ export const AssetCard = ({
                 className="px-2.5 py-1 rounded-lg bg-slate-850 hover:bg-slate-750 border border-slate-700 text-xs font-mono font-bold text-indigo-300 flex items-center gap-1.5 transition-colors"
               >
                 <span>
-                  {String(asset.numeroPatrimonio || '').length > 5 && (
-                    <span className="opacity-50">{String(asset.numeroPatrimonio || '').slice(0, -5)}</span>
+                  {prefix && (
+                    <span className="opacity-50 mr-1">{prefix}-</span>
                   )}
-                  <strong className="text-white font-bold bg-slate-900 px-1 py-0.5 rounded text-indigo-300">
-                    {String(asset.numeroPatrimonio || '').slice(-5)}
+                  <strong className="text-white font-bold bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300">
+                    {formattedXX}
                   </strong>
                 </span>
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
