@@ -46,10 +46,10 @@ export function LoginScreen({ onLoginSuccess, authError, isConfigured }) {
             Acesso Restrito & Seguro
           </span>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Sistema de Patrimônio
+            Carga Patrimonial
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Gestão, Cautelas e Conferência em Tempo Real
+            Gestão & Conferência de Carga Patrimonial
           </p>
         </div>
 

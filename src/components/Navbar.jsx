@@ -49,7 +49,7 @@ export const Navbar = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-white tracking-tight">CargaPatrimônio</span>
+                <span className="font-bold text-lg text-white tracking-tight">Carga Patrimonial</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   ONLINE
                 </span>
