@@ -766,11 +766,11 @@ export const AssetTableRowCard = ({
               Baixado
             </div>
           ) : showUncheckConfirm ? (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-0.5 rounded">
-              <span className="text-[9px] text-amber-200 font-bold px-0.5">Desmarcar?</span>
+            <div className="z-20 flex items-center gap-1.5 bg-slate-950 border border-amber-500 px-2 py-0.5 rounded-lg shadow-xl shadow-black select-none whitespace-nowrap">
+              <span className="text-[10px] text-amber-300 font-bold">Desmarcar?</span>
               <button
                 onClick={handleConfirmUncheck}
-                className="px-1 py-0.2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[9px] font-bold cursor-pointer"
+                className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[10px] font-bold cursor-pointer transition-colors shadow-sm"
               >
                 Sim
               </button>
@@ -779,7 +779,7 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setShowUncheckConfirm(false);
                 }}
-                className="px-1 py-0.2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[9px] cursor-pointer"
+                className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-[10px] font-semibold cursor-pointer transition-colors"
               >
                 Não
               </button>
