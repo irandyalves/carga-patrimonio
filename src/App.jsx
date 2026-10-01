@@ -535,6 +535,7 @@ export function App() {
       if (statusFilter === 'CONFERIDOS' && item.status !== 'CONFERIDO') return false;
       if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
       if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
+      if (statusFilter === 'ENVIADOS_DTIN' && item.status !== 'ENVIADO_DTIN' && !item.enviadoDtin) return false;
 
       // Text search filter (busca flexível, não exata, multi-termos, com e sem ponto, sem acentos)
       if (searchTerm) {
@@ -1616,7 +1617,7 @@ export function App() {
                     <span className="text-slate-400">Filtrando:</span>
                     {statusFilter !== 'ALL' && (
                       <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
-                        {statusFilter === 'PENDENTES' ? 'Pendentes' : statusFilter === 'CONFERIDOS' ? 'Conferidos' : statusFilter === 'CAUTELAS' ? 'Em Cautela' : 'Baixados'}
+                        {statusFilter === 'PENDENTES' ? 'Pendentes' : statusFilter === 'CONFERIDOS' ? 'Conferidos' : statusFilter === 'CAUTELAS' ? 'Em Cautela' : statusFilter === 'ENVIADOS_DTIN' ? 'Enviados para a DTIN' : 'Baixados'}
                       </span>
                     )}
                     {searchTerm && (

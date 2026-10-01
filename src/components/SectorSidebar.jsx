@@ -254,11 +254,16 @@ export const SectorSidebar = ({
                       )
                     ) : null}
 
-                    <div className="truncate">
-                      <div className="flex items-center gap-1.5">
-                        <span className={isSelected ? 'font-bold' : 'font-medium'}>
+                    <div className="truncate min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className={isSelected ? 'font-bold text-white' : 'font-medium'}>
                           {sec.name}
                         </span>
+                        {sec.responsavel && (
+                          <span className="text-orange-400 font-semibold text-[11px] truncate shrink-0">
+                            | {sec.responsavel}
+                          </span>
+                        )}
                         {isMySector && (
                           <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
                             Meu Setor
@@ -270,11 +275,6 @@ export const SectorSidebar = ({
                           </span>
                         )}
                       </div>
-                      {isSelected && sec.responsavel && (
-                        <span className="text-orange-400 font-semibold text-[11px] block truncate mt-0.5">
-                          {sec.responsavel}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -338,6 +338,32 @@ export const SectorSidebar = ({
                             <span className="truncate">Emitir Relatório</span>
                           </div>
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
+                        </button>
+                      )}
+
+                      {/* Menu exclusivo do setor de TI: Enviados para a DTIN (logo abaixo de Emitir Relatório) */}
+                      {(sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia')) && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectStatusFilter('ENVIADOS_DTIN')}
+                          title="Filtrar equipamentos enviados para a DTIN"
+                          className={`w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left group ${
+                            statusFilter === 'ENVIADOS_DTIN'
+                              ? 'bg-gradient-to-r from-cyan-600/40 via-cyan-600/15 to-transparent text-white font-bold border-l-[3px] border-l-cyan-400 shadow-sm'
+                              : 'text-cyan-400 hover:text-cyan-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Server className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 shrink-0" />
+                            <span className="truncate">Enviados para a DTIN</span>
+                          </div>
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                            statusFilter === 'ENVIADOS_DTIN'
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold'
+                              : 'bg-slate-800/80 text-cyan-400'
+                          }`}>
+                            {assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length}
+                          </span>
                         </button>
                       )}
                     </div>
