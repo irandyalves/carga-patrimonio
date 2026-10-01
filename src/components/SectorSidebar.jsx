@@ -351,12 +351,12 @@ export const SectorSidebar = ({
 
         {/* Rodapé da Sidebar - Fixado no Rodapé Esquerdo */}
         <div className="shrink-0 sticky bottom-0 z-20 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 p-3 text-[11px] text-slate-400 space-y-2.5 shadow-2xl">
-          {/* Barra de Progresso do Setor Ativo (acima da conferência geral) */}
-          {activeSector && (
+          {/* Barra de Progresso do Setor Ativo (oculta quando TODAS AS ÁREAS está selecionado) */}
+          {filterMode !== 'ALL_SECTORS' && activeSector && (
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="truncate pr-1 text-slate-300 font-medium">
-                  {filterMode === 'ALL_SECTORS' ? `Setor: ${activeSector.name}` : activeSector.name}
+                  {activeSector.name}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] font-bold text-blue-400">
                   <strong className="text-white">{activeSectorStats?.conferidos || 0}</strong>/{activeSectorStats?.total || 0} ({sectorPct}%)
