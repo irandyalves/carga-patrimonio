@@ -12,7 +12,6 @@ import {
   AlertTriangle, 
   ArrowRightLeft, 
   Check, 
-  Copy, 
   Trash2,
   MoreVertical,
   User,
@@ -308,20 +307,11 @@ export const AssetTableRowCard = ({
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className={`font-mono text-xl sm:text-[23px] font-black tracking-tight select-all leading-none ${
-                isConferido ? 'text-emerald-400' : 'text-indigo-400'
-              }`}>
-                {formattedXX}
-              </span>
-              <button
-                onClick={handleCopyTag}
-                title="Copiar número do patrimônio"
-                className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
+            <span className={`font-mono text-xl sm:text-[23px] font-black tracking-tight select-all leading-none ${
+              isConferido ? 'text-emerald-400' : 'text-indigo-400'
+            }`}>
+              {formattedXX}
+            </span>
             
             {/* Tags e Badges especiais (sem badge de conferido duplicado) */}
             {(prefix || isBaixado) && (
