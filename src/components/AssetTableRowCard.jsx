@@ -52,6 +52,8 @@ export const AssetTableRowCard = ({
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+  const [copiedDesc, setCopiedDesc] = useState(false);
 
   // Estados de edição inline de localização com suporte a voz
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -339,38 +341,31 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (Nunca quebra linha, sempre com reticências ...) */}
+        {/* Coluna 3: Descrição do Bem (Nunca quebra linha, clique para abrir modal) */}
         <div className="flex-[1.2] min-w-[200px] shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
           <h4 
-            className="text-xs sm:text-[12.5px] font-semibold text-slate-100 group-hover:text-white transition-colors truncate whitespace-nowrap"
-            title={asset.descricao}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDescModalOpen(true);
+            }}
+            className="text-xs sm:text-[12.5px] font-semibold text-slate-100 group-hover:text-white transition-colors truncate whitespace-nowrap cursor-pointer hover:text-indigo-300"
+            title="Clique para ver a descrição completa no modal"
           >
             {asset.descricao}
           </h4>
 
           {isDescLong && (
-            <div className="relative group/hint inline-flex items-center shrink-0">
-              <button
-                type="button"
-                onClick={(e) => e.stopPropagation()}
-                className="p-0.5 rounded text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm shrink-0"
-                title="Passe o mouse para ver a descrição completa"
-              >
-                <Info className="w-3 h-3" />
-              </button>
-
-              {/* Hint Bonito / Tooltip Flutuante */}
-              <div className="absolute left-0 bottom-full mb-2 hidden group-hover/hint:flex flex-col z-50 w-72 sm:w-96 bg-slate-900/98 backdrop-blur-xl border border-indigo-500/50 rounded-2xl p-3 shadow-2xl shadow-indigo-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
-                <div className="flex items-center gap-1.5 pb-1 mb-1 border-b border-indigo-500/20">
-                  <Info className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="font-bold text-white text-[10px] uppercase tracking-wider">Descrição Completa</span>
-                  <span className="ml-auto font-mono text-[9px] text-indigo-300 font-bold">{formattedXX}</span>
-                </div>
-                <p className="text-slate-200 leading-relaxed font-medium text-[11px] break-words">
-                  {asset.descricao}
-                </p>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDescModalOpen(true);
+              }}
+              className="p-1 rounded-lg text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm shrink-0"
+              title="Clique para ver a descrição completa no modal"
+            >
+              <Info className="w-3 h-3" />
+            </button>
           )}
         </div>
 
@@ -947,6 +942,105 @@ export const AssetTableRowCard = ({
         </div>
 
       </div>
+
+      {/* Modal de Descrição Completa do Bem */}
+      {isDescModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsDescModalOpen(false);
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Descrição do Patrimônio</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                      Nº {formattedXX}
+                    </span>
+                    {asset.categoria && (
+                      <span className="text-[11px] text-slate-400 truncate max-w-[200px]">
+                        • {asset.categoria}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDescModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo da Descrição */}
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
+                <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap select-text font-normal break-words">
+                  {asset.descricao}
+                </p>
+              </div>
+
+              {/* Detalhes complementares */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Localização:</span>
+                  <span className="text-slate-200 font-semibold truncate block">{asset.localizacao || 'Não informada'}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Responsável:</span>
+                  <span className="text-slate-200 font-semibold truncate block">{asset.responsavel || 'Não informado'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-between mt-5 pt-3.5 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(asset.descricao || '');
+                  setCopiedDesc(true);
+                  setTimeout(() => setCopiedDesc(false), 2000);
+                }}
+                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                {copiedDesc ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Copiar Texto</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDescModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
