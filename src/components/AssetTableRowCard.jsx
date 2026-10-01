@@ -1510,10 +1510,10 @@ export const AssetTableRowCard = ({
             className="bg-slate-900/98 border border-slate-700/80 w-full max-w-sm rounded-2xl p-2.5 sm:p-3 shadow-2xl shadow-black/80 relative animate-in zoom-in-95 duration-100 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Topo Compacto com Patrimônio no Centro */}
+            {/* Topo Compacto com Patrimônio no Centro em Destaque */}
             <div className="relative flex items-center justify-center pb-2 border-b border-slate-800/80 mb-2">
-              <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-0.5 rounded-md border border-emerald-500/30">
-                № {formattedXX}
+              <span className="font-mono text-2xl font-black text-emerald-400 tracking-wide select-all">
+                {formattedXX}
               </span>
               <button
                 type="button"
