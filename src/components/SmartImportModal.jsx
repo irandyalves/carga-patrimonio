@@ -414,26 +414,26 @@ export const SmartImportModal = ({
 
           {/* PASSO 2: PREVIEW E MAPEAR COLUNAS (COMO SOLICITADO PELO USUÁRIO) */}
           {step === 'COLUMN_PREVIEW' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="space-y-3 animate-in fade-in duration-150 flex flex-col flex-1 min-h-0">
               
-              {/* Box de Informações do Arquivo */}
-              <div className="p-3.5 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+              {/* Linha Compacta de Informações do Arquivo e Destino (Sem Borda) */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 pb-0.5">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <span className="text-slate-300">
-                    Arquivo: <strong className="text-white font-mono">{selectedFile?.name}</strong> ({parsedRows.length} linhas detectadas)
+                  <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span>
+                    Arquivo: <strong className="text-white font-mono">{selectedFile?.name}</strong> <span className="text-slate-400">({parsedRows.length} linhas detectadas)</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <span className="text-slate-400">Setor de Destino:</span>
-                  <span className="px-2 py-0.5 rounded font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                  <span className="px-2.5 py-0.5 rounded-lg font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                     {targetSectorMode === 'SPECIFIC' ? currentTargetSector?.name : 'Detectado por linha'}
                   </span>
                 </div>
               </div>
 
               {/* Cabeçalho da Lista de Mapeamento com Ações Rápidas */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-1">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
                     Colunas a Importar ({acceptedCount} de {parsedHeaders.length} selecionadas)
@@ -447,22 +447,22 @@ export const SmartImportModal = ({
                   <button
                     type="button"
                     onClick={handleAcceptAll}
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[10px] font-semibold transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 text-[10.5px] font-semibold transition-colors cursor-pointer border border-slate-700 hover:border-emerald-500/30"
                   >
                     Aceitar Todas
                   </button>
                   <button
                     type="button"
                     onClick={handleRejectUnmapped}
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] font-semibold transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10.5px] font-semibold transition-colors cursor-pointer border border-slate-700"
                   >
                     Rejeitar Não Mapeadas
                   </button>
                 </div>
               </div>
 
-              {/* LISTA DAS COLUNAS COM OK OU REJEITAR (EXATAMENTE COMO O USUÁRIO PEDIU) */}
-              <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/60 divide-y divide-slate-800/80 max-h-[260px] overflow-y-auto scrollbar-thin">
+              {/* LISTA DAS COLUNAS COM OK OU REJEITAR (Espaço ampliado para conferência completa) */}
+              <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/60 divide-y divide-slate-800/80 max-h-[460px] overflow-y-auto scrollbar-thin">
                 {parsedHeaders.map((header) => {
                   const mapInfo = columnMapping[header] || { targetField: null, isAccepted: false, confidence: 0 };
                   const isOk = mapInfo.isAccepted && mapInfo.targetField;
@@ -528,24 +528,6 @@ export const SmartImportModal = ({
                     </div>
                   );
                 })}
-              </div>
-
-              {/* PRÉVIA DOS PRIMEIROS 3 ITENS */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Prévia dos Registros (Primeiros itens a serem inseridos)
-                </span>
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-2.5 overflow-x-auto text-[11px] font-mono space-y-1">
-                  {parsedRows.slice(0, 3).map((row, idx) => (
-                    <div key={`preview-${idx}`} className="text-slate-300 truncate py-0.5 border-b border-slate-900 last:border-none">
-                      <span className="text-indigo-400 font-bold">#{idx + 1}: </span>
-                      {Object.entries(columnMapping)
-                        .filter(([_, conf]) => conf.isAccepted && conf.targetField)
-                        .map(([h, conf]) => `${conf.targetField}: "${row[h] || '---'}"`)
-                        .join(' | ')}
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* Erro de Validação */}
