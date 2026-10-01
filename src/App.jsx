@@ -485,21 +485,25 @@ export function App() {
         : valB.localeCompare(valA, 'pt-BR');
     };
 
-    const active = [];
+    const pendentes = [];
+    const conferidos = [];
     const baixados = [];
 
     filteredAssets.forEach(item => {
       if (item.baixado || item.status === 'BAIXADO') {
         baixados.push(item);
+      } else if (item.status === 'CONFERIDO') {
+        conferidos.push(item);
       } else {
-        active.push(item);
+        pendentes.push(item);
       }
     });
 
-    active.sort(sortFn);
+    pendentes.sort(sortFn);
+    conferidos.sort(sortFn);
     baixados.sort(sortFn);
 
-    return [...active, ...baixados];
+    return [...pendentes, ...conferidos, ...baixados];
   }, [filteredAssets, sortField, sortDirection]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos

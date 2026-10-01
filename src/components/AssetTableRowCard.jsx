@@ -504,7 +504,8 @@ export const AssetTableRowCard = ({
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
-          {isBaixado && (
+          {/* Checkbox / Botão de Conferência ou Ícone de Baixa */}
+          {isBaixado ? (
             <button
               type="button"
               onClick={(e) => {
@@ -515,6 +516,19 @@ export const AssetTableRowCard = ({
               className="p-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-400 hover:text-rose-200 transition-all cursor-pointer shadow-sm shrink-0 flex items-center justify-center hover:scale-110 active:scale-95 group/baixa"
             >
               <Archive className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleConferenceClick}
+              title={isConferido ? "Item Conferido (Clique para desmarcar)" : "Clique para conferir o item"}
+              className={`w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                isConferido
+                  ? 'bg-emerald-500 text-slate-950 border border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] hover:scale-110 active:scale-95'
+                  : 'border border-slate-600 hover:border-emerald-400 text-transparent hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-110 active:scale-95'
+              }`}
+            >
+              <Check className={`w-3 h-3 stroke-[3] ${isConferido ? 'text-slate-950' : ''}`} />
             </button>
           )}
 
