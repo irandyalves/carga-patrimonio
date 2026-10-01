@@ -23,7 +23,8 @@ import {
   ChevronDown,
   Check,
   UserCheck,
-  Hash
+  Hash,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -47,6 +48,8 @@ export const Navbar = ({
   onLogout,
   isFirebaseActive,
   cautelasCount = 0,
+  conferidosCount = 0,
+  onScrollToConferidos,
   onToggleSidebar,
   onOpenPedidos,
   pedidosCount = 0,
@@ -196,6 +199,17 @@ export const Navbar = ({
                   <span className="opacity-40">▲</span>
                 )}
               </span>
+            </button>
+
+            {/* Ir direto para Conferidos */}
+            <button
+              type="button"
+              onClick={onScrollToConferidos}
+              title={`Ir para a seção de Conferidos (${conferidosCount || 0} itens)`}
+              className="px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="text-[10px] font-mono font-bold text-emerald-400">{conferidosCount || 0}</span>
             </button>
           </div>
 

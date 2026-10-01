@@ -1456,6 +1456,16 @@ export function App() {
 
 
 
+  // Scroll suave direto para a seção de conferidos
+  const handleScrollToConferidos = () => {
+    const el = document.getElementById('conferidos-divider-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      showToast('Nenhum item conferido neste setor ainda.', 'info');
+    }
+  };
+
   return (
     <div className="h-screen max-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
       
@@ -1494,6 +1504,8 @@ export function App() {
         onLogout={handleLogout}
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
+        conferidosCount={stats.conferidos}
+        onScrollToConferidos={handleScrollToConferidos}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
@@ -2086,18 +2098,25 @@ export function App() {
             {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
               <div className="w-full flex-1 pb-8 border-t border-slate-800/80">
-                {sortedAssets.map((asset, index) => {
-                  const isBaixado = asset.baixado || asset.status === 'BAIXADO';
-                  const isConferido = asset.status === 'CONFERIDO' && !isBaixado;
-                  const prevAsset = index > 0 ? sortedAssets[index - 1] : null;
-                  const isFirstConferido = isConferido && (!prevAsset || (prevAsset.status !== 'CONFERIDO' && !prevAsset.baixado && prevAsset.status !== 'BAIXADO'));
-                  const isFirstBaixado = isBaixado && (!prevAsset || (!prevAsset.baixado && prevAsset.status !== 'BAIXADO'));
+                {(() => {
+                  const firstConferidoIndex = sortedAssets.findIndex(a => 
+                    (a.status === 'CONFERIDO' || stayInConferidosIds.has(a.id)) && !a.baixado && a.status !== 'BAIXADO'
+                  );
+                  const firstBaixadoIndex = sortedAssets.findIndex(a => 
+                    (a.baixado || a.status === 'BAIXADO')
+                  );
 
-                  return (
-                    <React.Fragment key={asset.id}>
-                      {/* Divisor Visual de Itens Conferidos com Ícone e Título Centralizados e Botões de Ordenação sobre as colunas */}
-                      {isFirstConferido && statusFilter !== 'CONFERIDOS' && (
-                        <div className="relative py-1.5 px-3 sm:px-4 my-2 mx-2 border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm flex items-center justify-between min-h-[38px]">
+                  return sortedAssets.map((asset, index) => {
+                    const isBaixado = asset.baixado || asset.status === 'BAIXADO';
+                    const isConferido = asset.status === 'CONFERIDO' && !isBaixado;
+                    const isFirstConferido = index === firstConferidoIndex;
+                    const isFirstBaixado = index === firstBaixadoIndex;
+
+                    return (
+                      <React.Fragment key={asset.id}>
+                        {/* Divisor Visual de Itens Conferidos com Ícone e Título Centralizados e Botões de Ordenação sobre as colunas */}
+                        {isFirstConferido && statusFilter !== 'CONFERIDOS' && (
+                          <div id="conferidos-divider-section" className="relative py-1.5 px-3 sm:px-4 my-2 mx-2 border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm flex items-center justify-between min-h-[38px] scroll-mt-20">
                           
                           {/* Botões de Ordenação posicionados à esquerda alinhados com as colunas Patrimônio e Item */}
                           <div className="flex items-center gap-2 z-10">
@@ -2239,8 +2258,9 @@ export function App() {
                       />
                     </React.Fragment>
                   );
-                })}
-              </div>
+                });
+              })()}
+            </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500">
