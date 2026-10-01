@@ -212,10 +212,10 @@ export const AssetTableRowCard = ({
       )}
 
       {/* Linha Principal (Colunas alinhadas ocupando toda a largura da tela) */}
-      <div className="p-3 sm:px-5 sm:py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs w-full">
+      <div className="p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-xs w-full">
         
         {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS, SEM BADGE PENDENTE) */}
-        <div className="lg:w-32 shrink-0 flex items-center gap-1.5">
+        <div className="w-32 shrink-0 flex items-center gap-1.5">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-indigo-400 select-all leading-none">
@@ -251,7 +251,7 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 2: Quantidade (SEM BORDAS, Centralizado) */}
-        <div className="lg:w-14 shrink-0 flex items-center lg:justify-center">
+        <div className="w-14 shrink-0 flex items-center justify-center">
           <div className="flex items-baseline gap-1">
             <span className="text-xs text-slate-400 lg:hidden">Qtde:</span>
             <span className="font-black text-xl sm:text-2xl text-cyan-300">
@@ -478,13 +478,12 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 4: Responsável (Compacto) */}
-        <div className="lg:w-36 shrink-0 flex items-center lg:justify-center">
+        <div className="w-36 shrink-0 flex items-center justify-center">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
               <User className="w-3 h-3" />
             </div>
             <div className="truncate text-left">
-              <span className="text-[10px] text-slate-400 block lg:hidden">Responsável:</span>
               <span className="font-semibold text-slate-200 truncate block text-xs" title={asset.responsavel}>
                 {asset.responsavel || 'Não definido'}
               </span>
@@ -498,11 +497,10 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 5: Data de Aquisição (Espremido) */}
-        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
+        <div className="w-24 shrink-0 flex items-center justify-center text-center">
           <div className="flex items-center gap-1 text-slate-300">
             <Calendar className="w-3 h-3 text-slate-400 shrink-0 hidden sm:block" />
             <div>
-              <span className="text-[10px] text-slate-400 block lg:hidden">Data Aquisição:</span>
               <span className="font-medium text-xs">
                 {asset.dataAquisicao || asset.anoAquisicao || '---'}
               </span>
@@ -511,9 +509,8 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 6: Valor Original (Espremido) */}
-        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
+        <div className="w-24 shrink-0 flex items-center justify-center text-center">
           <div>
-            <span className="text-[10px] text-slate-400 block lg:hidden">Valor Original:</span>
             <span className="font-semibold text-slate-200 text-xs">
               {formatCurrency(asset.valorOriginal)}
             </span>
@@ -521,9 +518,8 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 7: Valor Atual (Espremido) */}
-        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
+        <div className="w-24 shrink-0 flex items-center justify-center text-center">
           <div>
-            <span className="text-[10px] text-slate-400 block lg:hidden">Valor Atual:</span>
             <span className="font-bold text-emerald-400 text-xs">
               {formatCurrency(asset.valorAtual || asset.valorOriginal)}
             </span>
@@ -531,7 +527,7 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 8: Ações & Conferência (Colado na Direita) */}
-        <div className="lg:w-40 shrink-0 flex items-center justify-end gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800 pr-1">
+        <div className="w-40 shrink-0 flex items-center justify-end gap-1.5 pr-1">
           
           {/* Botão de Conferência ou Bloqueio / Pedido de Carga */}
           {!canManageAsset ? (
