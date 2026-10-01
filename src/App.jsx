@@ -256,11 +256,57 @@ export function App() {
     }
   }, [cautelas]);
 
+  // Type-to-search global: ao começar a digitar qualquer caractere na tela do setor, foca no campo de busca e vai filtrando em tempo real
   useEffect(() => {
-    try {
-      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(pedidosCarga));
-    } catch (e) {}
-  }, [pedidosCarga]);
+    const handleGlobalKeyDown = (e) => {
+      // Ignora atalhos de sistema (Ctrl, Alt, Meta)
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      // Se algum modal estiver aberto, não intercepta
+      if (
+        isAssetModalOpen || isCautelaModalOpen || isBaixaModalOpen || 
+        isTransferModalOpen || isManageSectorsOpen || isLabelsModalOpen || 
+        isExcelModalOpen || isBackupModalOpen || isFirebaseModalOpen || 
+        isSolicitacaoModalOpen || isPedidosModalOpen || isQrOpen
+      ) {
+        return;
+      }
+
+      // Se já estiver com foco em algum input ou textarea
+      const activeEl = document.activeElement;
+      const tag = activeEl?.tagName?.toLowerCase();
+      const isContentEditable = activeEl?.isContentEditable;
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || isContentEditable) {
+        if (e.key === 'Escape') {
+          setSearchTerm('');
+          activeEl?.blur();
+        }
+        return;
+      }
+
+      // Se pressionou Escape sem estar focado no input
+      if (e.key === 'Escape') {
+        setSearchTerm('');
+        return;
+      }
+
+      // Se for tecla imprimível comum (letras, números, hífen, ponto)
+      if (e.key.length === 1) {
+        const searchInput = document.getElementById('main-search-input');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [
+    isAssetModalOpen, isCautelaModalOpen, isBaixaModalOpen, 
+    isTransferModalOpen, isManageSectorsOpen, isLabelsModalOpen, 
+    isExcelModalOpen, isBackupModalOpen, isFirebaseModalOpen, 
+    isSolicitacaoModalOpen, isPedidosModalOpen, isQrOpen
+  ]);
 
   // Persona e Permissões Efetivas para Teste de Operadores e Departamentos
   const simulatedPersona = useMemo(() => {
@@ -407,8 +453,8 @@ export function App() {
   // Filtered Assets for Display
   const filteredAssets = useMemo(() => {
     return assets.filter(item => {
-      // Sector filter
-      if (filterMode === 'MY_SECTOR' && !searchTerm) {
+      // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado
+      if (filterMode === 'MY_SECTOR') {
         if (item.setorId !== activeSectorId) return false;
       }
 
@@ -1128,6 +1174,8 @@ export function App() {
         currentPersona={simulatedPersona}
         onSelectPersona={handleSelectPersona}
         sectors={sectors}
+        activeSectorName={activeSector?.name}
+        filterMode={filterMode}
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}

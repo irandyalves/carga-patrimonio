@@ -47,7 +47,9 @@ export const Navbar = ({
   pedidosCount = 0,
   currentPersona,
   onSelectPersona,
-  sectors = []
+  sectors = [],
+  activeSectorName = '',
+  filterMode = 'MY_SECTOR'
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -161,10 +163,17 @@ export const Navbar = ({
               </div>
               
               <input
+                id="main-search-input"
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={isVoiceListening ? "🎙️ Ouvindo... Fale o patrimônio ou descrição" : "Buscar patrimônio por número ou descrição..."}
+                placeholder={
+                  isVoiceListening 
+                    ? "🎙️ Ouvindo... Fale o patrimônio ou descrição" 
+                    : filterMode === 'MY_SECTOR' && activeSectorName
+                      ? `Buscar em ${activeSectorName} (ou digite direto)...`
+                      : "Buscar patrimônio por número ou descrição..."
+                }
                 className={`w-full bg-slate-800/90 border rounded-xl pl-9 pr-28 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none transition-all ${
                   isVoiceListening 
                     ? 'border-rose-500 ring-2 ring-rose-500/40 bg-slate-900/90 placeholder-rose-300 font-medium' 
