@@ -1050,11 +1050,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (Largura definida para puxar a Localização para a esquerda) */}
+                  {/* Coluna 3: Descrição do Bem (Flexível para empurrar Localização para a direita) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`w-[280px] shrink-0 flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
+                    className={`flex-[1.2] min-w-[280px] shrink-0 flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1069,11 +1069,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 4: Localização (Movida para a esquerda) */}
+                  {/* Coluna 4: Localização */}
                   <button
                     onClick={() => handleSort('localizacao')}
                     title="Clique para ordenar por localização"
-                    className={`w-48 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                    className={`w-56 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
                       sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1087,12 +1087,12 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 5: Observação */}
-                  <div className="w-52 shrink-0 flex items-center justify-start text-left">
+                  {/* Coluna 5: Observação (Afastada de localização, preenche espaço até as colunas da direita) */}
+                  <div className="flex-1 min-w-[220px] pl-6 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 
-                  {/* Coluna 6: Responsável (Esmagado, sem boneco) */}
+                  {/* Coluna 6: Responsável */}
                   <button
                     onClick={() => handleSort('responsavel')}
                     title="Clique para ordenar por responsável"
@@ -1110,11 +1110,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 7: Data Aquisição (Esmagado, sem ícone) */}
+                  {/* Coluna 7: Data Aquisição */}
                   <button
                     onClick={() => handleSort('dataAquisicao')}
                     title="Clique para ordenar por data de aquisição"
-                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1128,11 +1128,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 8: Valor Original (Esmagado) */}
+                  {/* Coluna 8: Valor Original */}
                   <button
                     onClick={() => handleSort('valorOriginal')}
                     title="Clique para ordenar por valor original"
-                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1146,11 +1146,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 9: Valor Atual (Esmagado) */}
+                  {/* Coluna 9: Valor Atual */}
                   <button
                     onClick={() => handleSort('valorAtual')}
                     title="Clique para ordenar por valor atual"
-                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1164,7 +1164,7 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 10: Ações (Esmagado) */}
+                  {/* Coluna 10: Ações */}
                   <div className="w-28 shrink-0 flex items-center justify-end pr-1">
                     <span>Ações</span>
                   </div>
