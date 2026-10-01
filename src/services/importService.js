@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
+import { parseCleanNumber } from '../utils/formatters';
 
 // Dicionário Semântico de Campos do Sistema com Sinônimos e Variações
 export const DB_FIELDS = [
@@ -428,8 +429,19 @@ export const buildFinalAssetsFromImport = ({
     const rawPatrimonio = itemData.numeroPatrimonio || `IMP-${timestamp.toString().slice(-4)}-${index + 1}`;
     const cleanNum = rawPatrimonio.replace(/\s+/g, ' ');
     const qtdeNum = parseInt(itemData.quantidade || '1', 10);
-    const vOrigNum = parseFloat(String(itemData.valorOriginal || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
-    const vAtualNum = parseFloat(String(itemData.valorAtual || '0').replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || (vOrigNum > 0 ? vOrigNum : 0);
+    const vOrigNum = parseCleanNumber(itemData.valorOriginal);
+    const vAtualNum = itemData.valorAtual !== undefined && itemData.valorAtual !== ''
+      ? parseCleanNumber(itemData.valorAtual)
+      : (vOrigNum > 0 ? vOrigNum : 0);
+
+    // Trata Depreciação: se for número/float, arredonda para 2 casas de centavos
+    let cleanDepreciacao = itemData.depreciacao || '';
+    if (cleanDepreciacao && !String(cleanDepreciacao).endsWith('%')) {
+      const parsedDep = parseCleanNumber(cleanDepreciacao);
+      if (parsedDep > 0) {
+        cleanDepreciacao = parsedDep;
+      }
+    }
 
     // Setor: Usa o setor escolhido antes de tudo, ou tenta achar pelo nome do setor na planilha
     let resolvedSectorId = targetSector ? targetSector.id : 'sec-foyer';
@@ -457,7 +469,7 @@ export const buildFinalAssetsFromImport = ({
       descricao: itemData.descricao || 'Item Importado',
       marca: itemData.marca || '',
       modelo: itemData.modelo || '',
-      depreciacao: itemData.depreciacao || '',
+      depreciacao: cleanDepreciacao,
       setorId: resolvedSectorId,
       setorNome: resolvedSectorName,
       localizacao: itemData.localizacao || '',

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
+import { formatCurrency, formatDepreciacao } from '../utils/formatters';
 
 const COLOR_OPTIONS = [
   { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
@@ -565,17 +566,19 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 2: Quantidade */}
-        <div className="w-12 shrink-0 flex items-center justify-center">
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
-            <span className={`font-black text-sm sm:text-[15px] leading-none ${
-              FONT_COLOR_MAP[asset.cardColor]?.quantidade || 'text-cyan-300'
-            }`}>
-              {asset.quantidade || 1}
-            </span>
-            <span className="text-[8.5px] font-medium text-slate-400">un</span>
+        {visibleColumns?.quantidade !== false && (
+          <div className="w-12 shrink-0 flex items-center justify-center animate-in fade-in duration-150">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
+              <span className={`font-black text-sm sm:text-[15px] leading-none ${
+                FONT_COLOR_MAP[asset.cardColor]?.quantidade || 'text-cyan-300'
+              }`}>
+                {asset.quantidade || 1}
+              </span>
+              <span className="text-[8.5px] font-medium text-slate-400">un</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Coluna 3: Item / Descrição (Expande e ocupa o espaço liberado pelas colunas ocultadas) */}
         <div className="flex-1 min-w-0 shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
@@ -1078,11 +1081,12 @@ export const AssetTableRowCard = ({
         {visibleColumns?.depreciacao !== false && (
           <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
             <span className="font-semibold text-amber-400 text-[11px]" title={String(asset.depreciacao || '')}>
-              {asset.depreciacao 
-                ? (typeof asset.depreciacao === 'number' ? `${asset.depreciacao}%` : String(asset.depreciacao))
-                : (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
-                    ? formatCurrency(Number(asset.valorOriginal) - Number(asset.valorAtual)) 
-                    : '---')}
+              {formatDepreciacao(
+                asset.depreciacao || 
+                (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
+                  ? Number(asset.valorOriginal) - Number(asset.valorAtual) 
+                  : '')
+              )}
             </span>
           </div>
         )}
@@ -1504,75 +1508,69 @@ export const AssetTableRowCard = ({
 
       </div>
 
-      {/* Modal de Descrição Completa do Bem */}
+      {/* Modalzinho Minimalista de Descrição / Sobre o Item */}
       {isDescModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/40 backdrop-blur-[2px] animate-in fade-in duration-100"
           onClick={(e) => {
             e.stopPropagation();
             setIsDescModalOpen(false);
           }}
         >
           <div 
-            className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 text-left"
+            className="bg-slate-900/98 border border-slate-700/80 w-full max-w-sm rounded-2xl p-4 shadow-2xl shadow-black/80 relative animate-in zoom-in-95 duration-100 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Cabeçalho */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">Descrição do Patrimônio</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                      Nº {formattedXX}
-                    </span>
-                    {asset.categoria && (
-                      <span className="text-[11px] text-slate-400 truncate max-w-[200px]">
-                        • {asset.categoria}
-                      </span>
-                    )}
-                  </div>
-                </div>
+            {/* Topo Compacto */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                  Nº {formattedXX}
+                </span>
+                <span className="text-[11px] font-medium text-slate-400">
+                  Detalhes do Item
+                </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDescModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Conteúdo da Descrição */}
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
-                <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap select-text font-normal break-words">
-                  <HighlightText text={asset.descricao} query={searchTerm} />
-                </p>
-              </div>
-
-              {/* Detalhes complementares */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px]">Localização:</span>
-                  <span className="text-slate-200 font-semibold truncate block">
-                    <HighlightText text={asset.localizacao || 'Não informada'} query={searchTerm} />
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
-                  <span className="text-slate-400 block text-[10px]">Responsável:</span>
-                  <span className="text-slate-200 font-semibold truncate block">
-                    <HighlightText text={asset.responsavel || 'Não informado'} query={searchTerm} />
-                  </span>
-                </div>
-              </div>
+            {/* Texto Descrição */}
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 mb-3 shadow-inner">
+              <p className="text-slate-100 text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap select-text font-medium break-words">
+                <HighlightText text={asset.descricao} query={searchTerm} />
+              </p>
             </div>
 
-            {/* Rodapé */}
-            <div className="flex items-center justify-between mt-5 pt-3.5 border-t border-slate-800">
+            {/* Micro metadados (Marca / Modelo / Local) */}
+            {(asset.marca || asset.modelo || asset.localizacao) && (
+              <div className="grid grid-cols-2 gap-1.5 text-[10.5px] mb-3">
+                {(asset.marca || asset.modelo) && (
+                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Marca / Modelo:</span>
+                    <span className="text-slate-200 font-semibold truncate block">
+                      {[asset.marca, asset.modelo].filter(Boolean).join(' - ')}
+                    </span>
+                  </div>
+                )}
+                {asset.localizacao && (
+                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Local:</span>
+                    <span className="text-slate-200 font-semibold truncate block">
+                      {asset.localizacao}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Ação Rápida */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
               <button
                 type="button"
                 onClick={() => {
@@ -1580,7 +1578,7 @@ export const AssetTableRowCard = ({
                   setCopiedDesc(true);
                   setTimeout(() => setCopiedDesc(false), 2000);
                 }}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 {copiedDesc ? (
                   <>
@@ -1590,7 +1588,7 @@ export const AssetTableRowCard = ({
                 ) : (
                   <>
                     <FileText className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Copiar Texto</span>
+                    <span>Copiar</span>
                   </>
                 )}
               </button>
@@ -1598,7 +1596,7 @@ export const AssetTableRowCard = ({
               <button
                 type="button"
                 onClick={() => setIsDescModalOpen(false)}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold shadow-sm transition-all cursor-pointer"
               >
                 Fechar
               </button>

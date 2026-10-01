@@ -142,12 +142,13 @@ export function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Slide bar lateral esquerdo
 
-  // Visibilidade das Colunas [Responsável, Aquisição, $ Original, $ Atual]
+  // Visibilidade das Colunas [Quantidade, Marca, Modelo, Responsável, Aquisição, $ Original, $ Atual, Depreciação]
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const stored = localStorage.getItem('carga_patrimonio_visible_columns');
       if (stored) {
         return {
+          quantidade: true,
           marca: true,
           modelo: true,
           responsavel: true,
@@ -160,6 +161,7 @@ export function App() {
       }
     } catch (e) {}
     return {
+      quantidade: true,
       marca: true,
       modelo: true,
       responsavel: true,
@@ -185,6 +187,7 @@ export function App() {
 
   const showAllColumns = () => {
     setVisibleColumns({
+      quantidade: true,
       marca: true,
       modelo: true,
       responsavel: true,
@@ -197,6 +200,7 @@ export function App() {
 
   const hiddenColumnsCount = useMemo(() => {
     let count = 0;
+    if (!visibleColumns.quantidade) count++;
     if (!visibleColumns.marca) count++;
     if (!visibleColumns.modelo) count++;
     if (!visibleColumns.responsavel) count++;
@@ -208,7 +212,8 @@ export function App() {
   }, [visibleColumns]);
 
   const tableMinWidth = useMemo(() => {
-    let base = 840;
+    let base = 800;
+    if (visibleColumns.quantidade) base += 48;
     if (visibleColumns.marca) base += 112;
     if (visibleColumns.modelo) base += 112;
     if (visibleColumns.responsavel) base += 112;
@@ -1393,23 +1398,38 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 2: Quantidade */}
-                  <button
-                    onClick={() => handleSort('quantidade')}
-                    title="Clique para ordenar por quantidade"
-                    className={`w-12 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
-                      sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>Qtde</span>
-                    <span className="shrink-0">
-                      {sortField === 'quantidade' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 2: Quantidade com Olhinho para Ocultar */}
+                  {visibleColumns.quantidade !== false && (
+                    <div className="w-12 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('quantidade')}
+                        title="Clique para ordenar por quantidade"
+                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Qtde</span>
+                        <span className="shrink-0">
+                          {sortField === 'quantidade' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('quantidade');
+                        }}
+                        title="Ocultar coluna Quantidade"
+                        className="p-0.5 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded transition-all cursor-pointer"
+                      >
+                        <Eye className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Coluna 3: Item (Expande dinamicamente para ocupar todo o espaço liberado pelas colunas ocultadas) */}
                   <button
@@ -1732,6 +1752,7 @@ export function App() {
 
                         <div className="space-y-1 pt-0.5">
                           {[
+                            { key: 'quantidade', label: 'Qtde (Quantidade)' },
                             { key: 'marca', label: 'Marca' },
                             { key: 'modelo', label: 'Modelo' },
                             { key: 'responsavel', label: 'Responsável' },
