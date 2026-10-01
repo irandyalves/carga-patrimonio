@@ -147,7 +147,7 @@ export const SectorSidebar = ({
               }}
               className={`w-full px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
                 filterMode === 'ALL_SECTORS'
-                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
+                  ? 'bg-blue-600/40 text-white font-bold border border-blue-500/50 shadow-md shadow-blue-600/20 backdrop-blur-sm'
                   : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
               }`}
             >
@@ -233,7 +233,7 @@ export const SectorSidebar = ({
                   }}
                   className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
                     isSelected
-                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
+                      ? 'bg-blue-600/40 text-white font-bold border border-blue-500/50 shadow-md shadow-blue-600/20 backdrop-blur-sm'
                       : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                   }`}
                 >
@@ -264,7 +264,7 @@ export const SectorSidebar = ({
                         )}
                       </div>
                       {isSelected && sec.responsavel && (
-                        <span className="opacity-90 font-normal ml-1 text-[11px] block truncate">
+                        <span className="text-orange-400 font-semibold text-[11px] block truncate mt-0.5">
                           {sec.responsavel}
                         </span>
                       )}
