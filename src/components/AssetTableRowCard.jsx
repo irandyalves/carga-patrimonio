@@ -32,6 +32,7 @@ import {
   Laptop
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
+import { HighlightText } from './HighlightText';
 
 const COLOR_OPTIONS = [
   { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
@@ -115,6 +116,7 @@ export const AssetTableRowCard = ({
   onUpdateCardColor,
   onOpenSolicitacao,
   hasPendingPedido = false,
+  searchTerm = '',
   index = 0
 }) => {
   const [copied, setCopied] = useState(false);
@@ -488,7 +490,7 @@ export const AssetTableRowCard = ({
           <div className="flex items-center gap-1.5 font-medium truncate">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span className="truncate text-[11px]">
-              Carga oficial de: <strong className="text-amber-200">{asset.setorNome}</strong> ({asset.responsavel})
+              Carga oficial de: <strong className="text-amber-200"><HighlightText text={asset.setorNome} query={searchTerm} /></strong> (<HighlightText text={asset.responsavel} query={searchTerm} />)
             </span>
           </div>
           {canManageAsset ? (
@@ -542,14 +544,14 @@ export const AssetTableRowCard = ({
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
               FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
             }`}>
-              {formattedXX}
+              <HighlightText text={formattedXX} query={searchTerm} />
             </span>
             
             {/* Prefixo especial de dígitos longos */}
             {prefix && (
               <div className="mt-0.5 flex items-center gap-1">
                 <span className="text-[9px] font-mono text-slate-500">
-                  {prefix}
+                  <HighlightText text={prefix} query={searchTerm} />
                 </span>
               </div>
             )}
@@ -581,7 +583,7 @@ export const AssetTableRowCard = ({
             }`}
             title="Clique para ver a descrição completa no modal"
           >
-            {asset.descricao}
+            <HighlightText text={asset.descricao} query={searchTerm} />
           </h4>
 
           {isEnviadoDtin && (
@@ -726,7 +728,7 @@ export const AssetTableRowCard = ({
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
               >
                 <span className="truncate max-w-[175px]">
-                  {asset.localizacao || 'Onde está?'}
+                  <HighlightText text={asset.localizacao || 'Onde está?'} query={searchTerm} />
                 </span>
                 <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
               </button>
@@ -951,7 +953,7 @@ export const AssetTableRowCard = ({
                       <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
                     )}
                     <span className="truncate max-w-[210px]" title={asset.observacao}>
-                      {asset.observacao}
+                      <HighlightText text={asset.observacao} query={searchTerm} />
                     </span>
                     <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5" />
                   </button>
@@ -1009,11 +1011,11 @@ export const AssetTableRowCard = ({
         <div className="w-28 shrink-0 flex items-center justify-center text-center">
           <div className="truncate w-full">
             <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
-              {asset.responsavel || '---'}
+              <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
             </span>
             {isGeneralView && asset.setorNome && (
               <span className="text-[8.5px] text-slate-400 block truncate">
-                {asset.setorNome}
+                <HighlightText text={asset.setorNome} query={searchTerm} />
               </span>
             )}
           </div>
@@ -1503,7 +1505,7 @@ export const AssetTableRowCard = ({
             <div className="space-y-3">
               <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
                 <p className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap select-text font-normal break-words">
-                  {asset.descricao}
+                  <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
               </div>
 
@@ -1511,11 +1513,15 @@ export const AssetTableRowCard = ({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
                   <span className="text-slate-400 block text-[10px]">Localização:</span>
-                  <span className="text-slate-200 font-semibold truncate block">{asset.localizacao || 'Não informada'}</span>
+                  <span className="text-slate-200 font-semibold truncate block">
+                    <HighlightText text={asset.localizacao || 'Não informada'} query={searchTerm} />
+                  </span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
                   <span className="text-slate-400 block text-[10px]">Responsável:</span>
-                  <span className="text-slate-200 font-semibold truncate block">{asset.responsavel || 'Não informado'}</span>
+                  <span className="text-slate-200 font-semibold truncate block">
+                    <HighlightText text={asset.responsavel || 'Não informado'} query={searchTerm} />
+                  </span>
                 </div>
               </div>
             </div>
@@ -1601,26 +1607,26 @@ export const AssetTableRowCard = ({
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item Cautelado</span>
                 <p className="text-white font-medium text-sm">
-                  <strong className="font-mono text-indigo-400 mr-1.5">{formattedXX}</strong>
-                  {asset.descricao}
+                  <strong className="font-mono text-indigo-400 mr-1.5"><HighlightText text={formattedXX} query={searchTerm} /></strong>
+                  <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Responsável / Retirada:</span>
-                  <strong className="text-white text-sm block">{cautelaPessoa}</strong>
+                  <strong className="text-white text-sm block"><HighlightText text={cautelaPessoa} query={searchTerm} /></strong>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Destino:</span>
-                  <strong className="text-amber-300 text-sm block">{cautelaDestino}</strong>
+                  <strong className="text-amber-300 text-sm block"><HighlightText text={cautelaDestino} query={searchTerm} /></strong>
                 </div>
               </div>
 
               {cautelaDoc && (
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Documento / Matrícula:</span>
-                  <span className="font-mono text-slate-200 font-semibold">{cautelaDoc}</span>
+                  <span className="font-mono text-slate-200 font-semibold"><HighlightText text={cautelaDoc} query={searchTerm} /></span>
                 </div>
               )}
 
@@ -1673,7 +1679,7 @@ export const AssetTableRowCard = ({
                   <h3 className="font-bold text-white text-base">Resumo da Baixa Patrimonial</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="font-mono text-xs text-rose-300 font-bold bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
-                      Nº {formattedXX}
+                      Nº <HighlightText text={formattedXX} query={searchTerm} />
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
                       BAIXADO / DESINCORPORADO
@@ -1696,12 +1702,12 @@ export const AssetTableRowCard = ({
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item Baixado</span>
                 <p className="text-white font-medium text-sm">
-                  <strong className="font-mono text-rose-400 mr-1.5">{formattedXX}</strong>
-                  {asset.descricao}
+                  <strong className="font-mono text-rose-400 mr-1.5"><HighlightText text={formattedXX} query={searchTerm} /></strong>
+                  <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
                 <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                  <span>Setor: <strong className="text-slate-300 font-medium">{asset.setorNome || activeSector?.name}</strong></span>
-                  {asset.numeroSerie && <span>Série: <strong className="font-mono text-slate-300">{asset.numeroSerie}</strong></span>}
+                  <span>Setor: <strong className="text-slate-300 font-medium"><HighlightText text={asset.setorNome || activeSector?.name} query={searchTerm} /></strong></span>
+                  {asset.numeroSerie && <span>Série: <strong className="font-mono text-slate-300"><HighlightText text={asset.numeroSerie} query={searchTerm} /></strong></span>}
                 </div>
               </div>
 
@@ -1882,12 +1888,12 @@ export const AssetTableRowCard = ({
               <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                 <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item de Informática</span>
                 <p className="text-white font-medium text-sm">
-                  <strong className="font-mono text-cyan-400 mr-1.5">{formattedXX}</strong>
-                  {asset.descricao}
+                  <strong className="font-mono text-cyan-400 mr-1.5"><HighlightText text={formattedXX} query={searchTerm} /></strong>
+                  <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
                 <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                  <span>Setor: <strong className="text-slate-300 font-medium">{asset.setorNome || activeSector?.name}</strong></span>
-                  {asset.numeroSerie && <span>S/N: <strong className="font-mono text-slate-300">{asset.numeroSerie}</strong></span>}
+                  <span>Setor: <strong className="text-slate-300 font-medium"><HighlightText text={asset.setorNome || activeSector?.name} query={searchTerm} /></strong></span>
+                  {asset.numeroSerie && <span>S/N: <strong className="font-mono text-slate-300"><HighlightText text={asset.numeroSerie} query={searchTerm} /></strong></span>}
                 </div>
               </div>
 

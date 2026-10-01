@@ -21,12 +21,14 @@ import {
   Lock
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
+import { HighlightText } from './HighlightText';
 
 export const AssetCard = ({
   asset,
   activeSector,
   currentUserName,
   isGeneralView = false,
+  searchTerm = '',
   onToggleConference,
   onOpenEdit,
   onOpenCautela,
@@ -93,7 +95,7 @@ export const AssetCard = ({
           <div className="flex items-center gap-1.5 font-medium truncate">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="truncate">
-              Carga oficial de: <strong className="text-amber-200">{asset.setorNome}</strong> ({asset.responsavel})
+              Carga oficial de: <strong className="text-amber-200"><HighlightText text={asset.setorNome} query={searchTerm} /></strong> (<HighlightText text={asset.responsavel} query={searchTerm} />)
             </span>
           </div>
           <button
@@ -127,7 +129,7 @@ export const AssetCard = ({
           <div className="flex items-center gap-1.5 font-medium truncate">
             <Handshake className="w-3.5 h-3.5 text-purple-400 shrink-0" />
             <span className="truncate">
-              Está com: <strong className="text-white">{asset.cautelaAtual?.setorDestino || 'ASCOM'}</strong> ({asset.cautelaAtual?.responsavelRetirada || asset.cautelaAtual?.responsavel || 'Jean'})
+              Está com: <strong className="text-white"><HighlightText text={asset.cautelaAtual?.setorDestino || 'ASCOM'} query={searchTerm} /></strong> (<HighlightText text={asset.cautelaAtual?.responsavelRetirada || asset.cautelaAtual?.responsavel || 'Jean'} query={searchTerm} />)
             </span>
           </div>
           <span className="text-[10px] text-purple-300 font-mono shrink-0">
@@ -164,10 +166,10 @@ export const AssetCard = ({
               >
                 <span>
                   {prefix && (
-                    <span className="opacity-50 mr-1">{prefix}-</span>
+                    <span className="opacity-50 mr-1"><HighlightText text={prefix} query={searchTerm} />-</span>
                   )}
                   <strong className="text-white font-bold bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300">
-                    {formattedXX}
+                    <HighlightText text={formattedXX} query={searchTerm} />
                   </strong>
                 </span>
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
@@ -194,19 +196,19 @@ export const AssetCard = ({
 
           {/* Description */}
           <h3 className="font-semibold text-slate-100 text-sm sm:text-base leading-snug line-clamp-2 mb-2.5">
-            {asset.descricao}
+            <HighlightText text={asset.descricao} query={searchTerm} />
           </h3>
 
           {/* Location & Sector Info */}
           <div className="space-y-1.5 text-xs text-slate-300 mb-3 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
             <div className="flex items-center gap-1.5 text-slate-400">
               <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span className="truncate">Local: <strong className="text-slate-200">{asset.localizacao || 'Não especificado'}</strong></span>
+              <span className="truncate">Local: <strong className="text-slate-200"><HighlightText text={asset.localizacao || 'Não especificado'} query={searchTerm} /></strong></span>
             </div>
 
             <div className="flex items-center justify-between text-slate-400 text-[11px]">
-              <span className="truncate">Setor Oficial: <strong className="text-slate-200">{asset.setorNome}</strong></span>
-              <span>Resp: <strong className="text-slate-200">{asset.responsavel}</strong></span>
+              <span className="truncate">Setor Oficial: <strong className="text-slate-200"><HighlightText text={asset.setorNome} query={searchTerm} /></strong></span>
+              <span>Resp: <strong className="text-slate-200"><HighlightText text={asset.responsavel} query={searchTerm} /></strong></span>
             </div>
           </div>
 

@@ -83,6 +83,7 @@ import {
   formatPatrimonio, 
   formatLast5Patrimonio 
 } from './utils/formatters';
+import { matchesAsset } from './utils/searchUtils';
 import { 
   Sparkles, 
   PackageSearch, 
@@ -470,27 +471,11 @@ export function App() {
       if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
       if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
 
-      // Text search filter (suporta com ponto, sem ponto, XX.XXX e texto livre)
+      // Text search filter (busca flexível, não exata, multi-termos, com e sem ponto, sem acentos)
       if (searchTerm) {
-        const q = searchTerm.toLowerCase().trim();
-        const qDigits = q.replace(/\D/g, '');
-        const numStr = String(item.numeroPatrimonio || '').toLowerCase();
-        const numDigits = numStr.replace(/\D/g, '');
-        const last5 = numDigits.length >= 5 ? numDigits.slice(-5) : numDigits;
-        const formatted5 = last5.length === 5 ? `${last5.slice(0, 2)}.${last5.slice(2)}` : last5;
-        const formattedFull = formatPatrimonio(item.numeroPatrimonio).toLowerCase();
-
-        const matchesNumber = numStr.includes(q) || 
-                              formattedFull.includes(q) ||
-                              formatted5.includes(q) ||
-                              (qDigits && numDigits.includes(qDigits)) || 
-                              (qDigits && last5.includes(qDigits));
-        const matchesDesc = item.descricao.toLowerCase().includes(q);
-        const matchesSerial = item.numeroSerie && item.numeroSerie.toLowerCase().includes(q);
-        const matchesSector = item.setorNome && item.setorNome.toLowerCase().includes(q);
-        const matchesResp = item.responsavel && item.responsavel.toLowerCase().includes(q);
-        
-        return matchesNumber || matchesDesc || matchesSerial || matchesSector || matchesResp;
+        if (!matchesAsset(item, searchTerm)) {
+          return false;
+        }
       }
 
       return true;
@@ -1519,6 +1504,7 @@ export function App() {
                           setIsSolicitacaoModalOpen(true);
                         }}
                         hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
+                        searchTerm={searchTerm}
                       />
                     </React.Fragment>
                   );
