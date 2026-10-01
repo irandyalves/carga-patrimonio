@@ -289,8 +289,33 @@ export function App() {
     };
   }, [simulatedPersonaId, sectors]);
 
-  const effectiveUserRole = simulatedPersona?.role || userRole || 'admin';
-  const effectiveUserSectorId = simulatedPersona?.sectorId || null;
+  // Setor vinculado ao responsável logado (reconhece por e-mail ou nome cadastrado)
+  const userLinkedSector = useMemo(() => {
+    if (!currentUser) return null;
+    const userEmail = (currentUser.email || '').toLowerCase().trim();
+    const userName = (currentUser.displayName || currentUser.name || '').toLowerCase().trim();
+
+    if (userEmail) {
+      const matchByEmail = sectors.find(s => s.email && s.email.toLowerCase().trim() === userEmail);
+      if (matchByEmail) return matchByEmail;
+    }
+
+    if (userName) {
+      const matchByName = sectors.find(s => s.responsavel && (
+        s.responsavel.toLowerCase().trim() === userName ||
+        userName.includes(s.responsavel.toLowerCase().trim()) ||
+        s.responsavel.toLowerCase().trim().includes(userName)
+      ));
+      if (matchByName) return matchByName;
+    }
+
+    return null;
+  }, [currentUser, sectors]);
+
+  const effectiveUserRole = simulatedPersonaId !== 'admin' ? simulatedPersona?.role : (userRole || 'admin');
+  const effectiveUserSectorId = simulatedPersonaId !== 'admin' 
+    ? simulatedPersona?.sectorId 
+    : (userRole === 'operador' ? (userLinkedSector?.id || null) : null);
 
   const handleSelectPersona = (personaId) => {
     setSimulatedPersonaId(personaId);
@@ -313,6 +338,22 @@ export function App() {
       setUserRole(authCheck.role);
       setIsAuthorized(true);
       setAuthError(null);
+
+      // Se for operador e tiver setor vinculado, ativa automaticamente seu setor
+      if (authCheck.role === 'operador') {
+        const uEmail = user.email.toLowerCase().trim();
+        const uName = (user.displayName || '').toLowerCase().trim();
+        const linked = sectors.find(s => 
+          (s.email && s.email.toLowerCase().trim() === uEmail) ||
+          (uName && s.responsavel && s.responsavel.toLowerCase().trim().includes(uName))
+        );
+        if (linked) {
+          setActiveSectorId(linked.id);
+          setFilterMode('MY_SECTOR');
+          showToast(`Bem-vindo, ${linked.responsavel}! Setor ${linked.name} carregado.`);
+          return;
+        }
+      }
       showToast(`Bem-vindo, ${user.displayName || user.email}!`);
     } else {
       setCurrentUser(user);
@@ -1319,6 +1360,7 @@ export function App() {
         onClose={() => setIsManageSectorsOpen(false)}
         sectors={sectors}
         assets={assets}
+        users={authorizedUsers}
         onSaveSector={handleSaveSector}
         onDeleteSector={handleDeleteSector}
       />

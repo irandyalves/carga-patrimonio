@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   X, 
   Building2, 
@@ -11,7 +11,11 @@ import {
   MapPin, 
   Layers, 
   AlertTriangle,
-  ArrowRightLeft
+  ArrowRightLeft,
+  CheckCircle2,
+  Sparkles,
+  AlertCircle,
+  Check
 } from 'lucide-react';
 
 export const SectorsManagementModal = ({
@@ -19,6 +23,7 @@ export const SectorsManagementModal = ({
   onClose,
   sectors = [],
   assets = [],
+  users = [],
   onSaveSector,
   onDeleteSector
 }) => {
@@ -32,6 +37,49 @@ export const SectorsManagementModal = ({
     email: '',
     sala: ''
   });
+
+  // Lista unificada de responsáveis disponíveis para puxar (usuários do sistema + responsáveis já cadastrados)
+  const availableUsers = useMemo(() => {
+    const map = new Map();
+    // 1. Usuários autorizados no sistema
+    users.forEach(u => {
+      const emailKey = (u.email || '').toLowerCase().trim();
+      if (emailKey) {
+        map.set(emailKey, {
+          name: u.name || u.displayName || emailKey.split('@')[0],
+          email: u.email,
+          role: u.role || 'operador',
+          isRegisteredUser: true
+        });
+      }
+    });
+
+    // 2. Responsáveis existentes nos setores atuais
+    sectors.forEach(s => {
+      const emailKey = (s.email || '').toLowerCase().trim();
+      const nameKey = (s.responsavel || '').trim();
+      if (emailKey && !map.has(emailKey)) {
+        map.set(emailKey, {
+          name: nameKey || emailKey.split('@')[0],
+          email: s.email,
+          role: 'operador',
+          isRegisteredUser: false
+        });
+      } else if (!emailKey && nameKey) {
+        const dummyKey = `name-${nameKey.toLowerCase()}`;
+        if (!map.has(dummyKey)) {
+          map.set(dummyKey, {
+            name: nameKey,
+            email: '',
+            role: 'operador',
+            isRegisteredUser: false
+          });
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [users, sectors]);
 
   const [deleteConfirmSector, setDeleteConfirmSector] = useState(null);
   const [reassignSectorId, setReassignSectorId] = useState('');
@@ -165,24 +213,87 @@ export const SectorsManagementModal = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
-                  <User className="w-3 h-3 text-indigo-400" />
-                  Responsável Oficial da Carga *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-300 flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Responsável Oficial da Carga *</span>
+                  </label>
+                  {availableUsers.length > 0 && (
+                    <span className="text-[10px] text-indigo-400 font-medium flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-indigo-400" />
+                      Puxar cadastrado
+                    </span>
+                  )}
+                </div>
+
+                {/* Seletor Rápido dos Usuários Cadastrados */}
+                {availableUsers.length > 0 && (
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const selectedVal = e.target.value;
+                      if (!selectedVal) return;
+                      const cand = availableUsers.find(u => u.email === selectedVal || u.name === selectedVal);
+                      if (cand) {
+                        setFormData(prev => ({
+                          ...prev,
+                          responsavel: cand.name,
+                          email: cand.email || prev.email
+                        }));
+                      }
+                    }}
+                    className="w-full mb-1.5 bg-slate-900 border border-indigo-500/40 hover:border-indigo-400 text-indigo-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer transition-all"
+                  >
+                    <option value="" disabled>
+                      👥 Puxar usuário responsável...
+                    </option>
+                    {availableUsers.map((u, i) => (
+                      <option key={`${u.email || u.name}-${i}`} value={u.email || u.name} className="bg-slate-900 text-white">
+                        {u.name} {u.email ? `(${u.email})` : ''} {u.isRegisteredUser ? '✓ Usuário do Sistema' : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Input com Autocomplete via Datalist */}
                 <input
                   type="text"
                   required
+                  list="responsibles-datalist"
                   value={formData.responsavel}
-                  onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
-                  placeholder="Ex: Fulano de Tal"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matched = availableUsers.find(u => 
+                      u.name.toLowerCase() === val.toLowerCase() || 
+                      (u.email && u.email.toLowerCase() === val.toLowerCase())
+                    );
+                    if (matched) {
+                      setFormData(prev => ({
+                        ...prev,
+                        responsavel: matched.name,
+                        email: matched.email || prev.email
+                      }));
+                    } else {
+                      setFormData(prev => ({ ...prev, responsavel: val }));
+                    }
+                  }}
+                  placeholder="Ex: Alex ou selecione da lista acima"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 />
+
+                <datalist id="responsibles-datalist">
+                  {availableUsers.map((u, i) => (
+                    <option key={`dl-${u.email || u.name}-${i}`} value={u.name}>
+                      {u.email ? `${u.email} (${u.role})` : u.name}
+                    </option>
+                  ))}
+                </datalist>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-slate-400" />
-                  E-mail de Contato
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>E-mail de Contato (Login do Responsável)</span>
                 </label>
                 <input
                   type="email"
@@ -195,8 +306,8 @@ export const SectorsManagementModal = ({
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-slate-400" />
-                  Localização Padrão (Sala / Bloco)
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Localização Padrão (Sala / Bloco)</span>
                 </label>
                 <input
                   type="text"
@@ -207,6 +318,35 @@ export const SectorsManagementModal = ({
                 />
               </div>
             </div>
+
+            {/* Aviso de Vínculo de Acesso e Login do Responsável */}
+            {(() => {
+              const isLinkedToSystemUser = users.some(u => 
+                (u.email && formData.email && u.email.toLowerCase().trim() === formData.email.toLowerCase().trim()) ||
+                (u.name && formData.responsavel && u.name.toLowerCase().trim() === formData.responsavel.toLowerCase().trim())
+              );
+              if (isLinkedToSystemUser) {
+                return (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>
+                      <strong>Vínculo de Acesso Ativo:</strong> Ao efetuar login com <u>{formData.email || formData.responsavel}</u>, o sistema reconhecerá este setor como "Meu Setor" para este operador.
+                    </span>
+                  </div>
+                );
+              }
+              if (formData.responsavel.trim()) {
+                return (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-slate-400 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>
+                      <strong>Dica:</strong> Para que <u>{formData.responsavel}</u> tenha acesso ao logar, informe o e-mail Google dele e autorize-o no menu <strong>Usuários</strong>.
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
               <button
