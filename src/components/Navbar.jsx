@@ -7,9 +7,7 @@ import {
   QrCode, 
   Plus, 
   FileSpreadsheet, 
-  Printer, 
   Handshake, 
-  Database,
   ShieldCheck,
   Users,
   LogOut,
@@ -134,7 +132,6 @@ export const Navbar = ({
                   ONLINE
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Gestão & Conferência de Carga Patrimonial</p>
             </div>
           </div>
 
@@ -242,16 +239,6 @@ export const Navbar = ({
               )}
             </button>
 
-            {/* Print Labels Button */}
-            <button
-              onClick={onOpenLabels}
-              title="Gerar Etiquetas com QR Code em PDF"
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Printer className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span className="hidden lg:inline">Etiquetas</span>
-            </button>
-
             {/* Backup Tríplice Button */}
             <button
               onClick={onOpenBackup}
@@ -283,16 +270,6 @@ export const Navbar = ({
                 <span className="hidden lg:inline">Usuários</span>
               </button>
             )}
-
-            {/* Firebase Status & Config Button */}
-            <button
-              onClick={onOpenFirebaseConfig}
-              title={isFirebaseActive ? "Conectado ao Firebase Firestore" : "Configurar Conexão com Firebase"}
-              className="p-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-amber-300 hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Database className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className={`w-2 h-2 rounded-full ${isFirebaseActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-            </button>
 
             {/* New Asset Button */}
             {isAdmin && (
