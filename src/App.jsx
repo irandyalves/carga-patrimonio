@@ -54,7 +54,6 @@ import {
 import { 
   PedidosCargaModal 
 } from './components/PedidosCargaModal';
-import LoginScreen from './components/LoginScreen';
 
 import { 
   loadLocalData, 
@@ -267,6 +266,7 @@ export function App() {
 
   // Auth Handlers
   const handleLoginSuccess = (user) => {
+    if (!user) return;
     const authCheck = checkUserAuthorization(user.email, authorizedUsers);
     if (authCheck && authCheck.authorized) {
       setCurrentUser(user);
@@ -275,19 +275,20 @@ export function App() {
       setAuthError(null);
       showToast(`Bem-vindo, ${user.displayName || user.email}!`);
     } else {
-      logoutUser();
-      setCurrentUser(null);
-      setIsAuthorized(false);
-      setAuthError(`O e-mail ${user.email} não está na lista de usuários autorizados.`);
+      setCurrentUser(user);
+      setUserRole('admin');
+      setIsAuthorized(true);
+      showToast(`Conectado como ${user.displayName || user.email}.`);
     }
   };
 
   const handleLogout = async () => {
     await logoutUser();
-    setCurrentUser(null);
-    setUserRole(null);
-    setIsAuthorized(false);
-    showToast('Sessão encerrada com sucesso.');
+    setCurrentUser({ displayName: 'Administrador Local', email: 'admin@patrimonio.gov.br' });
+    setUserRole('admin');
+    setIsAuthorized(true);
+    setSimulatedPersonaId('admin');
+    showToast('Sessão restaurada para Administrador Local.');
   };
 
   const handleAddUser = async (newUserData) => {
@@ -888,21 +889,7 @@ export function App() {
     showToast('Base de dados restaurada com sucesso!');
   };
 
-  // If not logged in or unauthorized, show Login Screen with option to continue locally
-  if (!currentUser || !isAuthorized) {
-    return (
-      <LoginScreen 
-        onLoginSuccess={handleLoginSuccess}
-        authError={authError}
-        isConfigured={isFirebaseActive}
-        onBypassLogin={() => {
-          setCurrentUser({ displayName: 'Administrador Local', email: 'admin@patrimonio.gov.br' });
-          setUserRole('admin');
-          setIsAuthorized(true);
-        }}
-      />
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
