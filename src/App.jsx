@@ -485,26 +485,44 @@ export function App() {
         : valB.localeCompare(valA, 'pt-BR');
     };
 
-    const pendentes = [];
-    const conferidos = [];
+    if (filterMode === 'ALL_SECTORS') {
+      const pendentes = [];
+      const conferidos = [];
+      const baixados = [];
+
+      filteredAssets.forEach(item => {
+        if (item.baixado || item.status === 'BAIXADO') {
+          baixados.push(item);
+        } else if (item.status === 'CONFERIDO') {
+          conferidos.push(item);
+        } else {
+          pendentes.push(item);
+        }
+      });
+
+      pendentes.sort(sortFn);
+      conferidos.sort(sortFn);
+      baixados.sort(sortFn);
+
+      return [...pendentes, ...conferidos, ...baixados];
+    }
+
+    const active = [];
     const baixados = [];
 
     filteredAssets.forEach(item => {
       if (item.baixado || item.status === 'BAIXADO') {
         baixados.push(item);
-      } else if (item.status === 'CONFERIDO') {
-        conferidos.push(item);
       } else {
-        pendentes.push(item);
+        active.push(item);
       }
     });
 
-    pendentes.sort(sortFn);
-    conferidos.sort(sortFn);
+    active.sort(sortFn);
     baixados.sort(sortFn);
 
-    return [...pendentes, ...conferidos, ...baixados];
-  }, [filteredAssets, sortField, sortDirection]);
+    return [...active, ...baixados];
+  }, [filteredAssets, sortField, sortDirection, filterMode]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {

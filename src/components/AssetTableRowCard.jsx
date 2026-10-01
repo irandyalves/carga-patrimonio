@@ -504,7 +504,7 @@ export const AssetTableRowCard = ({
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
-          {/* Checkbox / Botão de Conferência ou Ícone de Baixa */}
+          {/* Checkbox / Botão de Conferência (somente em TODAS AS ÁREAS) ou Ícone de Baixa */}
           {isBaixado ? (
             <button
               type="button"
@@ -517,7 +517,7 @@ export const AssetTableRowCard = ({
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
-          ) : (
+          ) : isGeneralView ? (
             <button
               type="button"
               onClick={handleConferenceClick}
@@ -530,7 +530,7 @@ export const AssetTableRowCard = ({
             >
               <Check className={`w-3 h-3 stroke-[3] ${isConferido ? 'text-slate-950' : ''}`} />
             </button>
-          )}
+          ) : null}
 
           <div className="flex flex-col">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
