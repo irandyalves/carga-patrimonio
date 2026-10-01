@@ -97,7 +97,7 @@ export const SectorSidebar = ({
       }`}>
         
         {/* Cabeçalho da Sidebar */}
-        <div className="p-3.5 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <div className="h-[58px] px-3.5 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
               <Building2 className="w-4 h-4" />

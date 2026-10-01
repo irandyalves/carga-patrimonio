@@ -986,9 +986,9 @@ export function App() {
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
-            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] w-full">
-              <div className="px-4">
-                <div className="px-5 py-3.5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
+              <div className="px-4 w-full">
+                <div className="px-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Coluna 1: Patrimônio (Alinhado exatamente na mesma largura e posição da esquerda) */}
                   <button
