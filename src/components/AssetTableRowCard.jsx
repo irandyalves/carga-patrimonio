@@ -577,7 +577,7 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (Expande e ocupa o espaço liberado pelas colunas ocultadas) */}
+        {/* Coluna 3: Item / Descrição (Expande e ocupa o espaço liberado pelas colunas ocultadas) */}
         <div className="flex-1 min-w-0 shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
           <h4 
             onClick={(e) => {
@@ -622,8 +622,26 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 4: Localização (Mostra SOMENTE os setores) */}
-        <div className="w-56 shrink-0 flex items-center justify-start text-left">
+        {/* Coluna 4: Marca */}
+        {visibleColumns?.marca !== false && (
+          <div className="w-28 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
+            <span className="text-[11px] font-semibold text-slate-300 truncate" title={asset.marca || '---'}>
+              <HighlightText text={asset.marca || '---'} query={searchTerm} />
+            </span>
+          </div>
+        )}
+
+        {/* Coluna 5: Modelo */}
+        {visibleColumns?.modelo !== false && (
+          <div className="w-28 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
+            <span className="text-[11px] font-medium text-slate-400 truncate" title={asset.modelo || '---'}>
+              <HighlightText text={asset.modelo || '---'} query={searchTerm} />
+            </span>
+          </div>
+        )}
+
+        {/* Coluna 6: Localização */}
+        <div className="w-48 shrink-0 flex items-center justify-start text-left">
           {isEditingLocation ? (
             <div 
               ref={locContainerRef}
@@ -758,8 +776,8 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 5: Observação (Alinhada perfeitamente com cabeçalho) */}
-        <div className="w-64 shrink-0 flex items-center justify-start text-left">
+        {/* Coluna 7: Observação */}
+        <div className="w-52 shrink-0 flex items-center justify-start text-left">
           {isEditingObs ? (
             <div 
               ref={obsContainerRef}
@@ -1047,7 +1065,7 @@ export const AssetTableRowCard = ({
           </div>
         )}
 
-        {/* Coluna 9: Valor Atual */}
+        {/* Coluna 11: Valor Atual */}
         {visibleColumns?.valorAtual !== false && (
           <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
             <span className="font-bold text-emerald-400 text-[11px]">
@@ -1056,7 +1074,20 @@ export const AssetTableRowCard = ({
           </div>
         )}
 
-        {/* Coluna 10: Ações & Conferência */}
+        {/* Coluna 12: Depreciação */}
+        {visibleColumns?.depreciacao !== false && (
+          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <span className="font-semibold text-amber-400 text-[11px]" title={String(asset.depreciacao || '')}>
+              {asset.depreciacao 
+                ? (typeof asset.depreciacao === 'number' ? `${asset.depreciacao}%` : String(asset.depreciacao))
+                : (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
+                    ? formatCurrency(Number(asset.valorOriginal) - Number(asset.valorAtual)) 
+                    : '---')}
+            </span>
+          </div>
+        )}
+
+        {/* Coluna 13: Ações & Conferência */}
         <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
           
           {/* Bloqueado / Conferência / Pedido */}

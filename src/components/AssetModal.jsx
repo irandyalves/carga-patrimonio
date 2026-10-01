@@ -122,10 +122,14 @@ export const AssetModal = ({
   sectors = []
 }) => {
   // Estado estruturado com os campos solicitados pelo usuário:
-  // PATRIMÔNIO, DESCRIÇÃO, LOCAL, NA CARGA OU NÃO, OBS, FOTO
+  // Estado estruturado com os campos solicitados pelo usuário:
+  // PATRIMÔNIO, DESCRIÇÃO (ITEM), MARCA, MODELO, LOCAL, NA CARGA OU NÃO, DEPRECIAÇÃO, OBS, FOTO
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
     descricao: '',
+    marca: '',
+    modelo: '',
+    depreciacao: '',
     localizacao: '',
     naCarga: true, // "Na Carga ou Não"
     observacoes: '', // "OBS"
@@ -151,6 +155,9 @@ export const AssetModal = ({
       setFormData({
         numeroPatrimonio: formattedNum || assetToEdit.numeroPatrimonio || '',
         descricao: assetToEdit.descricao || '',
+        marca: assetToEdit.marca || '',
+        modelo: assetToEdit.modelo || '',
+        depreciacao: assetToEdit.depreciacao || '',
         localizacao: assetToEdit.localizacao || '',
         naCarga: assetToEdit.naCarga !== undefined ? assetToEdit.naCarga : true,
         observacoes: assetToEdit.observacoes || assetToEdit.obs || '',
@@ -174,6 +181,9 @@ export const AssetModal = ({
       setFormData({
         numeroPatrimonio: formattedNum,
         descricao: '',
+        marca: '',
+        modelo: '',
+        depreciacao: '',
         localizacao: selectedSec.sala || '',
         naCarga: true,
         observacoes: '',
@@ -454,37 +464,81 @@ export const AssetModal = ({
             />
           </div>
 
-          {/* Campo: LOCAL */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Local Físico Onde o Bem Está *</span>
+          {/* Linha: Marca e Modelo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Marca
               </label>
-              
-              <button
-                type="button"
-                onClick={handleVoiceLoc}
-                title="Falar localização por voz"
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-600 text-white animate-pulse' 
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-                <span>{isListeningLoc ? 'Gravando...' : 'Falar'}</span>
-              </button>
+              <input
+                type="text"
+                value={formData.marca}
+                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                placeholder="Ex: Dell, Flexform, Samsung, LG, HP..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+              />
             </div>
 
-            <input
-              type="text"
-              required
-              value={formData.localizacao}
-              onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })}
-              placeholder="Ex: Sala de Reuniões, Bancada 02, Estúdio de Gravação, Copa do Térreo..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-            />
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Modelo
+              </label>
+              <input
+                type="text"
+                value={formData.modelo}
+                onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
+                placeholder="Ex: Optiplex 7090, U2723QE, Led 24 pol, Plus..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
+          </div>
+
+          {/* Linha: Local e Depreciação */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Local Físico Onde o Bem Está *</span>
+                </label>
+                
+                <button
+                  type="button"
+                  onClick={handleVoiceLoc}
+                  title="Falar localização por voz"
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                    isListeningLoc 
+                      ? 'bg-rose-600 text-white animate-pulse' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" />
+                  <span>{isListeningLoc ? 'Gravando...' : 'Falar'}</span>
+                </button>
+              </div>
+
+              <input
+                type="text"
+                required
+                value={formData.localizacao}
+                onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })}
+                placeholder="Ex: Sala de Reuniões, Bancada 02, Estúdio de Gravação, Copa do Térreo..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Depreciação
+              </label>
+              <input
+                type="text"
+                value={formData.depreciacao}
+                onChange={(e) => setFormData({ ...formData, depreciacao: e.target.value })}
+                placeholder="Ex: 10%, R$ 150,00, 2 anos..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
           </div>
 
           {/* Campo: NA CARGA OU NÃO (Toggle/Segmented Button) */}

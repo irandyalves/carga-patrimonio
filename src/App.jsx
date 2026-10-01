@@ -34,8 +34,8 @@ import {
   LabelPrinterModal 
 } from './components/LabelPrinterModal';
 import { 
-  ExcelImportExportModal 
-} from './components/ExcelImportExportModal';
+  SmartImportModal 
+} from './components/SmartImportModal';
 import { 
   FirebaseSettingsModal 
 } from './components/FirebaseSettingsModal';
@@ -148,19 +148,25 @@ export function App() {
       const stored = localStorage.getItem('carga_patrimonio_visible_columns');
       if (stored) {
         return {
+          marca: true,
+          modelo: true,
           responsavel: true,
           dataAquisicao: true,
           valorOriginal: true,
           valorAtual: true,
+          depreciacao: true,
           ...JSON.parse(stored)
         };
       }
     } catch (e) {}
     return {
+      marca: true,
+      modelo: true,
       responsavel: true,
       dataAquisicao: true,
       valorOriginal: true,
-      valorAtual: true
+      valorAtual: true,
+      depreciacao: true
     };
   });
 
@@ -179,28 +185,37 @@ export function App() {
 
   const showAllColumns = () => {
     setVisibleColumns({
+      marca: true,
+      modelo: true,
       responsavel: true,
       dataAquisicao: true,
       valorOriginal: true,
-      valorAtual: true
+      valorAtual: true,
+      depreciacao: true
     });
   };
 
   const hiddenColumnsCount = useMemo(() => {
     let count = 0;
+    if (!visibleColumns.marca) count++;
+    if (!visibleColumns.modelo) count++;
     if (!visibleColumns.responsavel) count++;
     if (!visibleColumns.dataAquisicao) count++;
     if (!visibleColumns.valorOriginal) count++;
     if (!visibleColumns.valorAtual) count++;
+    if (!visibleColumns.depreciacao) count++;
     return count;
   }, [visibleColumns]);
 
   const tableMinWidth = useMemo(() => {
-    let base = 960;
+    let base = 840;
+    if (visibleColumns.marca) base += 112;
+    if (visibleColumns.modelo) base += 112;
     if (visibleColumns.responsavel) base += 112;
     if (visibleColumns.dataAquisicao) base += 96;
     if (visibleColumns.valorOriginal) base += 96;
     if (visibleColumns.valorAtual) base += 96;
+    if (visibleColumns.depreciacao) base += 96;
     return `${base}px`;
   }, [visibleColumns]);
 
@@ -1248,10 +1263,23 @@ export function App() {
     generateInventoryReportPDF(filterMode === 'MY_SECTOR' ? activeSector : null, sectorAssets, stats);
   };
 
-  // Mass Import Success
-  const handleImportSuccess = (importedAssets) => {
-    setAssets(prev => [...importedAssets, ...prev]);
-    showToast(`${importedAssets.length} itens importados com sucesso!`);
+  // Mass Import Success (Excel, Word, CSV, TXT)
+  const handleImportSuccess = (importedAssets, targetSectorId) => {
+    setAssets(prev => {
+      const merged = [...importedAssets, ...prev];
+      saveLocalAssets(merged);
+      return merged;
+    });
+    if (targetSectorId && targetSectorId !== 'auto') {
+      setActiveSectorId(targetSectorId);
+      setFilterMode('MY_SECTOR');
+    }
+    showToast(`🎉 ${importedAssets.length} itens importados com sucesso!`);
+    try {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    } catch {
+      // ignore
+    }
     setIsExcelModalOpen(false);
   };
 
@@ -1383,16 +1411,16 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (Expande dinamicamente para ocupar todo o espaço liberado pelas colunas ocultadas) */}
+                  {/* Coluna 3: Item (Expande dinamicamente para ocupar todo o espaço liberado pelas colunas ocultadas) */}
                   <button
                     onClick={() => handleSort('descricao')}
-                    title="Clique para ordenar alfabeticamente pela descrição"
+                    title="Clique para ordenar alfabeticamente pelo item"
                     className={`flex-1 min-w-0 shrink flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
                     <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span>Descrição do Bem</span>
+                    <span>Item</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'descricao' ? (
                         sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
@@ -1402,11 +1430,77 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 4: Localização */}
+                  {/* Coluna 4: Marca */}
+                  {visibleColumns.marca && (
+                    <div className="w-28 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('marca')}
+                        title="Clique para ordenar por marca"
+                        className={`flex items-center justify-start gap-1 transition-colors cursor-pointer group truncate ${
+                          sortField === 'marca' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Marca</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'marca' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('marca');
+                        }}
+                        title="Ocultar coluna Marca"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Coluna 5: Modelo */}
+                  {visibleColumns.modelo && (
+                    <div className="w-28 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('modelo')}
+                        title="Clique para ordenar por modelo"
+                        className={`flex items-center justify-start gap-1 transition-colors cursor-pointer group truncate ${
+                          sortField === 'modelo' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Modelo</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'modelo' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('modelo');
+                        }}
+                        title="Ocultar coluna Modelo"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Coluna 6: Localização */}
                   <button
                     onClick={() => handleSort('localizacao')}
                     title="Clique para ordenar por localização"
-                    className={`w-56 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                    className={`w-48 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
                       sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1420,8 +1514,8 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 5: Observação */}
-                  <div className="w-64 shrink-0 flex items-center justify-start text-left">
+                  {/* Coluna 7: Observação */}
+                  <div className="w-52 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 
@@ -1524,7 +1618,7 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 9: Valor Atual com Olhinho para Ocultar */}
+                  {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
                   {visibleColumns.valorAtual && (
                     <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
                       <button
@@ -1557,7 +1651,40 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 10: Ações + Botão de Gerenciamento e Restauração de Colunas */}
+                  {/* Coluna 12: Depreciação com Olhinho para Ocultar */}
+                  {visibleColumns.depreciacao && (
+                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('depreciacao')}
+                        title="Clique para ordenar por depreciação"
+                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'depreciacao' ? 'text-amber-400 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Depreciação</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'depreciacao' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-amber-400" /> : <ArrowDown className="w-3.5 h-3.5 text-amber-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('depreciacao');
+                        }}
+                        title="Ocultar coluna Depreciação"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Coluna 13: Ações + Botão de Gerenciamento e Restauração de Colunas */}
                   <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1 relative" ref={columnDropdownRef}>
                     <button
                       type="button"
@@ -1605,10 +1732,13 @@ export function App() {
 
                         <div className="space-y-1 pt-0.5">
                           {[
+                            { key: 'marca', label: 'Marca' },
+                            { key: 'modelo', label: 'Modelo' },
                             { key: 'responsavel', label: 'Responsável' },
                             { key: 'dataAquisicao', label: 'Aquisição' },
                             { key: 'valorOriginal', label: '$ Original' },
-                            { key: 'valorAtual', label: '$ Atual' }
+                            { key: 'valorAtual', label: '$ Atual' },
+                            { key: 'depreciacao', label: 'Depreciação' }
                           ].map(col => {
                             const isVisible = visibleColumns[col.key] !== false;
                             return (
@@ -1889,11 +2019,14 @@ export function App() {
         activeSector={activeSector}
       />
 
-      <ExcelImportExportModal
+      <SmartImportModal
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
+        sectors={sectors}
+        activeSectorId={activeSectorId}
         assets={assets}
         onImportSuccess={handleImportSuccess}
+        onOpenManageSectors={() => setIsManageSectorsOpen(true)}
       />
 
       <FirebaseSettingsModal

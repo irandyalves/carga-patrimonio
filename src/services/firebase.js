@@ -307,8 +307,38 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
-const DATA_VERSION = 'v4_carga_individual_itens_2026';
+const DATA_VERSION = 'v5_clean_production_2026';
 const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
+
+export const wipeAllOnlineAndLocalData = async () => {
+  try {
+    // 1. Limpa localStorage
+    localStorage.removeItem(STORAGE_KEY_ASSETS);
+    localStorage.removeItem(STORAGE_KEY_CAUTELAS);
+    localStorage.removeItem('carga_patrimonio_pedidos');
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
+
+    // 2. Se Firebase conectado, limpa coleções online
+    const { isConfigured, db } = initFirebase();
+    if (isConfigured && db) {
+      try {
+        const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+        const assetSnap = await getDocs(collection(db, 'assets'));
+        const deletePromises = assetSnap.docs.map(d => deleteDoc(doc(db, 'assets', d.id)));
+        const cautelaSnap = await getDocs(collection(db, 'cautelas'));
+        const cautelaPromises = cautelaSnap.docs.map(d => deleteDoc(doc(db, 'cautelas', d.id)));
+        await Promise.all([...deletePromises, ...cautelaPromises]);
+      } catch (fbErr) {
+        console.warn('Erro ao limpar coleções online do Firebase:', fbErr);
+      }
+    }
+  } catch (err) {
+    console.error('Erro na limpeza de dados:', err);
+  }
+  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
+};
 
 export const loadLocalData = () => {
   let assets = INITIAL_ASSETS;
@@ -318,12 +348,13 @@ export const loadLocalData = () => {
   try {
     const storedVersion = localStorage.getItem(STORAGE_KEY_VERSION);
     if (storedVersion !== DATA_VERSION) {
-      // Migração automática para a nova lista de setores e patrimônios fornecidos
+      // Migração automática para a base limpa de produção
       localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
       localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
-      return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
+      return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
     }
 
     const storedSectors = localStorage.getItem(STORAGE_KEY_SECTORS);
@@ -337,14 +368,14 @@ export const loadLocalData = () => {
     if (storedAssets) {
       assets = JSON.parse(storedAssets);
     } else {
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
     }
 
     const storedCautelas = localStorage.getItem(STORAGE_KEY_CAUTELAS);
     if (storedCautelas) {
       cautelas = JSON.parse(storedCautelas);
     } else {
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
     }
   } catch (e) {
     console.error('Error loading local data:', e);
@@ -356,13 +387,14 @@ export const loadLocalData = () => {
 export const resetToDefaultData = () => {
   try {
     localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
-    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+    localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
   } catch (e) {
     console.error(e);
   }
-  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
+  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
 };
 
 export const saveLocalAssets = (assets) => {
