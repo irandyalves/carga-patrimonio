@@ -33,7 +33,9 @@ export const SectorSidebar = ({
   assets = [],
   onOpenManageSectors,
   userRole = 'admin',
-  userSectorId = null
+  userSectorId = null,
+  statusFilter = 'ALL',
+  onSelectStatusFilter = () => {}
 }) => {
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
@@ -59,8 +61,11 @@ export const SectorSidebar = ({
     const sectorAssets = assets.filter(a => a.setorId === sectorId);
     const total = sectorAssets.length;
     const conferidos = sectorAssets.filter(a => a.status === 'CONFERIDO').length;
+    const pendentes = sectorAssets.filter(a => a.status === 'PENDENTE').length;
+    const cautelas = sectorAssets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length;
+    const baixados = sectorAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length;
     const isCompleted = total > 0 && conferidos === total;
-    return { total, conferidos, isCompleted };
+    return { total, conferidos, pendentes, cautelas, baixados, isCompleted };
   };
 
   const totalAssetsCount = assets.length;
@@ -127,28 +132,66 @@ export const SectorSidebar = ({
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
           
           {/* Aba: Todas as Áreas */}
-          <button
-            onClick={() => onSelectFilterMode('ALL_SECTORS')}
-            className={`w-full px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
-              filterMode === 'ALL_SECTORS'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
-                : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
-              <span className="font-semibold truncate">Todas as Áreas</span>
-            </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30 font-mono font-bold shrink-0">
-              {totalAssetsCount}
-            </span>
-          </button>
+          <div className="space-y-0.5">
+            <button
+              onClick={() => onSelectFilterMode('ALL_SECTORS')}
+              className={`w-full px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                filterMode === 'ALL_SECTORS'
+                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
+                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span className="font-semibold truncate">Todas as Áreas</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30 font-mono font-bold shrink-0">
+                {totalAssetsCount}
+              </span>
+            </button>
+
+            {/* Sub-opções indentadas quando Todas as Áreas está selecionado */}
+            {filterMode === 'ALL_SECTORS' && (
+              <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
+                {[
+                  { id: 'ALL', label: 'Todos os Bens', count: totalAssetsCount, color: 'text-slate-300' },
+                  { id: 'PENDENTES', label: 'Pendentes', count: assets.filter(a => a.status === 'PENDENTE').length, color: 'text-amber-400', dot: 'bg-amber-400' },
+                  { id: 'CONFERIDOS', label: 'Conferidos', count: assets.filter(a => a.status === 'CONFERIDO').length, color: 'text-emerald-400', dot: 'bg-emerald-400' },
+                  { id: 'CAUTELAS', label: 'Em Cautela', count: assets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length, color: 'text-blue-400', dot: 'bg-blue-400' },
+                  { id: 'BAIXADOS', label: 'Baixados', count: assets.filter(a => a.status === 'BAIXADO' || a.baixado).length, color: 'text-rose-400', dot: 'bg-rose-400' },
+                ].map(tab => {
+                  const isSubActive = statusFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => onSelectStatusFilter(tab.id)}
+                      className={`w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-colors cursor-pointer text-left ${
+                        isSubActive
+                          ? 'bg-indigo-600 text-white font-bold shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
+                        <span className="truncate">{tab.label}</span>
+                      </div>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                        isSubActive ? 'bg-indigo-800 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="pt-2 pb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Setores com Carga
           </div>
 
-          {/* Abas dos Setores */}
+          {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
           {sectors.map((sec) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
@@ -156,67 +199,101 @@ export const SectorSidebar = ({
             const isOtherSector = userRole === 'operador' && userSectorId && userSectorId !== sec.id;
 
             return (
-              <button
-                key={sec.id}
-                onClick={() => {
-                  onSelectFilterMode('MY_SECTOR');
-                  onSelectSector(sec.id);
-                }}
-                className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
-                  isSelected
-                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
-                }`}
-              >
-                {/* Nome do Setor:
-                    - Inativo: Apenas nome direto (ex: Studio, SACADI)
-                    - Ativo: Ícone + Nome - Responsável (ex: [Icon] Studio - Tadeu)
-                */}
-                <div className="flex items-center gap-2 truncate">
-                  {isSelected ? (
-                    stats.isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-                    ) : (
-                      getSectorIcon(sec.id)
-                    )
-                  ) : null}
+              <div key={sec.id} className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    onSelectFilterMode('MY_SECTOR');
+                    onSelectSector(sec.id);
+                  }}
+                  className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                    isSelected
+                      ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
+                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                  }`}
+                >
+                  {/* Nome do Setor */}
+                  <div className="flex items-center gap-2 truncate">
+                    {isSelected ? (
+                      stats.isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                      ) : (
+                        getSectorIcon(sec.id)
+                      )
+                    ) : null}
 
-                  <div className="truncate">
-                    <div className="flex items-center gap-1.5">
-                      <span className={isSelected ? 'font-bold' : 'font-medium'}>
-                        {sec.name}
-                      </span>
-                      {isMySector && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
-                          Meu Setor
+                    <div className="truncate">
+                      <div className="flex items-center gap-1.5">
+                        <span className={isSelected ? 'font-bold' : 'font-medium'}>
+                          {sec.name}
                         </span>
-                      )}
-                      {isOtherSector && (
-                        <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
-                          <Lock className="w-3 h-3 inline" />
+                        {isMySector && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
+                            Meu Setor
+                          </span>
+                        )}
+                        {isOtherSector && (
+                          <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
+                            <Lock className="w-3 h-3 inline" />
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && sec.responsavel && (
+                        <span className="opacity-90 font-normal ml-1 text-[11px] block truncate">
+                          {sec.responsavel}
                         </span>
                       )}
                     </div>
-                    {isSelected && sec.responsavel && (
-                      <span className="opacity-90 font-normal ml-1 text-[11px] block truncate">
-                        {sec.responsavel}
-                      </span>
-                    )}
                   </div>
-                </div>
 
-                {/* Badge de quantidade e status de conclusão */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {stats.isCompleted && !isSelected && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  )}
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                    isSelected ? 'bg-white/20 text-white font-bold' : 'bg-slate-800 text-slate-300'
-                  }`}>
-                    {stats.total}
-                  </span>
-                </div>
-              </button>
+                  {/* Badge de quantidade e status de conclusão */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {stats.isCompleted && !isSelected && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    )}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                      isSelected ? 'bg-white/20 text-white font-bold' : 'bg-slate-800 text-slate-300'
+                    }`}>
+                      {stats.total}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Sub-opções indentadas abaixo do setor clicado */}
+                {isSelected && (
+                  <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
+                    {[
+                      { id: 'ALL', label: 'Todos os Bens', count: stats.total, color: 'text-slate-300' },
+                      { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
+                      { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
+                      { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
+                      { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400', dot: 'bg-rose-400' },
+                    ].map(tab => {
+                      const isSubActive = statusFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => onSelectStatusFilter(tab.id)}
+                          className={`w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-colors cursor-pointer text-left ${
+                            isSubActive
+                              ? 'bg-indigo-600 text-white font-bold shadow-sm'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
+                            <span className="truncate">{tab.label}</span>
+                          </div>
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                            isSubActive ? 'bg-indigo-800 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                          }`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
 
