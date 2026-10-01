@@ -7,9 +7,6 @@ import {
   SectorSidebar 
 } from './components/SectorSidebar';
 import { 
-  AlphabetFastScroller 
-} from './components/AlphabetFastScroller';
-import { 
   ConferenceStats 
 } from './components/ConferenceStats';
 import { 
@@ -273,8 +270,20 @@ export function App() {
   // Persona Simulada para Teste de Operadores e Departamentos
   const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
 
-  // Referência do scroll principal para navegação rápida
+  // Referência do scroll principal
   const mainScrollRef = useRef(null);
+
+  // Barra de rolagem auto-hide: aparece ao rolar e desaparece suavemente quando para
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef(null);
+
+  const handleMainScroll = () => {
+    setIsScrolling(true);
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 1000);
+  };
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
@@ -1343,7 +1352,11 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main ref={mainScrollRef} className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col relative">
+        <main 
+          ref={mainScrollRef} 
+          onScroll={handleMainScroll}
+          className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto custom-scroll-auto-hide ${isScrolling ? 'is-scrolling' : ''} bg-slate-950 flex flex-col relative`}
+        >
           <div style={{ minWidth: tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
@@ -1782,13 +1795,6 @@ export function App() {
             )}
 
           </div>
-
-          {/* Barra de rolagem alfabética rápida (A-Z) com indicador visual */}
-          <AlphabetFastScroller
-            items={sortedAssets}
-            sortField={sortField}
-            scrollContainerRef={mainScrollRef}
-          />
         </main>
 
       </div>
