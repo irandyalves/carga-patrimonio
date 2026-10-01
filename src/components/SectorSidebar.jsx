@@ -88,6 +88,14 @@ export const SectorSidebar = ({
 
   return (
     <>
+      {/* Backdrop Overlay para Mobile */}
+      {isOpen && (
+        <div 
+          onClick={onToggle}
+          className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
+        />
+      )}
+
       {/* Botão Flutuante de Abrir Sidebar quando recolhida */}
       {!isOpen && (
         <button
@@ -101,8 +109,8 @@ export const SectorSidebar = ({
       )}
 
       {/* Slide Bar Lateral Esquerdo */}
-      <aside className={`shrink-0 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 transition-all duration-300 ease-in-out z-20 flex flex-col h-full select-none ${
-        isOpen ? 'w-64 sm:w-72' : 'w-0 -translate-x-full overflow-hidden border-none'
+      <aside className={`fixed inset-y-0 left-0 z-40 lg:static lg:z-20 shrink-0 bg-slate-900/98 backdrop-blur-xl border-r border-slate-800 transition-all duration-300 ease-in-out flex flex-col h-full select-none ${
+        isOpen ? 'w-72 shadow-2xl lg:shadow-none' : 'w-0 -translate-x-full overflow-hidden border-none'
       }`}>
         
         {/* Cabeçalho da Sidebar */}

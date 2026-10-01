@@ -145,7 +145,18 @@ export function App() {
   const [filterMode, setFilterMode] = useState('MY_SECTOR'); // 'MY_SECTOR' | 'ALL_SECTORS'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Slide bar lateral esquerdo
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Visibilidade das Colunas [Quantidade, Marca, Modelo, Responsável, Aquisição, $ Original, $ Atual, Depreciação]
   const [visibleColumns, setVisibleColumns] = useState(() => {
@@ -617,6 +628,15 @@ export function App() {
     });
   }, [assets, activeSectorId, filterMode, statusFilter, searchTerm]);
 
+  // IDs de itens que foram desmarcados da conferência enquanto estavam na seção de conferidos
+  // Permite que o item continue visível no mesmo local (sem pular para o topo) até que o usuário mude de setor/filtro
+  const [stayInConferidosIds, setStayInConferidosIds] = useState(() => new Set());
+
+  // Limpa os itens mantidos temporariamente quando mudar de setor ou status
+  useEffect(() => {
+    setStayInConferidosIds(new Set());
+  }, [activeSectorId, filterMode, statusFilter]);
+
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
@@ -692,7 +712,7 @@ export function App() {
     filteredAssets.forEach(item => {
       if (item.baixado || item.status === 'BAIXADO') {
         baixados.push(item);
-      } else if (item.status === 'CONFERIDO') {
+      } else if (item.status === 'CONFERIDO' || stayInConferidosIds.has(item.id)) {
         conferidos.push(item);
       } else {
         pendentes.push(item);
@@ -704,7 +724,7 @@ export function App() {
     baixados.sort(sortFn);
 
     return [...pendentes, ...conferidos, ...baixados];
-  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection]);
+  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection, stayInConferidosIds]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {
@@ -730,9 +750,34 @@ export function App() {
       showToast('Você só pode conferir bens do seu departamento. Use "Fazer Pedido" para este item.', 'warning');
       return;
     }
+
+    // Salva a posição de rolagem para manter exatamente onde o usuário está
+    const currentScrollTop = mainScrollRef.current ? mainScrollRef.current.scrollTop : null;
+
+    const isCurrentlyConferido = itemToCheck?.status === 'CONFERIDO';
+    const isNowConferido = !isCurrentlyConferido;
+
+    if (isCurrentlyConferido) {
+      // Se estava conferido e foi desmarcado: mantém o item exatamente onde está no final da lista
+      setStayInConferidosIds(prev => {
+        const next = new Set(prev);
+        next.add(assetId);
+        return next;
+      });
+    } else {
+      // Se foi marcado como conferido: remove dos mantidos temporariamente
+      setStayInConferidosIds(prev => {
+        if (prev.has(assetId)) {
+          const next = new Set(prev);
+          next.delete(assetId);
+          return next;
+        }
+        return prev;
+      });
+    }
+
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        const isNowConferido = item.status !== 'CONFERIDO';
         const nowStr = new Date().toLocaleString('pt-BR');
         
         return {
@@ -753,10 +798,19 @@ export function App() {
     });
 
     setAssets(updated);
+
+    // Restaura scroll sem salto
+    if (currentScrollTop !== null) {
+      requestAnimationFrame(() => {
+        if (mainScrollRef.current) {
+          mainScrollRef.current.scrollTop = currentScrollTop;
+        }
+      });
+    }
     
     // Check if whole sector reached 100%
     const itemChecked = updated.find(a => a.id === assetId);
-    if (itemChecked.status === 'CONFERIDO') {
+    if (itemChecked && itemChecked.status === 'CONFERIDO') {
       showToast(`Bem ${itemChecked.numeroPatrimonio} conferido com sucesso!`);
       const sectorRemaining = updated.filter(a => a.setorId === activeSectorId && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO');
       if (sectorRemaining.length === 0) {
@@ -767,8 +821,8 @@ export function App() {
         });
         showToast('Parabéns! 100% da carga do setor foi conferida com sucesso!', 'success');
       }
-    } else {
-      showToast('Conferência do bem desmarcada.', 'info');
+    } else if (itemChecked) {
+      showToast(`Conferência do bem ${itemChecked.numeroPatrimonio} desmarcada.`, 'info');
     }
   };
 
@@ -1485,10 +1539,10 @@ export function App() {
           onScroll={handleMainScroll}
           className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto custom-scroll-auto-hide ${isScrolling ? 'is-scrolling' : ''} bg-slate-950 flex flex-col relative`}
         >
-          <div style={{ minWidth: tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
+          <div style={{ minWidth: isMobile ? '100%' : tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
 
-            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
-            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
+            {/* Cabeçalho Fixo da Tabela Desktop */}
+            <div className="hidden md:flex sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] items-center">
               <div className="w-full">
                 <div className="pl-6 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
