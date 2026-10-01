@@ -631,140 +631,142 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 6: Localização */}
-        <div className="w-48 shrink-0 flex items-center justify-start text-left">
-          {isEditingLocation ? (
-            <div 
-              ref={locContainerRef}
-              onClick={(e) => e.stopPropagation()} 
-              className="relative flex items-center z-30 animate-in fade-in zoom-in-95 duration-100"
-            >
-              {/* Campo de Entrada e Botão Dropdown */}
-              <div className="relative inline-flex items-center">
-                <input
-                  type="text"
-                  value={locationValue}
-                  onChange={(e) => {
-                    setLocationValue(e.target.value);
-                    resetLocTimer();
-                    setShowLocListbox(true);
-                  }}
-                  onFocus={() => {
-                    resetLocTimer();
-                    setShowLocListbox(true);
-                  }}
-                  onKeyDown={(e) => {
-                    resetLocTimer();
-                    if (e.key === 'Enter') handleSaveLocation(e);
-                    if (e.key === 'Escape') closeLocEdit();
-                  }}
-                  placeholder="Selecione ou digite o setor..."
-                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[140px] pr-6 shadow-xl"
-                  autoFocus
-                />
+        {visibleColumns?.localizacao !== false && (
+          <div className="w-48 shrink-0 flex items-center justify-start text-left animate-in fade-in duration-150">
+            {isEditingLocation ? (
+              <div 
+                ref={locContainerRef}
+                onClick={(e) => e.stopPropagation()} 
+                className="relative flex items-center z-30 animate-in fade-in zoom-in-95 duration-100"
+              >
+                {/* Campo de Entrada e Botão Dropdown */}
+                <div className="relative inline-flex items-center">
+                  <input
+                    type="text"
+                    value={locationValue}
+                    onChange={(e) => {
+                      setLocationValue(e.target.value);
+                      resetLocTimer();
+                      setShowLocListbox(true);
+                    }}
+                    onFocus={() => {
+                      resetLocTimer();
+                      setShowLocListbox(true);
+                    }}
+                    onKeyDown={(e) => {
+                      resetLocTimer();
+                      if (e.key === 'Enter') handleSaveLocation(e);
+                      if (e.key === 'Escape') closeLocEdit();
+                    }}
+                    placeholder="Selecione ou digite o setor..."
+                    className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[140px] pr-6 shadow-xl"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLocListbox(!showLocListbox);
+                      resetLocTimer();
+                    }}
+                    className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
+                    title="Mostrar setores"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-emerald-400' : ''}`} />
+                  </button>
+
+                  {/* Listbox customizado com 10 opções visíveis contendo SOMENTE os setores */}
+                  {showLocListbox && (
+                    <div className="absolute left-0 top-full mt-1.5 w-64 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
+                        <span>Setores</span>
+                        <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
+                      </div>
+                      <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
+                        {sectors.map((s) => (
+                          <button
+                            key={`loc-sec-${s.id}`}
+                            type="button"
+                            onClick={(e) => {
+                              setLocationValue(s.name);
+                              handleSaveLocation(e, s.name);
+                            }}
+                            className="w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">
+                                {s.name}
+                              </span>
+                              {s.responsavel && (
+                                <span className="text-[10px] text-slate-400 truncate">
+                                  ({s.responsavel})
+                                </span>
+                              )}
+                            </div>
+                            <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botão de Voz */}
+                <div className="inline-flex items-center ml-1.5">
+                  <button
+                    type="button"
+                    onClick={startLocationVoice}
+                    title="Ditar localização por voz"
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
+                      isListeningLoc 
+                        ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                        : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <Mic className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-0.5 group/loc">
                 <button
                   type="button"
-                  tabIndex={-1}
                   onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLocListbox(!showLocListbox);
-                    resetLocTimer();
+                    if (!canManageAsset) {
+                      onOpenSolicitacao(asset);
+                    } else {
+                      openLocEdit(e);
+                    }
                   }}
-                  className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
-                  title="Mostrar setores"
+                  title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
                 >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-emerald-400' : ''}`} />
+                  <span className="truncate max-w-[175px]">
+                    <HighlightText text={asset.localizacao || 'Onde está?'} query={searchTerm} />
+                  </span>
+                  <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
                 </button>
 
-                {/* Listbox customizado com 10 opções visíveis contendo SOMENTE os setores */}
-                {showLocListbox && (
-                  <div className="absolute left-0 top-full mt-1.5 w-64 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
-                      <span>Setores</span>
-                      <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
-                    </div>
-                    <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
-                      {sectors.map((s) => (
-                        <button
-                          key={`loc-sec-${s.id}`}
-                          type="button"
-                          onClick={(e) => {
-                            setLocationValue(s.name);
-                            handleSaveLocation(e, s.name);
-                          }}
-                          className="w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">
-                              {s.name}
-                            </span>
-                            {s.responsavel && (
-                              <span className="text-[10px] text-slate-400 truncate">
-                                ({s.responsavel})
-                              </span>
-                            )}
-                          </div>
-                          <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Botão de Voz */}
-              <div className="inline-flex items-center ml-1.5">
                 <button
                   type="button"
-                  onClick={startLocationVoice}
+                  onClick={(e) => {
+                    openLocEdit(e);
+                    startLocationVoice(e);
+                  }}
                   title="Ditar localização por voz"
-                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
+                  className={`p-1 rounded transition-all cursor-pointer ${
                     isListeningLoc 
-                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
+                      ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                      : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
                   }`}
                 >
                   <Mic className="w-3 h-3" />
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-0.5 group/loc">
-              <button
-                type="button"
-                onClick={(e) => {
-                  if (!canManageAsset) {
-                    onOpenSolicitacao(asset);
-                  } else {
-                    openLocEdit(e);
-                  }
-                }}
-                title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
-              >
-                <span className="truncate max-w-[175px]">
-                  <HighlightText text={asset.localizacao || 'Onde está?'} query={searchTerm} />
-                </span>
-                <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  openLocEdit(e);
-                  startLocationVoice(e);
-                }}
-                title="Ditar localização por voz"
-                className={`p-1 rounded transition-all cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Coluna 7: Observação */}
         <div className="w-52 shrink-0 flex items-center justify-start text-left">

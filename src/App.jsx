@@ -169,6 +169,7 @@ export function App() {
       quantidade: true,
       marca: true,
       modelo: true,
+      localizacao: true,
       responsavel: true,
       dataAquisicao: true,
       valorOriginal: true,
@@ -195,6 +196,7 @@ export function App() {
       quantidade: true,
       marca: true,
       modelo: true,
+      localizacao: true,
       responsavel: true,
       dataAquisicao: true,
       valorOriginal: true,
@@ -205,27 +207,29 @@ export function App() {
 
   const hiddenColumnsCount = useMemo(() => {
     let count = 0;
-    if (!visibleColumns.quantidade) count++;
-    if (!visibleColumns.marca) count++;
-    if (!visibleColumns.modelo) count++;
-    if (!visibleColumns.responsavel) count++;
-    if (!visibleColumns.dataAquisicao) count++;
-    if (!visibleColumns.valorOriginal) count++;
-    if (!visibleColumns.valorAtual) count++;
-    if (!visibleColumns.depreciacao) count++;
+    if (visibleColumns.quantidade === false) count++;
+    if (visibleColumns.marca === false) count++;
+    if (visibleColumns.modelo === false) count++;
+    if (visibleColumns.localizacao === false) count++;
+    if (visibleColumns.responsavel === false) count++;
+    if (visibleColumns.dataAquisicao === false) count++;
+    if (visibleColumns.valorOriginal === false) count++;
+    if (visibleColumns.valorAtual === false) count++;
+    if (visibleColumns.depreciacao === false) count++;
     return count;
   }, [visibleColumns]);
 
   const tableMinWidth = useMemo(() => {
-    let base = 800;
-    if (visibleColumns.quantidade) base += 48;
-    if (visibleColumns.marca) base += 112;
-    if (visibleColumns.modelo) base += 112;
-    if (visibleColumns.responsavel) base += 112;
-    if (visibleColumns.dataAquisicao) base += 96;
-    if (visibleColumns.valorOriginal) base += 112;
-    if (visibleColumns.valorAtual) base += 112;
-    if (visibleColumns.depreciacao) base += 112;
+    let base = 600;
+    if (visibleColumns.quantidade !== false) base += 48;
+    if (visibleColumns.marca !== false) base += 112;
+    if (visibleColumns.modelo !== false) base += 112;
+    if (visibleColumns.localizacao !== false) base += 192;
+    if (visibleColumns.responsavel !== false) base += 112;
+    if (visibleColumns.dataAquisicao !== false) base += 96;
+    if (visibleColumns.valorOriginal !== false) base += 112;
+    if (visibleColumns.valorAtual !== false) base += 112;
+    if (visibleColumns.depreciacao !== false) base += 112;
     return `${base}px`;
   }, [visibleColumns]);
 
@@ -1596,23 +1600,38 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 6: Localização */}
-                  <button
-                    onClick={() => handleSort('localizacao')}
-                    title="Clique para ordenar por localização"
-                    className={`w-48 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
-                      sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>Localização</span>
-                    <span className="shrink-0 ml-0.5">
-                      {sortField === 'localizacao' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 6: Localização com Olhinho para Ocultar */}
+                  {visibleColumns.localizacao !== false && (
+                    <div className="w-48 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('localizacao')}
+                        title="Clique para ordenar por localização"
+                        className={`flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                          sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Localização</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'localizacao' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('localizacao');
+                        }}
+                        title="Ocultar coluna Localização"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Coluna 7: Observação */}
                   <div className="w-52 shrink-0 flex items-center justify-start text-left">
@@ -1835,6 +1854,7 @@ export function App() {
                             { key: 'quantidade', label: 'Qtde (Quantidade)' },
                             { key: 'marca', label: 'Marca' },
                             { key: 'modelo', label: 'Modelo' },
+                            { key: 'localizacao', label: 'Localização' },
                             { key: 'responsavel', label: 'Responsável' },
                             { key: 'dataAquisicao', label: 'Aquisição' },
                             { key: 'valorOriginal', label: '$ Original' },
