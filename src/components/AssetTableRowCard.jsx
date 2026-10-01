@@ -79,7 +79,7 @@ export const AssetTableRowCard = ({
   };
 
   return (
-    <div className={`relative rounded-xl border transition-all duration-200 overflow-visible group ${
+    <div className={`relative rounded-xl border transition-all duration-200 overflow-visible group w-full ${
       isOutOfPlace 
         ? 'bg-amber-950/20 border-amber-500/40 hover:border-amber-400/60' 
         : isConferido 
@@ -108,29 +108,31 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Linha Principal (Colunas alinhadas) */}
-      <div className="p-3 sm:px-4 sm:py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+      {/* Linha Principal (Colunas alinhadas ocupando toda a largura da tela) */}
+      <div className="p-3 sm:px-5 sm:py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs w-full">
         
-        {/* Coluna 1: Patrimônio */}
+        {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS) */}
         <div className="lg:w-44 shrink-0 flex items-center gap-2">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-xs font-semibold text-slate-400 tracking-wider">
-                {prefix && <span className="opacity-60">{prefix}</span>}
-                <strong className="text-white text-sm bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-700 shadow-inner text-indigo-300">
-                  {last5}
-                </strong>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-indigo-400 select-all leading-none">
+                {last5}
               </span>
               <button
                 onClick={handleCopyTag}
                 title="Copiar número do patrimônio"
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700/50 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
             
-            <div className="mt-1 flex items-center gap-1">
+            <div className="mt-1 flex items-center gap-1.5">
+              {prefix && (
+                <span className="text-[10px] font-mono text-slate-500">
+                  {prefix}
+                </span>
+              )}
               {isConferido ? (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                   <CheckCircle2 className="w-3 h-3" /> Conferido
@@ -152,31 +154,31 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 2: Quantidade */}
+        {/* Coluna 2: Quantidade (SEM BORDAS) */}
         <div className="lg:w-20 shrink-0 flex items-center lg:justify-center">
-          <div className="flex items-center gap-1 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-lg">
-            <span className="text-[10px] text-slate-400 lg:hidden">Qtde:</span>
-            <span className="font-bold text-sm text-cyan-300">
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs text-slate-400 lg:hidden">Qtde:</span>
+            <span className="font-black text-xl sm:text-2xl text-cyan-300">
               {asset.quantidade || 1}
             </span>
-            <span className="text-[10px] text-slate-400">un</span>
+            <span className="text-[11px] font-semibold text-slate-400">un</span>
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem */}
-        <div className="flex-1 min-w-[200px]">
+        {/* Coluna 3: Descrição do Bem (A MAIOR COLUNA) */}
+        <div className="flex-[3] min-w-[280px]">
           <div className="flex items-baseline gap-2">
-            <h4 className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+            <h4 className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug">
               {asset.descricao}
             </h4>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-400">
             <span className="text-slate-300 font-medium">
               {asset.categoria}
             </span>
             {asset.localizacao && (
               <span className="flex items-center gap-1 text-slate-400">
-                <MapPin className="w-3 h-3 text-slate-500" />
+                <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                 {asset.localizacao}
               </span>
             )}
@@ -185,8 +187,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 4: Responsável */}
         <div className="lg:w-44 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
               <User className="w-3.5 h-3.5" />
             </div>
             <div className="truncate">

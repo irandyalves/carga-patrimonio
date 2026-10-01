@@ -5,10 +5,19 @@ import {
   MapPin, 
   ChevronLeft, 
   ChevronRight, 
-  Settings, 
+  Plus, 
   CheckCircle2, 
   Layers,
-  Sparkles
+  Sparkles,
+  Coffee,
+  Tv,
+  Users,
+  Server,
+  Monitor,
+  Flame,
+  PenTool,
+  BookOpen,
+  Volume2
 } from 'lucide-react';
 
 export const SectorTabs = ({
@@ -18,18 +27,52 @@ export const SectorTabs = ({
   filterMode, // 'MY_SECTOR' | 'ALL_SECTORS'
   onSelectFilterMode,
   assets = [],
-  onOpenManageSectors
+  onOpenManageSectors,
+  onOpenNewAsset
 }) => {
   const scrollContainerRef = useRef(null);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -260 : 260;
+      const scrollAmount = direction === 'left' ? -300 : 300;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
-  // Helper para obter estatísticas rápidas por setor
+  // Ícones representativos para as abas dos setores
+  const getSectorIcon = (secId) => {
+    switch (secId) {
+      case 'sec-studio': return <Tv className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-auditorio': return <Volume2 className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-foyer': return <Monitor className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-recepcao': return <UserCheck className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-lab-inovacao': return <Sparkles className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-revista-jmu': return <BookOpen className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-sacadi-cadmi': return <Users className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-ti': return <Server className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-reunioes': return <Users className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-copa-terreo': return <Coffee className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-copa-1piso': return <Flame className="w-3.5 h-3.5 shrink-0" />;
+      default: return <Building2 className="w-3.5 h-3.5 shrink-0" />;
+    }
+  };
+
+  // Cores inspiradas no print 2 (tons de roxo, índigo, azul marinho e azul vibrante)
+  const getTabColor = (index, isSelected) => {
+    if (isSelected) {
+      return 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 border-b-2 border-white ring-1 ring-blue-400';
+    }
+    // Paleta profissional alternada no estilo do print (azul petróleo, roxo, violeta, índigo)
+    const palettes = [
+      'bg-[#2d225a] hover:bg-[#392c73] text-indigo-100 border-[#47368f]',
+      'bg-[#1e2a5e] hover:bg-[#27377a] text-blue-100 border-[#324599]',
+      'bg-[#3b1d5c] hover:bg-[#4d2578] text-purple-100 border-[#5e2e94]',
+      'bg-[#19324d] hover:bg-[#204266] text-cyan-100 border-[#2b598a]',
+      'bg-[#26245c] hover:bg-[#34317d] text-indigo-100 border-[#433ea1]',
+    ];
+    return `${palettes[index % palettes.length]} border-t border-x`;
+  };
+
   const getSectorStats = (sectorId) => {
     const sectorAssets = assets.filter(a => a.setorId === sectorId);
     const total = sectorAssets.length;
@@ -45,149 +88,104 @@ export const SectorTabs = ({
   };
 
   const totalAssetsCount = assets.length;
-  const totalConferidos = assets.filter(a => a.status === 'CONFERIDO').length;
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-3 sm:p-4 shadow-xl backdrop-blur-md space-y-3">
+    <div className="w-full space-y-2">
       
-      {/* Top Bar: Título e Botão de Gerenciar Setores */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
-            <Layers className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Áreas & Cargas Patrimoniais
-            </span>
-            <span className="text-[11px] text-slate-500 ml-2">
-              Selecione uma aba para conferência
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {/* Scroll Navigation Buttons */}
-          <button
-            onClick={() => scroll('left')}
-            title="Rolar abas para esquerda"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => scroll('right')}
-            title="Rolar abas para direita"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-
-          {/* Gerenciar Setores */}
-          <button
-            onClick={onOpenManageSectors}
-            title="Gerenciar Setores e Responsáveis"
-            className="ml-1 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs Container (Scroll Horizontal) */}
-      <div 
-        ref={scrollContainerRef}
-        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none scroll-smooth"
-      >
-        {/* Aba: Todas as Áreas (Consolidado) */}
+      {/* 1. BARRA SUPERIOR DE ABAS (ESTILO PRINT 2 - ABAS RETANGULARES CONECTADAS) */}
+      <div className="relative flex items-center bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-md">
+        
+        {/* Botão de Scroll Esquerda */}
         <button
-          onClick={() => onSelectFilterMode('ALL_SECTORS')}
-          className={`shrink-0 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer border ${
-            filterMode === 'ALL_SECTORS'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400/50 shadow-md shadow-blue-600/30'
-              : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border-slate-700/60'
-          }`}
+          onClick={() => scroll('left')}
+          title="Rolar abas para a esquerda"
+          className="shrink-0 p-1.5 text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer mr-1 z-10"
         >
-          <Layers className="w-3.5 h-3.5 shrink-0" />
-          <span>Todas as Áreas</span>
-          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-            filterMode === 'ALL_SECTORS' ? 'bg-white/20 text-white font-bold' : 'bg-slate-900 text-slate-400'
-          }`}>
-            {totalAssetsCount}
-          </span>
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Abas Individuais dos Setores no formato: "Nome do Setor - Responsável" */}
-        {sectors.map((sec) => {
-          const stats = getSectorStats(sec.id);
-          const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
+        {/* Abas com rolagem horizontal contínua */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none scroll-smooth flex-1"
+        >
+          
+          {/* Aba: Todas as Áreas */}
+          <button
+            onClick={() => onSelectFilterMode('ALL_SECTORS')}
+            className={`shrink-0 px-3 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${
+              filterMode === 'ALL_SECTORS'
+                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
+                : 'bg-[#1b233d] hover:bg-[#242f52] text-slate-200 border border-slate-700/60'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span className="font-semibold whitespace-nowrap">Todas as Áreas</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono font-bold">
+              {totalAssetsCount}
+            </span>
+          </button>
 
-          return (
-            <button
-              key={sec.id}
-              onClick={() => {
-                onSelectFilterMode('MY_SECTOR');
-                onSelectSector(sec.id);
-              }}
-              className={`shrink-0 px-3.5 py-2.5 rounded-2xl text-xs font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer border ${
-                isSelected
-                  ? 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white border-indigo-400/50 shadow-lg shadow-indigo-600/30 font-semibold'
-                  : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-700/60 hover:border-slate-600'
-              }`}
-            >
-              {stats.isCompleted ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-              ) : (
-                <Building2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`} />
-              )}
+          {/* Abas dos Setores no formato: "Nome do Setor - Responsável" */}
+          {sectors.map((sec, idx) => {
+            const stats = getSectorStats(sec.id);
+            const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
+            const colorClass = getTabColor(idx, isSelected);
 
-              {/* Rótulo da Aba: Setor - Responsável */}
-              <span className="whitespace-nowrap">
-                <strong>{sec.name}</strong>
-                <span className={isSelected ? 'text-indigo-100 font-normal ml-1' : 'text-slate-400 font-normal ml-1'}>
-                  - {sec.responsavel}
+            return (
+              <button
+                key={sec.id}
+                onClick={() => {
+                  onSelectFilterMode('MY_SECTOR');
+                  onSelectSector(sec.id);
+                }}
+                className={`shrink-0 px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${colorClass}`}
+              >
+                {/* Ícone */}
+                {stats.isCompleted ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                ) : (
+                  getSectorIcon(sec.id)
+                )}
+
+                {/* Texto da Aba: Setor - Responsável */}
+                <span className="whitespace-nowrap tracking-wide">
+                  <strong>{sec.name}</strong>
+                  <span className="opacity-80 font-normal ml-1.5">
+                    - {sec.responsavel}
+                  </span>
                 </span>
-              </span>
 
-              {/* Badge de Itens da Aba */}
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                isSelected 
-                  ? 'bg-white/20 text-white font-bold' 
-                  : stats.isCompleted
-                    ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                    : 'bg-slate-900 text-slate-400'
-              }`}>
-                {stats.conferidos}/{stats.total}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                {/* Contador de itens */}
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  isSelected ? 'bg-white/20 text-white font-black' : 'bg-black/30 text-white/90'
+                }`}>
+                  {stats.total}
+                </span>
+              </button>
+            );
+          })}
 
-      {/* Active Tab Details Footer */}
-      <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 px-1">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-slate-200">
-            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-            Aba Ativa: <strong className="text-white">{filterMode === 'ALL_SECTORS' ? 'Todas as Áreas Consolidadas' : currentSector.name}</strong>
-          </span>
-          {filterMode === 'MY_SECTOR' && (
-            <span className="flex items-center gap-1 text-slate-300">
-              <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-              Carga: <strong className="text-cyan-200">{currentSector.responsavel}</strong>
-            </span>
-          )}
-          {filterMode === 'MY_SECTOR' && currentSector.sala && (
-            <span className="hidden sm:flex items-center gap-1 text-slate-400">
-              <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              {currentSector.sala}
-            </span>
-          )}
+          {/* Botão de Adicionar / Gerenciar Setor (+) estilo Print 2 */}
+          <button
+            onClick={onOpenManageSectors}
+            title="Adicionar ou Configurar Setores"
+            className="shrink-0 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+
         </div>
 
-        <div className="text-[11px] text-slate-400">
-          Mostrando <strong className="text-white">{filterMode === 'ALL_SECTORS' ? totalAssetsCount : assets.filter(a => a.setorId === activeSectorId).length}</strong> itens desta aba
-        </div>
+        {/* Botão de Scroll Direita */}
+        <button
+          onClick={() => scroll('right')}
+          title="Rolar abas para a direita"
+          className="shrink-0 p-1.5 text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer ml-1 z-10"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
       </div>
 
     </div>
