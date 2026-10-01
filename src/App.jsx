@@ -1700,34 +1700,34 @@ export function App() {
 
                   return (
                     <React.Fragment key={asset.id}>
-                      {/* Divisor Visual de Itens Conferidos (ao marcar como conferido, movidos para o fim) */}
+                      {/* Divisor Visual de Itens Conferidos (ao marcar como conferido, movidos para o fim - Altura reduzida em 25%) */}
                       {isFirstConferido && statusFilter !== 'CONFERIDOS' && (
-                        <div className="py-2.5 px-6 my-3 mx-2 flex items-center justify-between border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2.5">
-                            <div className="p-1 rounded bg-emerald-500/20 text-emerald-400">
+                        <div className="py-1.5 px-4 my-2 mx-2 flex items-center justify-between border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="p-0.5 rounded bg-emerald-500/20 text-emerald-400">
                               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                             </div>
-                            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
                               Conferidos ({sortedAssets.filter(a => a.status === 'CONFERIDO' && !a.baixado && a.status !== 'BAIXADO').length})
                             </span>
-                            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                            <span className="text-[10.5px] text-slate-400 font-medium hidden sm:inline">
                               — Carga conferida do setor (no final da lista)
                             </span>
                           </div>
                         </div>
                       )}
 
-                      {/* Divisor Visual de Bens Baixados */}
+                      {/* Divisor Visual de Bens Baixados (Altura reduzida em 25%) */}
                       {isFirstBaixado && statusFilter !== 'BAIXADOS' && (
-                        <div className="py-2.5 px-6 my-3 mx-2 flex items-center justify-between border-y border-dashed border-rose-500/40 bg-gradient-to-r from-rose-950/40 via-rose-900/20 to-rose-950/40 rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2.5">
-                            <div className="p-1 rounded bg-rose-500/20 text-rose-400">
+                        <div className="py-1.5 px-4 my-2 mx-2 flex items-center justify-between border-y border-dashed border-rose-500/40 bg-gradient-to-r from-rose-950/40 via-rose-900/20 to-rose-950/40 rounded-lg shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="p-0.5 rounded bg-rose-500/20 text-rose-400">
                               <Archive className="w-3.5 h-3.5 shrink-0" />
                             </div>
-                            <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
+                            <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider">
                               Bens Baixados ({sortedAssets.filter(a => a.baixado || a.status === 'BAIXADO').length})
                             </span>
-                            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                            <span className="text-[10.5px] text-slate-400 font-medium hidden sm:inline">
                               — Itens desincorporados / baixados do setor (no final da lista)
                             </span>
                           </div>
