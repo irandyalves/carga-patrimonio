@@ -95,11 +95,8 @@ export const AssetTableRowCard = ({
   const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
   const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
 
-  // Truncamento inteligente para descrições longas com hint bonito (ampliado em 40%)
-  const isDescLong = (asset.descricao || '').length > 60;
-  const shortDesc = isDescLong 
-    ? `${asset.descricao.slice(0, 57).trim()}...` 
-    : asset.descricao;
+  // Truncamento inteligente para descrições longas com hint bonito
+  const isDescLong = (asset.descricao || '').length > 35;
 
   const handleCopyTag = (e) => {
     e.stopPropagation();
@@ -342,21 +339,21 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (Flexível para empurrar Localização para a direita) */}
-        <div className="flex-[1.2] min-w-[280px] shrink-0 flex items-center gap-1.5 flex-wrap">
+        {/* Coluna 3: Descrição do Bem (Nunca quebra linha, sempre com reticências ...) */}
+        <div className="flex-[1.2] min-w-[200px] shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
           <h4 
-            className="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
+            className="text-xs sm:text-[12.5px] font-semibold text-slate-100 group-hover:text-white transition-colors truncate whitespace-nowrap"
             title={asset.descricao}
           >
-            {shortDesc}
+            {asset.descricao}
           </h4>
 
           {isDescLong && (
-            <div className="relative group/hint inline-flex items-center">
+            <div className="relative group/hint inline-flex items-center shrink-0">
               <button
                 type="button"
                 onClick={(e) => e.stopPropagation()}
-                className="p-0.5 rounded text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm"
+                className="p-0.5 rounded text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm shrink-0"
                 title="Passe o mouse para ver a descrição completa"
               >
                 <Info className="w-3 h-3" />
