@@ -307,7 +307,7 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
-const DATA_VERSION = 'v7_clean_production_2026';
+const DATA_VERSION = 'v8_official_assets_2026';
 const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
 
 export const wipeAllOnlineAndLocalData = async () => {
@@ -316,8 +316,8 @@ export const wipeAllOnlineAndLocalData = async () => {
     localStorage.removeItem(STORAGE_KEY_ASSETS);
     localStorage.removeItem(STORAGE_KEY_CAUTELAS);
     localStorage.removeItem('carga_patrimonio_pedidos');
-    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
     localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
 
@@ -338,7 +338,7 @@ export const wipeAllOnlineAndLocalData = async () => {
   } catch (err) {
     console.error('Erro na limpeza de dados:', err);
   }
-  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
+  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
 };
 
 export const loadLocalData = () => {
@@ -349,9 +349,11 @@ export const loadLocalData = () => {
   try {
     const storedVersion = localStorage.getItem(STORAGE_KEY_VERSION);
     if (storedVersion !== DATA_VERSION) {
-      // Limpeza completa de versão e disparo assíncrono para online
-      wipeAllOnlineAndLocalData();
-      return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
+      localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
+      localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
+      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+      return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
     }
 
     const storedSectors = localStorage.getItem(STORAGE_KEY_SECTORS);
@@ -362,17 +364,19 @@ export const loadLocalData = () => {
     }
 
     const storedAssets = localStorage.getItem(STORAGE_KEY_ASSETS);
-    if (storedAssets) {
+    if (storedAssets && JSON.parse(storedAssets).length > 0) {
       assets = JSON.parse(storedAssets);
     } else {
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+      assets = INITIAL_ASSETS;
+      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
     }
 
     const storedCautelas = localStorage.getItem(STORAGE_KEY_CAUTELAS);
     if (storedCautelas) {
       cautelas = JSON.parse(storedCautelas);
     } else {
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+      cautelas = INITIAL_CAUTELAS;
+      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
     }
   } catch (e) {
     console.error('Error loading local data:', e);
@@ -384,14 +388,14 @@ export const loadLocalData = () => {
 export const resetToDefaultData = () => {
   try {
     localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
     localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
   } catch (e) {
     console.error(e);
   }
-  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
+  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
 };
 
 export const saveLocalAssets = (assets) => {
