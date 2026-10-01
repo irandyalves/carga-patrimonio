@@ -1268,9 +1268,10 @@ export function App() {
             {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
               <div className="w-full flex-1 pb-8 border-t border-slate-800/80 -ml-1">
-                {sortedAssets.map(asset => (
+                {sortedAssets.map((asset, index) => (
                   <AssetTableRowCard
                     key={asset.id}
+                    index={index}
                     asset={asset}
                     activeSector={activeSector}
                     sectors={sectors}

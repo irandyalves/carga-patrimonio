@@ -46,7 +46,8 @@ export const AssetTableRowCard = ({
   onUpdateLocation,
   onUpdateObservation,
   onOpenSolicitacao,
-  hasPendingPedido = false
+  hasPendingPedido = false,
+  index = 0
 }) => {
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
@@ -54,6 +55,20 @@ export const AssetTableRowCard = ({
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
+
+  // Posicionamento inteligente para nunca ser cortado pelo cabeçalho
+  const [cautelaPlacement, setCautelaPlacement] = useState(() => (index < 4 ? 'bottom' : 'top'));
+  const [isCautelaModalViewOpen, setIsCautelaModalViewOpen] = useState(false);
+  const [actionsPlacement, setActionsPlacement] = useState(() => (index < 3 ? 'bottom' : 'top'));
+
+  const handleCautelaMouseEnter = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.top < 280) {
+      setCautelaPlacement('bottom');
+    } else {
+      setCautelaPlacement('top');
+    }
+  };
 
   // Estados de edição inline de localização com suporte a voz
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -553,14 +568,29 @@ export const AssetTableRowCard = ({
               })()}
             </div>
           ) : isEmCautela ? (
-            <div className="relative group/cautela inline-block">
-              <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer transition-colors">
+            <div 
+              className="relative group/cautela inline-block"
+              onMouseEnter={handleCautelaMouseEnter}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCautelaModalViewOpen(true);
+                }}
+                title="Clique para abrir os detalhes da cautela em um modal"
+                className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer transition-colors"
+              >
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
                 <span className="truncate max-w-[240px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
-              </div>
+              </button>
 
-              {/* Floating Document Popover on Hover */}
-              <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3 shadow-2xl shadow-purple-950/60 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
+              {/* Floating Document Popover on Hover (Posicionamento inteligente: abre para baixo no limite do cabeçalho) */}
+              <div className={`absolute left-0 ${
+                cautelaPlacement === 'bottom' 
+                  ? 'top-full mt-2' 
+                  : 'bottom-full mb-2'
+              } hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3.5 shadow-2xl shadow-purple-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none`}>
                 <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-purple-500/20">
                   <div className="flex items-center gap-1.5">
                     <div className="p-1 rounded bg-purple-500/20 text-purple-400">
@@ -784,6 +814,12 @@ export const AssetTableRowCard = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                if (rect.top < 260) {
+                  setActionsPlacement('bottom');
+                } else {
+                  setActionsPlacement('top');
+                }
                 setIsActionsOpen(!isActionsOpen);
               }}
               title="Mais opções do bem"
@@ -802,7 +838,9 @@ export const AssetTableRowCard = ({
                     setShowDeleteConfirm(false);
                   }} 
                 />
-                <div className="absolute right-0 bottom-full mb-2 w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className={`absolute right-0 ${
+                  actionsPlacement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
+                } w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100`}>
                   {!canManageAsset ? (
                     <>
                       <button
@@ -1034,6 +1072,100 @@ export const AssetTableRowCard = ({
                 type="button"
                 onClick={() => setIsDescModalOpen(false)}
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes da Cautela */}
+      {isCautelaModalViewOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsCautelaModalViewOpen(false);
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <Handshake className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Termo de Cautela / Empréstimo</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-xs text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      Nº {formattedXX}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                      EM ANDAMENTO
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCautelaModalViewOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item Cautelado</span>
+                <p className="text-white font-medium text-sm">
+                  <strong className="font-mono text-indigo-400 mr-1.5">{formattedXX}</strong>
+                  {asset.descricao}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">Responsável / Retirada:</span>
+                  <strong className="text-white text-sm block">{cautelaPessoa}</strong>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Destino:</span>
+                  <strong className="text-amber-300 text-sm block">{cautelaDestino}</strong>
+                </div>
+              </div>
+
+              {cautelaDoc && (
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">Documento / Matrícula:</span>
+                  <span className="font-mono text-slate-200 font-semibold">{cautelaDoc}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">Data de Retirada:</span>
+                  <span className="text-slate-200 font-semibold">{cautelaRetirada}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">Previsão de Devolução:</span>
+                  <strong className="text-amber-400 font-bold">{cautelaDevolucao}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-end gap-2 mt-5 pt-3.5 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsCautelaModalViewOpen(false)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
               </button>
