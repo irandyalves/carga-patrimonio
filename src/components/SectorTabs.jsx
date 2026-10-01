@@ -39,7 +39,7 @@ export const SectorTabs = ({
     }
   };
 
-  // Ícones representativos para as abas dos setores
+  // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
     switch (secId) {
       case 'sec-studio': return <Tv className="w-3.5 h-3.5 shrink-0" />;
@@ -48,6 +48,8 @@ export const SectorTabs = ({
       case 'sec-recepcao': return <UserCheck className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-lab-inovacao': return <Sparkles className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-revista-jmu': return <BookOpen className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-sacadi': return <Users className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-cadmi': return <Users className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-sacadi-cadmi': return <Users className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-ti': return <Server className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-reunioes': return <Users className="w-3.5 h-3.5 shrink-0" />;
@@ -57,12 +59,11 @@ export const SectorTabs = ({
     }
   };
 
-  // Cores inspiradas no print 2 (tons de roxo, índigo, azul marinho e azul vibrante)
+  // Cores de abas
   const getTabColor = (index, isSelected) => {
     if (isSelected) {
       return 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 border-b-2 border-white ring-1 ring-blue-400';
     }
-    // Paleta profissional alternada no estilo do print (azul petróleo, roxo, violeta, índigo)
     const palettes = [
       'bg-[#2d225a] hover:bg-[#392c73] text-indigo-100 border-[#47368f]',
       'bg-[#1e2a5e] hover:bg-[#27377a] text-blue-100 border-[#324599]',
@@ -81,19 +82,13 @@ export const SectorTabs = ({
     return { total, conferidos, isCompleted };
   };
 
-  const currentSector = sectors.find(s => s.id === activeSectorId) || sectors[0] || {
-    name: 'Setor Geral',
-    responsavel: 'Responsável',
-    sala: 'Sala 01'
-  };
-
   const totalAssetsCount = assets.length;
 
   return (
     <div className="w-full space-y-2">
       
-      {/* 1. BARRA SUPERIOR DE ABAS (ESTILO PRINT 2 - ABAS RETANGULARES CONECTADAS) */}
-      <div className="relative flex items-center bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-md">
+      {/* 1. BARRA SUPERIOR DE ABAS (SEM BORDA EXTERNA) */}
+      <div className="relative flex items-center bg-slate-950/80 p-1.5 rounded-2xl shadow-md">
         
         {/* Botão de Scroll Esquerda */}
         <button
@@ -119,14 +114,17 @@ export const SectorTabs = ({
                 : 'bg-[#1b233d] hover:bg-[#242f52] text-slate-200 border border-slate-700/60'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
+            {filterMode === 'ALL_SECTORS' && <Layers className="w-3.5 h-3.5" />}
             <span className="font-semibold whitespace-nowrap">Todas as Áreas</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono font-bold">
               {totalAssetsCount}
             </span>
           </button>
 
-          {/* Abas dos Setores no formato: "Nome do Setor - Responsável" */}
+          {/* Abas dos Setores:
+              - Inativa: Apenas o NOME DIRETO do setor (ex: Studio, Auditório, SACADI)
+              - Ativa: Ícone + Nome do Setor - Responsável (ex: [Icon] Studio - Tadeu)
+          */}
           {sectors.map((sec, idx) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
@@ -141,19 +139,26 @@ export const SectorTabs = ({
                 }}
                 className={`shrink-0 px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${colorClass}`}
               >
-                {/* Ícone */}
-                {stats.isCompleted ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                ) : (
-                  getSectorIcon(sec.id)
+                {/* Quando selecionado: exibe ícone (ou check se 100% conferido) */}
+                {isSelected && (
+                  stats.isCompleted ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                  ) : (
+                    getSectorIcon(sec.id)
+                  )
                 )}
 
-                {/* Texto da Aba: Setor - Responsável */}
+                {/* Texto da Aba:
+                    - Inativo: nome direto do setor
+                    - Ativo: Nome do Setor - Responsável
+                */}
                 <span className="whitespace-nowrap tracking-wide">
-                  <strong>{sec.name}</strong>
-                  <span className="opacity-80 font-normal ml-1.5">
-                    - {sec.responsavel}
-                  </span>
+                  <strong className={isSelected ? 'font-bold' : 'font-medium'}>{sec.name}</strong>
+                  {isSelected && sec.responsavel && (
+                    <span className="opacity-90 font-normal ml-1.5">
+                      - {sec.responsavel}
+                    </span>
+                  )}
                 </span>
 
                 {/* Contador de itens */}

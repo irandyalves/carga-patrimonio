@@ -536,6 +536,21 @@ export function App() {
     showToast(`Bem transferido com sucesso para ${transferDetails.setorNome}!`);
   };
 
+  // Atualizar localização rápida do bem (por digitação, escolha ou microfone)
+  const handleUpdateAssetLocation = (assetId, newLocation) => {
+    const updated = assets.map(item => {
+      if (item.id === assetId) {
+        return {
+          ...item,
+          localizacao: newLocation
+        };
+      }
+      return item;
+    });
+    setAssets(updated);
+    showToast(`Localização atualizada: "${newLocation}"`);
+  };
+
   // Save New or Edited Asset
   const handleSaveAsset = (assetData) => {
     if (assetToEdit) {
@@ -1125,6 +1140,7 @@ export function App() {
                       onPrintSingleLabel={handlePrintSingleLabel}
                       onTransferSector={handleOpenTransferModal}
                       onDeleteAsset={handleDeleteAsset}
+                      onUpdateLocation={handleUpdateAssetLocation}
                     />
                   ))}
                 </div>

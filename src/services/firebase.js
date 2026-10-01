@@ -268,7 +268,7 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
-const DATA_VERSION = 'v2_carga_areas_2026';
+const DATA_VERSION = 'v4_carga_individual_itens_2026';
 const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
 
 export const loadLocalData = () => {
