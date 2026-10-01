@@ -71,6 +71,11 @@ export const SectorSidebar = ({
   };
 
   const totalAssetsCount = assets.length;
+  const activeSector = sectors.find(s => s.id === activeSectorId) || sectors[0];
+  const activeSectorStats = activeSector ? getSectorStats(activeSector.id) : null;
+  const sectorPct = activeSectorStats && activeSectorStats.total > 0
+    ? Math.round((activeSectorStats.conferidos / (activeSectorStats.total - activeSectorStats.baixados || 1)) * 100)
+    : 0;
 
   return (
     <>
@@ -336,20 +341,45 @@ export const SectorSidebar = ({
         </div>
 
         {/* Rodapé da Sidebar */}
-        <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 shrink-0 bg-slate-950/40">
-          <div className="flex items-center justify-between mb-1">
-            <span>Conferência Global</span>
-            <strong className="text-slate-200">
-              {assets.filter(a => a.status === 'CONFERIDO').length}/{totalAssetsCount}
-            </strong>
-          </div>
-          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-            <div 
-              className="bg-emerald-500 h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${totalAssetsCount > 0 ? (assets.filter(a => a.status === 'CONFERIDO').length / totalAssetsCount) * 100 : 0}%`
-              }}
-            />
+        <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 shrink-0 bg-slate-950/40 space-y-2.5">
+          {/* Barra de Progresso do Setor Ativo (acima da conferência geral) */}
+          {activeSector && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="truncate pr-1 text-slate-300 font-medium">
+                  {filterMode === 'ALL_SECTORS' ? 'Setor Selecionado' : activeSector.name}
+                </span>
+                <span className="shrink-0 font-mono text-[10px] font-bold text-blue-400">
+                  <strong className="text-white">{activeSectorStats?.conferidos || 0}</strong>/{activeSectorStats?.total || 0} ({sectorPct}%)
+                </span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-blue-500/30"
+                  style={{
+                    width: `${Math.min(100, sectorPct)}%`
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Barra de Conferência Geral */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span>Conferência Geral</span>
+              <span className="shrink-0 font-mono text-[10px] font-bold text-emerald-400">
+                <strong className="text-white">{assets.filter(a => a.status === 'CONFERIDO').length}</strong>/{totalAssetsCount} ({totalAssetsCount > 0 ? Math.round((assets.filter(a => a.status === 'CONFERIDO').length / totalAssetsCount) * 100) : 0}%)
+              </span>
+            </div>
+            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-emerald-500 h-full rounded-full transition-all duration-300 shadow-sm shadow-emerald-500/30"
+                style={{
+                  width: `${totalAssetsCount > 0 ? (assets.filter(a => a.status === 'CONFERIDO').length / totalAssetsCount) * 100 : 0}%`
+                }}
+              />
+            </div>
           </div>
         </div>
 
