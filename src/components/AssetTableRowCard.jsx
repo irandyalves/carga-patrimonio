@@ -1507,40 +1507,35 @@ export const AssetTableRowCard = ({
           }}
         >
           <div 
-            className="bg-slate-900/98 border border-slate-700/80 w-full max-w-sm rounded-2xl p-4 shadow-2xl shadow-black/80 relative animate-in zoom-in-95 duration-100 text-left"
+            className="bg-slate-900/98 border border-slate-700/80 w-full max-w-sm rounded-2xl p-2.5 sm:p-3 shadow-2xl shadow-black/80 relative animate-in zoom-in-95 duration-100 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Topo Compacto */}
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                  Nº {formattedXX}
-                </span>
-                <span className="text-[11px] font-medium text-slate-400">
-                  Detalhes do Item
-                </span>
-              </div>
+            {/* Topo Compacto com Patrimônio no Centro */}
+            <div className="relative flex items-center justify-center pb-2 border-b border-slate-800/80 mb-2">
+              <span className="font-mono text-xs text-emerald-400 font-bold bg-emerald-500/10 px-3 py-0.5 rounded-md border border-emerald-500/30">
+                № {formattedXX}
+              </span>
               <button
                 type="button"
                 onClick={() => setIsDescModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
+                className="absolute right-0 p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Texto Descrição */}
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 mb-3 shadow-inner">
+            {/* Texto Descrição Ocupando Máximo Espaço */}
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 mb-2 shadow-inner w-full">
               <p className="text-slate-100 text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap select-text font-medium break-words">
                 <HighlightText text={asset.descricao} query={searchTerm} />
               </p>
             </div>
 
-            {/* Micro metadados (Marca / Modelo / Local) */}
+            {/* Micro metadados com Mesma Largura da Descrição */}
             {(asset.marca || asset.modelo || asset.localizacao) && (
-              <div className="grid grid-cols-2 gap-1.5 text-[10.5px] mb-3">
+              <div className="flex flex-col gap-1.5 text-[10.5px] mb-2 w-full">
                 {(asset.marca || asset.modelo) && (
-                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
+                  <div className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
                     <span className="text-slate-400 block text-[9px]">Marca / Modelo:</span>
                     <span className="text-slate-200 font-semibold truncate block">
                       {[asset.marca, asset.modelo].filter(Boolean).join(' - ')}
@@ -1548,7 +1543,7 @@ export const AssetTableRowCard = ({
                   </div>
                 )}
                 {asset.localizacao && (
-                  <div className="px-2 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
+                  <div className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
                     <span className="text-slate-400 block text-[9px]">Local:</span>
                     <span className="text-slate-200 font-semibold truncate block">
                       {asset.localizacao}
