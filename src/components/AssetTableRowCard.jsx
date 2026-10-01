@@ -485,9 +485,11 @@ export const AssetTableRowCard = ({
               <span className="font-semibold text-slate-200 truncate block text-xs" title={asset.responsavel}>
                 {asset.responsavel || 'Não definido'}
               </span>
-              <span className="text-[10px] text-slate-400 block truncate">
-                {asset.setorNome}
-              </span>
+              {isGeneralView && asset.setorNome && (
+                <span className="text-[10px] text-slate-400 block truncate">
+                  {asset.setorNome}
+                </span>
+              )}
             </div>
           </div>
         </div>
