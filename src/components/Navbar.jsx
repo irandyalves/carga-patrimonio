@@ -291,8 +291,8 @@ export const Navbar = ({
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Quick Actions (Visível apenas em telas maiores / oculto na versão mobile) */}
+          <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
             
             {/* Pedidos & Solicitações de Carga */}
             <button
