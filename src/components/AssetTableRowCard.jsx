@@ -302,12 +302,12 @@ export const AssetTableRowCard = ({
       )}
 
       {/* Linha Principal (Linha debaixo da slidebar, colunas alinhadas com cabeçalho) */}
-      <div className="pl-10 pr-9 py-1.5 flex items-center gap-2 text-[11px] w-full">
+      <div className="pl-10 pr-9 py-0.5 sm:py-1 flex items-center gap-2 text-[11px] w-full">
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1">
           <div className="flex flex-col">
-            <span className={`font-mono text-xl sm:text-[23px] font-black tracking-tight select-all leading-none ${
+            <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
               isConferido ? 'text-emerald-400' : 'text-indigo-400'
             }`}>
               {formattedXX}
@@ -334,11 +334,11 @@ export const AssetTableRowCard = ({
         {/* Coluna 2: Quantidade */}
         <div className="w-12 shrink-0 flex items-center justify-center">
           <div className="flex items-baseline gap-0.5">
-            <span className="text-[10px] text-slate-400 lg:hidden">Qtde:</span>
-            <span className="font-black text-lg sm:text-[20px] text-cyan-300">
+            <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
+            <span className="font-black text-sm sm:text-[15px] text-cyan-300 leading-none">
               {asset.quantidade || 1}
             </span>
-            <span className="text-[9px] font-semibold text-slate-400">un</span>
+            <span className="text-[8.5px] font-medium text-slate-400">un</span>
           </div>
         </div>
 
@@ -694,11 +694,11 @@ export const AssetTableRowCard = ({
         {/* Coluna 6: Responsável */}
         <div className="w-28 shrink-0 flex items-center justify-center text-center">
           <div className="truncate w-full">
-            <span className="font-semibold text-slate-200 truncate block text-[11px]" title={asset.responsavel}>
+            <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
               {asset.responsavel || '---'}
             </span>
             {isGeneralView && asset.setorNome && (
-              <span className="text-[9px] text-slate-400 block truncate">
+              <span className="text-[8.5px] text-slate-400 block truncate">
                 {asset.setorNome}
               </span>
             )}
@@ -795,7 +795,7 @@ export const AssetTableRowCard = ({
                 setIsActionsOpen(!isActionsOpen);
               }}
               title="Mais opções do bem"
-              className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
