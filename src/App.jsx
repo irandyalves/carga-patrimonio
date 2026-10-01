@@ -152,6 +152,7 @@ export function App() {
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
 
   // Pedidos e Solicitações de Carga
   const [pedidosCarga, setPedidosCarga] = useState(() => {
