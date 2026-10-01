@@ -23,13 +23,16 @@ import {
   Mic,
   X,
   Send,
-  Info
+  Info,
+  Sparkles,
+  Building2
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
 export const AssetTableRowCard = ({
   asset,
   activeSector,
+  sectors = [],
   currentUserName,
   userRole = 'admin',
   userSectorId = null,
@@ -42,6 +45,7 @@ export const AssetTableRowCard = ({
   onTransferSector,
   onDeleteAsset,
   onUpdateLocation,
+  onUpdateObservation,
   onOpenSolicitacao,
   hasPendingPedido = false
 }) => {
@@ -58,6 +62,15 @@ export const AssetTableRowCard = ({
   useEffect(() => {
     setLocationValue(asset.localizacao || '');
   }, [asset.localizacao]);
+
+  // Estados de edição inline de observação com inteligência de setor e voz
+  const [isEditingObs, setIsEditingObs] = useState(false);
+  const [obsValue, setObsValue] = useState(asset.observacao || '');
+  const [isListeningObs, setIsListeningObs] = useState(false);
+
+  useEffect(() => {
+    setObsValue(asset.observacao || '');
+  }, [asset.observacao]);
 
   // Permissões: Administrador pode tudo. Operador só altera bens do seu próprio departamento.
   const isAdmin = userRole === 'admin';
@@ -169,6 +182,84 @@ export const AssetTableRowCard = ({
       onUpdateLocation(asset.id, locationValue.trim());
     }
     setIsEditingLocation(false);
+  };
+
+  // Detecção Inteligente de Setor na Observação (ex: "está no studio" -> reconhece o setor Studio)
+  const detectSectorInText = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const clean = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (!clean) return null;
+
+    for (const sec of sectors) {
+      const secClean = (sec.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      if (!secClean) continue;
+
+      if (clean.includes(secClean)) {
+        return sec;
+      }
+
+      const words = secClean.split(/\s+/).filter(w => w.length > 2 && !['de', 'da', 'do', 'das', 'dos', 'para', 'com', 'esta', 'no', 'na', 'sala'].includes(w));
+      for (const w of words) {
+        const regex = new RegExp(`\\b${w}\\b`, 'i');
+        if (regex.test(clean)) {
+          return sec;
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleSaveObservation = (e) => {
+    e?.stopPropagation();
+    const trimmed = obsValue.trim();
+    if (onUpdateObservation) {
+      onUpdateObservation(asset.id, trimmed);
+    }
+    setIsEditingObs(false);
+  };
+
+  const startObservationVoice = (e) => {
+    e?.stopPropagation();
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Reconhecimento de voz não suportado pelo seu navegador.');
+      return;
+    }
+    setIsEditingObs(true);
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      setIsListeningObs(true);
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          const formatted = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+          setObsValue(formatted);
+          if (onUpdateObservation) {
+            onUpdateObservation(asset.id, formatted);
+            setIsEditingObs(false);
+          }
+        }
+        setIsListeningObs(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListeningObs(false);
+      };
+
+      recognition.onend = () => {
+        setIsListeningObs(false);
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error(err);
+      setIsListeningObs(false);
+    }
   };
 
   return (
@@ -402,9 +493,86 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 5: Observação (Afastada de localização, preenche espaço até as colunas da direita) */}
+        {/* Coluna 5: Observação (Afastada de localização, com edição inline e detecção inteligente de setor) */}
         <div className="flex-1 min-w-[220px] pl-6 shrink-0 flex items-center justify-start text-left">
-          {isEmCautela ? (
+          {isEditingObs ? (
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              className="inline-flex flex-col gap-1 bg-slate-900 border border-blue-500/80 rounded-lg p-1 shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100"
+            >
+              <div className="inline-flex items-center gap-1">
+                <input
+                  type="text"
+                  list={`obs-presets-${asset.id}`}
+                  value={obsValue}
+                  onChange={(e) => setObsValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveObservation(e);
+                    if (e.key === 'Escape') setIsEditingObs(false);
+                  }}
+                  placeholder="Ex: Está no Studio..."
+                  className="bg-slate-800 text-white text-[11px] px-2 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[170px]"
+                  autoFocus
+                />
+
+                <datalist id={`obs-presets-${asset.id}`}>
+                  {sectors.map(s => (
+                    <option key={s.id} value={`Está no ${s.name}`} />
+                  ))}
+                  <option value="Em manutenção técnica" />
+                  <option value="Emprestado provisoriamente" />
+                  <option value="Aguardando recolhimento" />
+                  <option value="Sem etiqueta patrimonial" />
+                </datalist>
+
+                <button
+                  type="button"
+                  onClick={startObservationVoice}
+                  title="Ditar observação por voz"
+                  className={`p-1 rounded border transition-all cursor-pointer ${
+                    isListeningObs 
+                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveObservation}
+                  title="Salvar Observação"
+                  className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
+                >
+                  <Check className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditingObs(false)}
+                  title="Cancelar"
+                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Detecção inteligente de setor na observação */}
+              {(() => {
+                const detected = detectSectorInText(obsValue);
+                if (!detected) return null;
+                return (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-[9.5px] text-cyan-300">
+                    <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
+                    <span>Setor identificado: <strong className="text-white font-semibold">{detected.name}</strong></span>
+                    {detected.id !== asset.setorId && (
+                      <span className="text-[9px] text-amber-300 font-bold ml-auto">(Outro setor)</span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          ) : isEmCautela ? (
             <div className="relative group/cautela inline-block">
               <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-1.5 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
@@ -463,11 +631,75 @@ export const AssetTableRowCard = ({
               </div>
             </div>
           ) : asset.observacao ? (
-            <span className="text-slate-400 truncate text-[10px] block" title={asset.observacao}>
-              {asset.observacao}
-            </span>
+            (() => {
+              const detected = detectSectorInText(asset.observacao);
+              return (
+                <div className="inline-flex items-center gap-1 group/obs">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingObs(true);
+                    }}
+                    title="Clique para editar a observação"
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer ${
+                      detected 
+                        ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-500/30' 
+                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {detected && (
+                      <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
+                    )}
+                    <span className="truncate max-w-[210px]" title={asset.observacao}>
+                      {asset.observacao}
+                    </span>
+                    <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={startObservationVoice}
+                    title="Ditar observação por voz"
+                    className={`p-1 rounded transition-all cursor-pointer ${
+                      isListeningObs 
+                        ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
+                    }`}
+                  >
+                    <Mic className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })()
           ) : (
-            <span className="text-slate-600 text-[10px] block">---</span>
+            <div className="inline-flex items-center gap-1 group/obs">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditingObs(true);
+                }}
+                title="Clique para adicionar observação"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-800/80 text-slate-500 hover:text-slate-300 transition-all text-[11px] cursor-pointer"
+              >
+                <span>---</span>
+                <Edit3 className="w-2.5 h-2.5 opacity-40 group-hover/obs:opacity-100 text-slate-400 ml-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={startObservationVoice}
+                title="Ditar observação por voz"
+                className={`p-1 rounded opacity-0 group-hover/obs:opacity-100 hover:opacity-100 transition-all cursor-pointer ${
+                  isListeningObs 
+                    ? 'opacity-100 bg-rose-500/20 text-rose-400 animate-pulse' 
+                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+              </button>
+            </div>
           )}
         </div>
 

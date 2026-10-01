@@ -645,6 +645,21 @@ export function App() {
     showToast(`Localização atualizada: "${newLocation}"`);
   };
 
+  // Atualizar observação rápida do bem (inline, por digitação ou voz inteligente com detecção de setor)
+  const handleUpdateAssetObservation = (assetId, newObservation) => {
+    const updated = assets.map(item => {
+      if (item.id === assetId) {
+        return {
+          ...item,
+          observacao: newObservation
+        };
+      }
+      return item;
+    });
+    setAssets(updated);
+    showToast(newObservation ? `Observação salva: "${newObservation}"` : 'Observação limpa');
+  };
+
   // Criar Pedido / Solicitação de Carga de Bem de Outro Setor
   const handleCreatePedido = (pedidoData) => {
     const newPedido = {
@@ -1212,6 +1227,7 @@ export function App() {
                     key={asset.id}
                     asset={asset}
                     activeSector={activeSector}
+                    sectors={sectors}
                     currentUserName={currentUser?.displayName || currentUser?.email}
                     isGeneralView={filterMode === 'ALL_SECTORS'}
                     onToggleConference={handleToggleConference}
@@ -1225,6 +1241,7 @@ export function App() {
                     onTransferSector={handleOpenTransferModal}
                     onDeleteAsset={handleDeleteAsset}
                     onUpdateLocation={handleUpdateAssetLocation}
+                    onUpdateObservation={handleUpdateAssetObservation}
                     userRole={effectiveUserRole}
                     userSectorId={effectiveUserSectorId}
                     onOpenSolicitacao={(a) => {
