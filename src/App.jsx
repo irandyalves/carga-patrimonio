@@ -985,20 +985,19 @@ export function App() {
         <main className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col">
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
-            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores (Congelado no topo, sem bordas arredondadas) */}
-            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md w-full">
-              <div className="px-2 sm:px-4">
-                <div className="px-3 sm:px-5 py-3.5 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
+            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] w-full">
+              <div className="px-4">
+                <div className="px-5 py-3.5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
-                  {/* Coluna 1: Patrimônio (Alinhado à esquerda com o número do patrimônio) */}
+                  {/* Coluna 1: Patrimônio (Alinhado exatamente na mesma largura e posição da esquerda) */}
                   <button
                     onClick={() => handleSort('numeroPatrimonio')}
                     title="Clique para ordenar por patrimônio"
-                    className={`w-32 shrink-0 flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
+                    className={`w-32 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
                       sortField === 'numeroPatrimonio' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
-                    <Hash className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                     <span>Patrimônio</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'numeroPatrimonio' ? (
@@ -1162,7 +1161,7 @@ export function App() {
 
             {/* Asset Cards or Empty State */}
             {filteredAssets.length > 0 ? (
-              <div className="px-2 sm:px-4 py-3 space-y-2 flex-1 pb-8">
+              <div className="px-4 py-3 space-y-2 flex-1 pb-8">
                 {sortedAssets.map(asset => (
                   <AssetTableRowCard
                     key={asset.id}

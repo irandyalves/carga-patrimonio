@@ -212,7 +212,7 @@ export const AssetTableRowCard = ({
       )}
 
       {/* Linha Principal (Colunas alinhadas ocupando toda a largura da tela) */}
-      <div className="p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-xs w-full">
+      <div className="px-5 py-3.5 flex items-center gap-3 text-xs w-full">
         
         {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS, SEM BADGE PENDENTE) */}
         <div className="w-32 shrink-0 flex items-center gap-1.5">
