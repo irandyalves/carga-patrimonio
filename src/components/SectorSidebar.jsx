@@ -145,10 +145,10 @@ export const SectorSidebar = ({
                 onSelectFilterMode('ALL_SECTORS');
                 onSelectStatusFilter('ALL');
               }}
-              className={`w-full px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+              className={`w-full px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
                 filterMode === 'ALL_SECTORS'
-                  ? 'bg-blue-600/40 text-white font-bold border border-blue-500/50 shadow-md shadow-blue-600/20 backdrop-blur-sm'
-                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                  ? 'bg-blue-600/30 text-white font-bold border-l-4 border-l-blue-500 rounded-r-xl rounded-l-none backdrop-blur-sm shadow-sm'
+                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white rounded-xl border-l-4 border-l-transparent'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
@@ -174,10 +174,10 @@ export const SectorSidebar = ({
                     <button
                       key={tab.id}
                       onClick={() => onSelectStatusFilter(tab.id)}
-                      className={`w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-colors cursor-pointer text-left ${
+                      className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left ${
                         isSubActive
-                          ? 'bg-indigo-600 text-white font-bold shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                          ? 'bg-indigo-600/30 text-white font-bold border-l-[3px] border-l-indigo-400 rounded-r-lg rounded-l-none shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 rounded-lg border-l-[3px] border-l-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-1.5 truncate">
@@ -185,7 +185,7 @@ export const SectorSidebar = ({
                         <span className="truncate">{tab.label}</span>
                       </div>
                       <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                        isSubActive ? 'bg-indigo-800 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                        isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
                       }`}>
                         {tab.count}
                       </span>
@@ -231,10 +231,10 @@ export const SectorSidebar = ({
                     onSelectSector(sec.id);
                     onSelectStatusFilter('ALL');
                   }}
-                  className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                  className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
                     isSelected
-                      ? 'bg-blue-600/40 text-white font-bold border border-blue-500/50 shadow-md shadow-blue-600/20 backdrop-blur-sm'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                      ? 'bg-blue-600/30 text-white font-bold border-l-4 border-l-blue-500 rounded-r-xl rounded-l-none backdrop-blur-sm shadow-sm'
+                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl border-l-4 border-l-transparent'
                   }`}
                 >
                   {/* Nome do Setor */}
@@ -298,10 +298,10 @@ export const SectorSidebar = ({
                         <button
                           key={tab.id}
                           onClick={() => onSelectStatusFilter(tab.id)}
-                          className={`w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-colors cursor-pointer text-left ${
+                          className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left ${
                             isSubActive
-                              ? 'bg-indigo-600 text-white font-bold shadow-sm'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                              ? 'bg-indigo-600/30 text-white font-bold border-l-[3px] border-l-indigo-400 rounded-r-lg rounded-l-none shadow-sm'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 rounded-lg border-l-[3px] border-l-transparent'
                           }`}
                         >
                           <div className="flex items-center gap-1.5 truncate">
@@ -309,7 +309,7 @@ export const SectorSidebar = ({
                             <span className="truncate">{tab.label}</span>
                           </div>
                           <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                            isSubActive ? 'bg-indigo-800 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                            isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
                           }`}>
                             {tab.count}
                           </span>
