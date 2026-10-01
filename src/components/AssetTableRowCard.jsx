@@ -504,7 +504,7 @@ export const AssetTableRowCard = ({
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
-          {/* Checkbox / Botão de Conferência (somente em TODAS AS ÁREAS) ou Ícone de Baixa */}
+          {/* Ícone de Baixa ou Indicador Visual de Conferido em TODAS AS ÁREAS */}
           {isBaixado ? (
             <button
               type="button"
@@ -517,19 +517,13 @@ export const AssetTableRowCard = ({
             >
               <Archive className="w-3.5 h-3.5" />
             </button>
-          ) : isGeneralView ? (
-            <button
-              type="button"
-              onClick={handleConferenceClick}
-              title={isConferido ? "Item Conferido (Clique para desmarcar)" : "Clique para conferir o item"}
-              className={`w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                isConferido
-                  ? 'bg-emerald-500 text-slate-950 border border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] hover:scale-110 active:scale-95'
-                  : 'border border-slate-600 hover:border-emerald-400 text-transparent hover:text-emerald-400 hover:bg-emerald-500/10 hover:scale-110 active:scale-95'
-              }`}
+          ) : (isGeneralView && isConferido) ? (
+            <div
+              title="Item Conferido"
+              className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.35)]"
             >
-              <Check className={`w-3 h-3 stroke-[3] ${isConferido ? 'text-slate-950' : ''}`} />
-            </button>
+              <Check className="w-3 h-3 stroke-[3]" />
+            </div>
           ) : null}
 
           <div className="flex flex-col">
