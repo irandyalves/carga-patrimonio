@@ -163,7 +163,7 @@ export const SectorTabs = ({
 
                 {/* Contador de itens */}
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  isSelected ? 'bg-white/20 text-white font-black' : 'bg-black/30 text-white/90'
+                  isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black' : 'bg-black/30 text-white/90'
                 }`}>
                   {stats.total}
                 </span>

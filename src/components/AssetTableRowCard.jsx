@@ -184,7 +184,7 @@ export const AssetTableRowCard = ({
       
       {/* Aviso se for item fora da seção oficial */}
       {isOutOfPlace && (
-        <div className="bg-amber-500/15 border-b border-amber-500/30 px-3 py-1.5 text-xs text-amber-300 flex items-center justify-between gap-2">
+        <div className="bg-amber-500/15 border-b border-amber-500/30 pl-10 pr-9 py-1.5 text-xs text-amber-300 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 font-medium truncate">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span className="truncate text-[11px]">
@@ -211,14 +211,16 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Linha Principal (Altura reduzida em mais 20%, colunas compactadas) */}
-      <div className="px-5 py-1.5 flex items-center gap-2 text-[11px] w-full">
+      {/* Linha Principal (Linha debaixo da slidebar, colunas alinhadas com cabeçalho) */}
+      <div className="pl-10 pr-9 py-1.5 flex items-center gap-2 text-[11px] w-full">
         
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1">
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
-              <span className="font-mono text-xl sm:text-[23px] font-black tracking-tight text-indigo-400 select-all leading-none">
+              <span className={`font-mono text-xl sm:text-[23px] font-black tracking-tight select-all leading-none ${
+                isConferido ? 'text-emerald-400' : 'text-indigo-400'
+              }`}>
                 {formattedXX}
               </span>
               <button

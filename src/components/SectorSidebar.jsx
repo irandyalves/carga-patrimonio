@@ -155,7 +155,11 @@ export const SectorSidebar = ({
                 <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
                 <span className="font-semibold truncate">Todas as Áreas</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/30 font-mono font-bold shrink-0">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
+                filterMode === 'ALL_SECTORS'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-black/30 text-slate-300'
+              }`}>
                 {totalAssetsCount}
               </span>
             </button>
@@ -186,7 +190,7 @@ export const SectorSidebar = ({
                           <span className="truncate">{tab.label}</span>
                         </div>
                         <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                          isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                          isSubActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800/80 text-slate-400'
                         }`}>
                           {tab.count}
                         </span>
@@ -275,7 +279,7 @@ export const SectorSidebar = ({
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     )}
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                      isSelected ? 'bg-white/20 text-white font-bold' : 'bg-slate-800 text-slate-300'
+                      isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800 text-slate-300'
                     }`}>
                       {stats.total}
                     </span>
@@ -308,7 +312,7 @@ export const SectorSidebar = ({
                               <span className="truncate">{tab.label}</span>
                             </div>
                             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                              isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                              isSubActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800/80 text-slate-400'
                             }`}>
                               {tab.count}
                             </span>

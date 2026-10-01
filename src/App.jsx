@@ -1204,9 +1204,9 @@ export function App() {
               </div>
             )}
 
-            {/* Asset Cards or Empty State (Sem espaço entre cards, separados por linha) */}
+            {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
-              <div className="px-4 flex-1 pb-8 border-t border-slate-800/80">
+              <div className="w-full flex-1 pb-8 border-t border-slate-800/80 -ml-1">
                 {sortedAssets.map(asset => (
                   <AssetTableRowCard
                     key={asset.id}
