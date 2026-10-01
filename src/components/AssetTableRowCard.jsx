@@ -241,70 +241,6 @@ export const AssetTableRowCard = ({
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                   <CheckCircle2 className="w-3 h-3" /> Conferido
                 </span>
-              ) : isEmCautela ? (
-                <div className="relative group/cautela inline-block">
-                  <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-2 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
-                    <Handshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
-                  </div>
-
-                  {/* Floating Document Popover on Hover */}
-                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3.5 shadow-2xl shadow-purple-950/60 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-purple-500/20">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 rounded-lg bg-purple-500/20 text-purple-400">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-white text-xs">Doc. de Cautela / Empréstimo</div>
-                          <div className="text-[10px] text-purple-300 font-mono">#{asset.cautelaAtual?.id || 'CAUTELA'}</div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                        EM ANDAMENTO
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5 text-[11px]">
-                      <div>
-                        <span className="text-slate-400">Item: </span>
-                        <strong className="text-white font-mono">{formattedXX}</strong> - {asset.descricao}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Cautelado por:</span>
-                          <strong className="text-purple-300">{cautelaPessoa}</strong>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Setor de Destino:</span>
-                          <strong className="text-amber-300">{cautelaDestino}</strong>
-                        </div>
-                      </div>
-                      {cautelaDoc && (
-                        <div>
-                          <span className="text-slate-400 text-[10px]">Doc / Matrícula: </span>
-                          <span className="font-mono text-slate-300">{cautelaDoc}</span>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Data Retirada:</span>
-                          <span className="text-slate-300">{cautelaRetirada}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Previsão Devolução:</span>
-                          <span className="text-amber-400 font-semibold">{cautelaDevolucao}</span>
-                        </div>
-                      </div>
-                      {asset.cautelaAtual?.finalidade && (
-                        <div className="pt-1 border-t border-slate-800">
-                          <span className="text-slate-400 block text-[10px]">Finalidade:</span>
-                          <span className="text-slate-300 italic">"{asset.cautelaAtual.finalidade}"</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
               ) : isBaixado ? (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
                   <Archive className="w-3 h-3" /> Baixado
@@ -356,6 +292,73 @@ export const AssetTableRowCard = ({
                   <p className="text-slate-200 leading-relaxed font-medium text-xs break-words">
                     {asset.descricao}
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tag / Badge "Está com: ASCOM (Jean)" movida para a direita da descrição */}
+            {isEmCautela && (
+              <div className="relative group/cautela inline-block ml-1">
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-2 py-0.5 rounded-lg border border-amber-500/30 cursor-pointer transition-all shadow-sm">
+                  <Handshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+                </div>
+
+                {/* Floating Document Popover on Hover */}
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3.5 shadow-2xl shadow-purple-950/60 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-purple-500/20">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-lg bg-purple-500/20 text-purple-400">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white text-xs">Doc. de Cautela / Empréstimo</div>
+                        <div className="text-[10px] text-purple-300 font-mono">#{asset.cautelaAtual?.id || 'CAUTELA'}</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                      EM ANDAMENTO
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-[11px]">
+                    <div>
+                      <span className="text-slate-400">Item: </span>
+                      <strong className="text-white font-mono">{formattedXX}</strong> - {asset.descricao}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Cautelado por:</span>
+                        <strong className="text-purple-300">{cautelaPessoa}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Setor de Destino:</span>
+                        <strong className="text-amber-300">{cautelaDestino}</strong>
+                      </div>
+                    </div>
+                    {cautelaDoc && (
+                      <div>
+                        <span className="text-slate-400 text-[10px]">Doc / Matrícula: </span>
+                        <span className="font-mono text-slate-300">{cautelaDoc}</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Data Retirada:</span>
+                        <span className="text-slate-300">{cautelaRetirada}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Previsão Devolução:</span>
+                        <span className="text-amber-400 font-semibold">{cautelaDevolucao}</span>
+                      </div>
+                    </div>
+                    {asset.cautelaAtual?.finalidade && (
+                      <div className="pt-1 border-t border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">Finalidade:</span>
+                        <span className="text-slate-300 italic">"{asset.cautelaAtual.finalidade}"</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
