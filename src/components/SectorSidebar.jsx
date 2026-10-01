@@ -92,7 +92,7 @@ export const SectorSidebar = ({
       )}
 
       {/* Slide Bar Lateral Esquerdo */}
-      <aside className={`shrink-0 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 transition-all duration-300 ease-in-out z-20 flex flex-col ${
+      <aside className={`shrink-0 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 transition-all duration-300 ease-in-out z-20 flex flex-col h-full select-none ${
         isOpen ? 'w-64 sm:w-72' : 'w-0 -translate-x-full overflow-hidden border-none'
       }`}>
         
@@ -136,7 +136,7 @@ export const SectorSidebar = ({
         </div>
 
         {/* Lista de Abas com Rolagem Vertical */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
           
           {/* Aba: Todas as Áreas */}
           <div className="space-y-0.5">
@@ -340,14 +340,14 @@ export const SectorSidebar = ({
 
         </div>
 
-        {/* Rodapé da Sidebar */}
-        <div className="p-3 border-t border-slate-800 text-[11px] text-slate-400 shrink-0 bg-slate-950/40 space-y-2.5">
+        {/* Rodapé da Sidebar - Fixado no Rodapé Esquerdo */}
+        <div className="shrink-0 sticky bottom-0 z-20 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 p-3 text-[11px] text-slate-400 space-y-2.5 shadow-2xl">
           {/* Barra de Progresso do Setor Ativo (acima da conferência geral) */}
           {activeSector && (
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="truncate pr-1 text-slate-300 font-medium">
-                  {filterMode === 'ALL_SECTORS' ? 'Setor Selecionado' : activeSector.name}
+                  {filterMode === 'ALL_SECTORS' ? `Setor: ${activeSector.name}` : activeSector.name}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] font-bold text-blue-400">
                   <strong className="text-white">{activeSectorStats?.conferidos || 0}</strong>/{activeSectorStats?.total || 0} ({sectorPct}%)
@@ -367,7 +367,7 @@ export const SectorSidebar = ({
           {/* Barra de Conferência Geral */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span>Conferência Geral</span>
+              <span className="text-slate-300 font-medium">Conferência Geral</span>
               <span className="shrink-0 font-mono text-[10px] font-bold text-emerald-400">
                 <strong className="text-white">{assets.filter(a => a.status === 'CONFERIDO').length}</strong>/{totalAssetsCount} ({totalAssetsCount > 0 ? Math.round((assets.filter(a => a.status === 'CONFERIDO').length / totalAssetsCount) * 100) : 0}%)
               </span>

@@ -915,7 +915,7 @@ export function App() {
 
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="h-screen max-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
       
       {/* Toast Alert */}
       {toastMessage && (
@@ -961,7 +961,7 @@ export function App() {
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}
-      <div className="flex flex-1 w-full relative overflow-hidden">
+      <div className="flex flex-1 min-h-0 w-full relative overflow-hidden">
         
         {/* Slide Bar Lateral Esquerdo com as Abas dos Setores */}
         <SectorSidebar
@@ -982,7 +982,7 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main className="flex-1 min-w-0 w-full px-2 sm:px-4 py-3 space-y-3 overflow-y-auto">
+        <main className="flex-1 min-w-0 h-full w-full px-2 sm:px-4 py-3 space-y-3 overflow-y-auto">
 
           {/* Barra Informativa Compacta (quando há busca ou filtro ativo) */}
           {(searchTerm || statusFilter !== 'ALL') && (
