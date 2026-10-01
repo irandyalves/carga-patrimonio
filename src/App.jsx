@@ -1005,15 +1005,13 @@ export function App() {
         {/* Área Principal de Conteúdo */}
         <main 
           ref={mainScrollRef}
-          className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col z-10 transition-all duration-300 ${
-            isSidebarOpen ? '-ml-2 sm:-ml-2.5' : 'ml-0'
-          }`}
+          className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col"
         >
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
-            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens (Aumentada em 40%) */}
+            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
             <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
-              <div className="pl-0 pr-4 w-full">
+              <div className="px-4 w-full">
                 <div className="px-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Coluna 1: Patrimônio */}
@@ -1052,11 +1050,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem */}
+                  {/* Coluna 3: Descrição do Bem (Largura definida para puxar a Localização para a esquerda) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`flex-1 min-w-[260px] flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
+                    className={`w-[280px] shrink-0 flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1071,11 +1069,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 4: Localização */}
+                  {/* Coluna 4: Localização (Movida para a esquerda) */}
                   <button
                     onClick={() => handleSort('localizacao')}
                     title="Clique para ordenar por localização"
-                    className={`w-40 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                    className={`w-48 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
                       sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1090,7 +1088,7 @@ export function App() {
                   </button>
 
                   {/* Coluna 5: Observação */}
-                  <div className="w-44 shrink-0 flex items-center justify-start text-left">
+                  <div className="w-52 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 
@@ -1177,7 +1175,7 @@ export function App() {
 
             {/* Barra Informativa Compacta (quando há busca ou filtro ativo) */}
             {(searchTerm || statusFilter !== 'ALL') && (
-              <div className="pl-0 pr-4 pt-3">
+              <div className="px-4 pt-3">
                 <div className="flex items-center justify-between px-4 py-2 bg-slate-900/70 border border-slate-800 rounded-xl text-xs text-slate-300 animate-in fade-in">
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400">Filtrando:</span>
@@ -1208,7 +1206,7 @@ export function App() {
 
             {/* Asset Cards or Empty State (Sem espaço entre cards, separados por linha) */}
             {filteredAssets.length > 0 ? (
-              <div className="pl-0 pr-4 flex-1 pb-8 border-t border-slate-800/80">
+              <div className="px-4 flex-1 pb-8 border-t border-slate-800/80">
                 {sortedAssets.map(asset => (
                   <AssetTableRowCard
                     key={asset.id}

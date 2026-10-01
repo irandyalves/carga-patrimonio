@@ -261,8 +261,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem */}
-        <div className="flex-1 min-w-[260px] flex items-center gap-1.5 flex-wrap">
+        {/* Coluna 3: Descrição do Bem (Largura definida para puxar a Localização para a esquerda) */}
+        <div className="w-[280px] shrink-0 flex items-center gap-1.5 flex-wrap">
           <h4 
             className="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
             title={asset.descricao}
@@ -296,8 +296,8 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 4: Localização (Sem ícone de localização à esquerda) */}
-        <div className="w-40 shrink-0 flex items-center justify-start text-left">
+        {/* Coluna 4: Localização (Movida para a esquerda, sem ícone à esquerda) */}
+        <div className="w-48 shrink-0 flex items-center justify-start text-left">
           {isEditingLocation ? (
             <div 
               onClick={(e) => e.stopPropagation()} 
@@ -378,7 +378,7 @@ export const AssetTableRowCard = ({
                 title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
               >
-                <span className="truncate max-w-[140px]">
+                <span className="truncate max-w-[165px]">
                   {asset.localizacao || 'Onde está?'}
                 </span>
                 <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
@@ -401,12 +401,12 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 5: Observação (Onde fica a informação está com: xx) */}
-        <div className="w-44 shrink-0 flex items-center justify-start text-left">
+        <div className="w-52 shrink-0 flex items-center justify-start text-left">
           {isEmCautela ? (
             <div className="relative group/cautela inline-block">
               <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-1.5 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
-                <span className="truncate max-w-[155px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+                <span className="truncate max-w-[185px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
               </div>
 
               {/* Floating Document Popover on Hover */}

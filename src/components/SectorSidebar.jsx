@@ -92,8 +92,8 @@ export const SectorSidebar = ({
       )}
 
       {/* Slide Bar Lateral Esquerdo */}
-      <aside className={`shrink-0 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 transition-all duration-300 ease-in-out z-30 flex flex-col h-full select-none ${
-        isOpen ? 'w-64 sm:w-72 shadow-[12px_0_30px_-4px_rgba(0,0,0,0.85),4px_0_12px_-2px_rgba(0,0,0,0.7)]' : 'w-0 -translate-x-full overflow-hidden border-none shadow-none'
+      <aside className={`shrink-0 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 transition-all duration-300 ease-in-out z-20 flex flex-col h-full select-none ${
+        isOpen ? 'w-64 sm:w-72' : 'w-0 -translate-x-full overflow-hidden border-none'
       }`}>
         
         {/* Cabeçalho da Sidebar */}
