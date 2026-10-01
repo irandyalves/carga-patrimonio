@@ -1607,11 +1607,11 @@ export function App() {
 
                   {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
                   {visibleColumns.valorOriginal && (
-                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('valorOriginal')}
                         title="Clique para ordenar por valor original"
-                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
                           sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
@@ -1640,11 +1640,11 @@ export function App() {
 
                   {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
                   {visibleColumns.valorAtual && (
-                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('valorAtual')}
                         title="Clique para ordenar por valor atual"
-                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
                           sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
@@ -1673,11 +1673,11 @@ export function App() {
 
                   {/* Coluna 12: Depreciação com Olhinho para Ocultar */}
                   {visibleColumns.depreciacao && (
-                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
                       <button
                         onClick={() => handleSort('depreciacao')}
                         title="Clique para ordenar por depreciação"
-                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
                           sortField === 'depreciacao' ? 'text-amber-400 font-bold' : 'hover:text-slate-200'
                         }`}
                       >

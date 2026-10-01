@@ -1048,7 +1048,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 8: Valor Original */}
         {visibleColumns?.valorOriginal !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-semibold text-slate-200 text-[11px]">
               {formatCurrency(asset.valorOriginal)}
             </span>
@@ -1057,7 +1057,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 11: Valor Atual */}
         {visibleColumns?.valorAtual !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-bold text-emerald-400 text-[11px]">
               {formatCurrency(asset.valorAtual || asset.valorOriginal)}
             </span>
@@ -1066,7 +1066,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 12: Depreciação */}
         {visibleColumns?.depreciacao !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-semibold text-amber-400 text-[11px]" title={String(asset.depreciacao || '')}>
               {formatDepreciacao(
                 asset.depreciacao || 

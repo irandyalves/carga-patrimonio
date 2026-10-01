@@ -307,7 +307,7 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
-const DATA_VERSION = 'v5_clean_production_2026';
+const DATA_VERSION = 'v7_clean_production_2026';
 const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
 
 export const wipeAllOnlineAndLocalData = async () => {
@@ -318,6 +318,7 @@ export const wipeAllOnlineAndLocalData = async () => {
     localStorage.removeItem('carga_patrimonio_pedidos');
     localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
+    localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
 
     // 2. Se Firebase conectado, limpa coleções online
@@ -348,12 +349,8 @@ export const loadLocalData = () => {
   try {
     const storedVersion = localStorage.getItem(STORAGE_KEY_VERSION);
     if (storedVersion !== DATA_VERSION) {
-      // Migração automática para a base limpa de produção
-      localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
-      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
+      // Limpeza completa de versão e disparo assíncrono para online
+      wipeAllOnlineAndLocalData();
       return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
     }
 
