@@ -22,7 +22,8 @@ import {
   Inbox,
   ChevronDown,
   Check,
-  UserCheck
+  UserCheck,
+  Hash
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -53,7 +54,10 @@ export const Navbar = ({
   onSelectPersona,
   sectors = [],
   activeSectorName = '',
-  filterMode = 'MY_SECTOR'
+  filterMode = 'MY_SECTOR',
+  sortField = 'numeroPatrimonio',
+  sortDirection = 'asc',
+  onSort
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -139,10 +143,11 @@ export const Navbar = ({
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
       <div className="w-full px-2 sm:px-4">
-        <div className="flex items-center justify-between h-16 gap-3">
+        <div className="flex items-center justify-between h-16 gap-2 sm:gap-3">
           
-          {/* Logo & Title with Slide Bar Toggle Button */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Botão da Sidebar + Botões de Ordenação (Patrimônio e Item) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Abrir / Recolher Setores */}
             <button
               onClick={onToggleSidebar}
               title="Abrir/Recolher Barra Lateral de Setores"
@@ -151,17 +156,47 @@ export const Navbar = ({
               <PanelLeft className="w-5 h-5" />
             </button>
 
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
-              <Boxes className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-white tracking-tight">Carga Patrimonial</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  ONLINE
-                </span>
-              </div>
-            </div>
+            {/* Ordenar Patrimônio */}
+            <button
+              type="button"
+              onClick={() => onSort && onSort('numeroPatrimonio')}
+              title={`Ordenar por Nº de Patrimônio (${sortField === 'numeroPatrimonio' && sortDirection === 'desc' ? 'Decrescente ▼' : 'Crescente ▲'})`}
+              className={`px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                sortField === 'numeroPatrimonio'
+                  ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
+                  : 'bg-slate-800/80 hover:bg-slate-800 text-slate-400 border-slate-700/80 hover:text-slate-200'
+              }`}
+            >
+              <Hash className={`w-4 h-4 ${sortField === 'numeroPatrimonio' ? 'text-blue-400' : 'text-slate-400'}`} />
+              <span className="text-[10px] leading-none select-none font-bold">
+                {sortField === 'numeroPatrimonio' ? (
+                  sortDirection === 'asc' ? '▲' : '▼'
+                ) : (
+                  <span className="opacity-40">▲</span>
+                )}
+              </span>
+            </button>
+
+            {/* Ordenar Item / Descrição */}
+            <button
+              type="button"
+              onClick={() => onSort && onSort('descricao')}
+              title={`Ordenar por Item / Descrição (${sortField === 'descricao' && sortDirection === 'desc' ? 'Z-A ▼' : 'A-Z ▲'})`}
+              className={`px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                sortField === 'descricao'
+                  ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
+                  : 'bg-slate-800/80 hover:bg-slate-800 text-slate-400 border-slate-700/80 hover:text-slate-200'
+              }`}
+            >
+              <FileText className={`w-4 h-4 ${sortField === 'descricao' ? 'text-blue-400' : 'text-slate-400'}`} />
+              <span className="text-[10px] leading-none select-none font-bold">
+                {sortField === 'descricao' ? (
+                  sortDirection === 'asc' ? '▲' : '▼'
+                ) : (
+                  <span className="opacity-40">▲</span>
+                )}
+              </span>
+            </button>
           </div>
 
           {/* Search Bar with Inline Voice and QR inside */}

@@ -1502,6 +1502,9 @@ export function App() {
         sectors={sectors}
         activeSectorName={activeSector?.name}
         filterMode={filterMode}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}

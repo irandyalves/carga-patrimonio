@@ -1658,6 +1658,100 @@ export const AssetTableRowCard = ({
         )}
       </div>
 
+      {/* Modal Interativo de Definição de Localização Mobile */}
+      {isEditingLocation && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeLocEdit();
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-4 sm:p-5 shadow-2xl relative animate-in zoom-in-95 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Topo do Modal */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Definir Localização</h4>
+                  <span className="font-mono text-xs text-emerald-400 font-bold">Nº {formattedXX}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeLocEdit}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Input para Digitar ou Falar */}
+            <div className="flex items-center gap-1.5 mb-3">
+              <input
+                type="text"
+                value={locationValue}
+                onChange={(e) => setLocationValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveLocation(e);
+                  if (e.key === 'Escape') closeLocEdit();
+                }}
+                placeholder="Digite ou escolha abaixo..."
+                className="flex-1 bg-slate-950 text-white text-xs px-3 py-2.5 rounded-xl border border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={startLocationVoice}
+                title="Ditar localização por voz"
+                className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isListeningLoc 
+                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
+                }`}
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleSaveLocation(e)}
+                className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md"
+              >
+                Salvar
+              </button>
+            </div>
+
+            {/* Lista de Setores para Escolha Rápida com 1 Toque */}
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                Ou selecione um setor:
+              </span>
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                {sectors.map((s) => (
+                  <button
+                    key={`loc-mob-${s.id}`}
+                    type="button"
+                    onClick={(e) => {
+                      setLocationValue(s.name);
+                      handleSaveLocation(e, s.name);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs bg-slate-800/60 hover:bg-slate-800 active:bg-blue-600/30 text-slate-200 hover:text-white transition-colors flex items-center justify-between cursor-pointer group"
+                  >
+                    <span className="font-semibold text-emerald-400 group-hover:text-emerald-300">{s.name}</span>
+                    {s.responsavel && <span className="text-[10px] text-slate-400 truncate max-w-[120px]">({s.responsavel})</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modalzinho Minimalista de Descrição / Sobre o Item */}
       {isDescModalOpen && (
         <div 
