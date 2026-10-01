@@ -199,9 +199,9 @@ export const Navbar = ({
             <button
               onClick={onOpenCautelas}
               title="Módulo de Empréstimos & Cautelas"
-              className="relative px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="relative px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Handshake className="w-4 h-4 text-amber-400" />
+              <Handshake className="w-4 h-4 text-amber-400 shrink-0" />
               <span className="hidden md:inline">Cautelas</span>
               {cautelasCount > 0 && (
                 <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px]">
@@ -214,9 +214,9 @@ export const Navbar = ({
             <button
               onClick={onOpenLabels}
               title="Gerar Etiquetas com QR Code em PDF"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-cyan-400" />
+              <Printer className="w-4 h-4 text-cyan-400 shrink-0" />
               <span className="hidden lg:inline">Etiquetas</span>
             </button>
 
@@ -224,9 +224,9 @@ export const Navbar = ({
             <button
               onClick={onOpenBackup}
               title="Central de Backups (Local, Firebase e Google Drive)"
-              className="px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-xs font-semibold text-emerald-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-emerald-300 hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="hidden md:inline">Backup</span>
             </button>
 
@@ -234,9 +234,9 @@ export const Navbar = ({
             <button
               onClick={onOpenExcel}
               title="Importar / Exportar Planilha Excel"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="hidden lg:inline">Excel</span>
             </button>
 
@@ -245,9 +245,9 @@ export const Navbar = ({
               <button
                 onClick={onOpenUsers}
                 title="Gerenciar Usuários e Permissões de Acesso"
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/40 text-xs font-semibold text-indigo-300 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-indigo-300 hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Users className="w-4 h-4 text-indigo-400" />
+                <Users className="w-4 h-4 text-indigo-400 shrink-0" />
                 <span className="hidden lg:inline">Usuários</span>
               </button>
             )}
@@ -256,22 +256,19 @@ export const Navbar = ({
             <button
               onClick={onOpenFirebaseConfig}
               title={isFirebaseActive ? "Conectado ao Firebase Firestore" : "Configurar Conexão com Firebase"}
-              className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
-                isFirebaseActive 
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20' 
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-              }`}
+              className="p-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-amber-300 hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Database className="w-4 h-4" />
+              <Database className="w-4 h-4 text-amber-400 shrink-0" />
               <span className={`w-2 h-2 rounded-full ${isFirebaseActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
             </button>
 
             {/* New Asset Button */}
             <button
               onClick={onOpenNewAsset}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Cadastrar Novo Bem Patrimonial"
+              className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-blue-400 shrink-0" />
               <span className="hidden sm:inline">Novo Bem</span>
             </button>
 
