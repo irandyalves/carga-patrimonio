@@ -1014,13 +1014,13 @@ export function App() {
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens (Aumentada em 40%) */}
             <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
               <div className="pl-0 pr-4 w-full">
-                <div className="px-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+                <div className="px-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
-                  {/* Coluna 1: Patrimônio (Alinhado exatamente na mesma largura e posição da esquerda) */}
+                  {/* Coluna 1: Patrimônio */}
                   <button
                     onClick={() => handleSort('numeroPatrimonio')}
                     title="Clique para ordenar por patrimônio"
-                    className={`w-32 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                    className={`w-28 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
                       sortField === 'numeroPatrimonio' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1034,11 +1034,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 2: Quantidade (Centralizado) */}
+                  {/* Coluna 2: Quantidade */}
                   <button
                     onClick={() => handleSort('quantidade')}
                     title="Clique para ordenar por quantidade"
-                    className={`w-14 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-12 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1052,11 +1052,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (Alinhado à esquerda sobre a descrição) */}
+                  {/* Coluna 3: Descrição do Bem */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`flex-1 min-w-[400px] flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
+                    className={`flex-1 min-w-[260px] flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1071,15 +1071,37 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 4: Responsável (Centralizado sobre a coluna de responsável) */}
+                  {/* Coluna 4: Localização */}
+                  <button
+                    onClick={() => handleSort('localizacao')}
+                    title="Clique para ordenar por localização"
+                    className={`w-40 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                      sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <span>Localização</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'localizacao' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
+
+                  {/* Coluna 5: Observação */}
+                  <div className="w-44 shrink-0 flex items-center justify-start text-left">
+                    <span>Observação</span>
+                  </div>
+
+                  {/* Coluna 6: Responsável (Esmagado, sem boneco) */}
                   <button
                     onClick={() => handleSort('responsavel')}
                     title="Clique para ordenar por responsável"
-                    className={`w-36 shrink-0 flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
+                    className={`w-28 shrink-0 flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
                       sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
-                    <User className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                     <span>Responsável</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'responsavel' ? (
@@ -1090,15 +1112,14 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 5: Data Aquisição (Centralizado sobre data de aquisição) */}
+                  {/* Coluna 7: Data Aquisição (Esmagado, sem ícone) */}
                   <button
                     onClick={() => handleSort('dataAquisicao')}
                     title="Clique para ordenar por data de aquisição"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
-                    <Calendar className="w-3 h-3 text-indigo-400 shrink-0" />
                     <span>Aquisição</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'dataAquisicao' ? (
@@ -1109,11 +1130,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 6: Valor Original (Centralizado sobre valor original) */}
+                  {/* Coluna 8: Valor Original (Esmagado) */}
                   <button
                     onClick={() => handleSort('valorOriginal')}
                     title="Clique para ordenar por valor original"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1127,11 +1148,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 7: Valor Atual (Centralizado sobre valor atual) */}
+                  {/* Coluna 9: Valor Atual (Esmagado) */}
                   <button
                     onClick={() => handleSort('valorAtual')}
                     title="Clique para ordenar por valor atual"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                    className={`w-20 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
                       sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1145,8 +1166,8 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 8: Ações & Conferência (Colado na Direita) */}
-                  <div className="w-40 shrink-0 flex items-center justify-end pr-1 gap-1">
+                  {/* Coluna 10: Ações (Esmagado) */}
+                  <div className="w-28 shrink-0 flex items-center justify-end pr-1">
                     <span>Ações</span>
                   </div>
 

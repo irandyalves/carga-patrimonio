@@ -211,14 +211,14 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Linha Principal (Altura reduzida em >20%, fontes reduzidas em 10%) */}
-      <div className="px-5 py-2 flex items-center gap-3 text-[11px] w-full">
+      {/* Linha Principal (Altura reduzida em mais 20%, colunas compactadas) */}
+      <div className="px-5 py-1.5 flex items-center gap-2 text-[11px] w-full">
         
-        {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS, SEM BADGE PENDENTE) */}
-        <div className="w-32 shrink-0 flex items-center gap-1.5">
+        {/* Coluna 1: Patrimônio */}
+        <div className="w-28 shrink-0 flex items-center gap-1">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-xl sm:text-[25px] font-black tracking-tight text-indigo-400 select-all leading-none">
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xl sm:text-[23px] font-black tracking-tight text-indigo-400 select-all leading-none">
                 {formattedXX}
               </span>
               <button
@@ -226,7 +226,7 @@ export const AssetTableRowCard = ({
                 title="Copiar número do patrimônio"
                 className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
               </button>
             </div>
             
@@ -238,31 +238,31 @@ export const AssetTableRowCard = ({
                 </span>
               )}
               {isConferido ? (
-                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
-                  <CheckCircle2 className="w-2.5 h-2.5" /> Conferido
+                <span className="inline-flex items-center text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                  Conferido
                 </span>
               ) : isBaixado ? (
-                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
-                  <Archive className="w-2.5 h-2.5" /> Baixado
+                <span className="inline-flex items-center text-[9px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
+                  Baixado
                 </span>
               ) : null}
             </div>
           </div>
         </div>
 
-        {/* Coluna 2: Quantidade (SEM BORDAS, Centralizado) */}
-        <div className="w-14 shrink-0 flex items-center justify-center">
-          <div className="flex items-baseline gap-1">
+        {/* Coluna 2: Quantidade */}
+        <div className="w-12 shrink-0 flex items-center justify-center">
+          <div className="flex items-baseline gap-0.5">
             <span className="text-[10px] text-slate-400 lg:hidden">Qtde:</span>
-            <span className="font-black text-lg sm:text-[21px] text-cyan-300">
+            <span className="font-black text-lg sm:text-[20px] text-cyan-300">
               {asset.quantidade || 1}
             </span>
-            <span className="text-[10px] font-semibold text-slate-400">un</span>
+            <span className="text-[9px] font-semibold text-slate-400">un</span>
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem + Localizador, Onde Está, Editar e Mic à DIREITA */}
-        <div className="flex-1 min-w-[400px] flex items-center gap-2 flex-wrap">
+        {/* Coluna 3: Descrição do Bem */}
+        <div className="flex-1 min-w-[260px] flex items-center gap-1.5 flex-wrap">
           <h4 
             className="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
             title={asset.descricao}
@@ -294,16 +294,122 @@ export const AssetTableRowCard = ({
               </div>
             </div>
           )}
+        </div>
 
-          {/* Tag / Badge "Está com: ASCOM (Jean)" se em cautela */}
-          {isEmCautela && (
+        {/* Coluna 4: Localização (Sem ícone de localização à esquerda) */}
+        <div className="w-40 shrink-0 flex items-center justify-start text-left">
+          {isEditingLocation ? (
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              className="inline-flex items-center gap-1 bg-slate-900 border border-blue-500/70 rounded-lg p-0.5 shadow-xl z-20"
+            >
+              <input
+                type="text"
+                list={`loc-presets-${asset.id}`}
+                value={locationValue}
+                onChange={(e) => setLocationValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveLocation(e);
+                  if (e.key === 'Escape') setIsEditingLocation(false);
+                }}
+                placeholder="Ex: Sala de reuniões"
+                className="bg-slate-800 text-white text-[11px] px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[140px]"
+                autoFocus
+              />
+              <datalist id={`loc-presets-${asset.id}`}>
+                <option value="Está na Sala de Reuniões" />
+                <option value="Está na Copa Cozinha Térreo" />
+                <option value="Está na Copa 1º Piso" />
+                <option value="Está no Studio" />
+                <option value="Está no Auditório" />
+                <option value="Está no Foyer" />
+                <option value="Está na Recepção" />
+                <option value="Está no Laboratório Inovação" />
+                <option value="Está na Revista JMU" />
+                <option value="Está no SACADI" />
+                <option value="Está no CADMI" />
+                <option value="Está na TI" />
+                <option value="Almoxarifado" />
+              </datalist>
+
+              <button
+                type="button"
+                onClick={startLocationVoice}
+                title="Falar por voz"
+                className={`p-1 rounded border transition-all cursor-pointer ${
+                  isListeningLoc 
+                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveLocation}
+                title="Salvar"
+                className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingLocation(false)}
+                title="Cancelar"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-0.5 group/loc">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!canManageAsset) {
+                    onOpenSolicitacao(asset);
+                  } else {
+                    setIsEditingLocation(true);
+                  }
+                }}
+                title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
+              >
+                <span className="truncate max-w-[140px]">
+                  {asset.localizacao || 'Onde está?'}
+                </span>
+                <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={startLocationVoice}
+                title="Ditar localização por voz"
+                className={`p-1 rounded transition-all cursor-pointer ${
+                  isListeningLoc 
+                    ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Coluna 5: Observação (Onde fica a informação está com: xx) */}
+        <div className="w-44 shrink-0 flex items-center justify-start text-left">
+          {isEmCautela ? (
             <div className="relative group/cautela inline-block">
               <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-1.5 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
-                <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+                <span className="truncate max-w-[155px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
               </div>
 
-              {/* Floating Document Popover */}
+              {/* Floating Document Popover on Hover */}
               <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3 shadow-2xl shadow-purple-950/60 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
                 <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-purple-500/20">
                   <div className="flex items-center gap-1.5">
@@ -351,209 +457,88 @@ export const AssetTableRowCard = ({
                       <span className="text-amber-400 font-semibold">{cautelaDevolucao}</span>
                     </div>
                   </div>
-                  {asset.cautelaAtual?.finalidade && (
-                    <div className="pt-0.5 border-t border-slate-800">
-                      <span className="text-slate-400 block text-[9px]">Finalidade:</span>
-                      <span className="text-slate-300 italic">"{asset.cautelaAtual.finalidade}"</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Localizador, Onde Está, Ícone de Editar e Microfone MOVIDOS PARA A DIREITA DA DESCRIÇÃO */}
-          {isEditingLocation ? (
-            <div 
-              onClick={(e) => e.stopPropagation()} 
-              className="inline-flex items-center gap-1 bg-slate-900 border border-blue-500/70 rounded-lg p-0.5 shadow-xl z-20 ml-1"
-            >
-              <MapPin className="w-3 h-3 text-rose-500 shrink-0 ml-1" />
-              <input
-                type="text"
-                list={`loc-presets-${asset.id}`}
-                value={locationValue}
-                onChange={(e) => setLocationValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveLocation(e);
-                  if (e.key === 'Escape') setIsEditingLocation(false);
-                }}
-                placeholder="Ex: Está na sala de reuniões"
-                className="bg-slate-800 text-white text-[11px] px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[170px]"
-                autoFocus
-              />
-              <datalist id={`loc-presets-${asset.id}`}>
-                <option value="Está na Sala de Reuniões" />
-                <option value="Está na Copa Cozinha Térreo" />
-                <option value="Está na Copa 1º Piso" />
-                <option value="Está no Studio" />
-                <option value="Está no Auditório" />
-                <option value="Está no Foyer" />
-                <option value="Está na Recepção" />
-                <option value="Está no Laboratório Inovação" />
-                <option value="Está na Revista JMU" />
-                <option value="Está no SACADI" />
-                <option value="Está no CADMI" />
-                <option value="Está na TI" />
-                <option value="Almoxarifado" />
-              </datalist>
-
-              <button
-                type="button"
-                onClick={startLocationVoice}
-                title="Falar por voz"
-                className={`p-1 rounded border transition-all cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveLocation}
-                title="Salvar Localização"
-                className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
-              >
-                <Check className="w-3 h-3" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsEditingLocation(false)}
-                title="Cancelar"
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
+          ) : asset.observacao ? (
+            <span className="text-slate-400 truncate text-[10px] block" title={asset.observacao}>
+              {asset.observacao}
+            </span>
           ) : (
-            <div className="inline-flex items-center gap-0.5 group/loc ml-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!canManageAsset) {
-                    onOpenSolicitacao(asset);
-                  } else {
-                    setIsEditingLocation(true);
-                  }
-                }}
-                title={canManageAsset ? "Clique para editar a localização (digitar ou escolher)" : "Clique para informar localização"}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
-              >
-                <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
-                <span className="truncate max-w-[170px]">
-                  {asset.localizacao || 'Onde está?'}
-                </span>
-                <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={startLocationVoice}
-                title="Ditar localização por voz"
-                className={`p-1 rounded-md transition-all cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-              </button>
-            </div>
+            <span className="text-slate-600 text-[10px] block">---</span>
           )}
         </div>
 
-        {/* Coluna 4: Responsável (Compacto) */}
-        <div className="w-36 shrink-0 flex items-center justify-center">
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
-              <User className="w-2.5 h-2.5" />
-            </div>
-            <div className="truncate text-left">
-              <span className="font-semibold text-slate-200 truncate block text-[11px]" title={asset.responsavel}>
-                {asset.responsavel || 'Não definido'}
-              </span>
-              {isGeneralView && asset.setorNome && (
-                <span className="text-[9px] text-slate-400 block truncate">
-                  {asset.setorNome}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna 5: Data de Aquisição (Espremido) */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <div className="flex items-center gap-1 text-slate-300">
-            <Calendar className="w-3 h-3 text-slate-400 shrink-0 hidden sm:block" />
-            <div>
-              <span className="font-medium text-[11px]">
-                {asset.dataAquisicao || asset.anoAquisicao || '---'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna 6: Valor Original (Espremido) */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <div>
-            <span className="font-semibold text-slate-200 text-[11px]">
-              {formatCurrency(asset.valorOriginal)}
+        {/* Coluna 6: Responsável (Esmagado, sem boneco) */}
+        <div className="w-28 shrink-0 flex items-center justify-center text-center">
+          <div className="truncate w-full">
+            <span className="font-semibold text-slate-200 truncate block text-[11px]" title={asset.responsavel}>
+              {asset.responsavel || '---'}
             </span>
+            {isGeneralView && asset.setorNome && (
+              <span className="text-[9px] text-slate-400 block truncate">
+                {asset.setorNome}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Coluna 7: Valor Atual (Espremido) */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <div>
-            <span className="font-bold text-emerald-400 text-[11px]">
-              {formatCurrency(asset.valorAtual || asset.valorOriginal)}
-            </span>
-          </div>
+        {/* Coluna 7: Data de Aquisição (Esmagado, sem ícone) */}
+        <div className="w-20 shrink-0 flex items-center justify-center text-center">
+          <span className="font-medium text-[11px] text-slate-300">
+            {asset.dataAquisicao || asset.anoAquisicao || '---'}
+          </span>
         </div>
 
-        {/* Coluna 8: Ações & Conferência (Colado na Direita) */}
-        <div className="w-40 shrink-0 flex items-center justify-end gap-1.5 pr-1">
+        {/* Coluna 8: Valor Original (Esmagado) */}
+        <div className="w-20 shrink-0 flex items-center justify-center text-center">
+          <span className="font-semibold text-slate-200 text-[11px]">
+            {formatCurrency(asset.valorOriginal)}
+          </span>
+        </div>
+
+        {/* Coluna 9: Valor Atual (Esmagado) */}
+        <div className="w-20 shrink-0 flex items-center justify-center text-center">
+          <span className="font-bold text-emerald-400 text-[11px]">
+            {formatCurrency(asset.valorAtual || asset.valorOriginal)}
+          </span>
+        </div>
+
+        {/* Coluna 10: Ações & Conferência (Esmagado, cadeado vermelho somente, sem icone conferir) */}
+        <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
           
-          {/* Botão de Conferência ou Bloqueio / Pedido de Carga */}
+          {/* Bloqueado / Conferência / Pedido */}
           {!canManageAsset ? (
             hasPendingPedido ? (
-              <span className="px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
-                <Clock className="w-3 h-3 text-amber-400" />
-                <span>Enviado</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
+                Enviado
               </span>
             ) : (
               <button
                 onClick={() => onOpenSolicitacao(asset)}
-                title="Este bem pertence a outro departamento. Clique para fazer um pedido e informar a qual setor ele pertence."
-                className="px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
+                title="Fazer pedido de carga"
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer"
               >
-                <Send className="w-3 h-3" />
-                <span>Pedido</span>
+                Pedido
               </button>
             )
           ) : isGeneralView ? (
             <div 
-              title="Na aba Geral não se pode conferir carga. Entre no setor específico para conferir."
-              className="px-2 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 text-slate-400 bg-slate-900/90 border border-slate-800 cursor-not-allowed select-none"
+              title="Bloqueado"
+              className="p-1 rounded text-rose-500 hover:text-rose-400 cursor-not-allowed select-none"
             >
-              <Lock className="w-3 h-3 text-slate-500" />
-              <span>Bloqueado</span>
+              <Lock className="w-3.5 h-3.5 text-rose-500" />
             </div>
           ) : isBaixado ? (
-            <div className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
+            <div className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
               Baixado
             </div>
           ) : showUncheckConfirm ? (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-1 rounded-lg">
-              <span className="text-[9px] text-amber-200 font-bold px-1">Desmarcar?</span>
+            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-0.5 rounded">
+              <span className="text-[9px] text-amber-200 font-bold px-0.5">Desmarcar?</span>
               <button
                 onClick={handleConfirmUncheck}
-                className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[9px] font-bold cursor-pointer"
+                className="px-1 py-0.2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[9px] font-bold cursor-pointer"
               >
                 Sim
               </button>
@@ -562,7 +547,7 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setShowUncheckConfirm(false);
                 }}
-                className="px-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[9px] cursor-pointer"
+                className="px-1 py-0.2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[9px] cursor-pointer"
               >
                 Não
               </button>
@@ -570,13 +555,12 @@ export const AssetTableRowCard = ({
           ) : (
             <button
               onClick={handleConferenceClick}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer shadow-sm ${
                 isConferido
                   ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                   : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
               }`}
             >
-              <CheckCircle2 className={`w-3.5 h-3.5 ${isConferido ? 'text-emerald-400' : 'text-white'}`} />
               <span>{isConferido ? 'Conferido' : 'Conferir'}</span>
             </button>
           )}
