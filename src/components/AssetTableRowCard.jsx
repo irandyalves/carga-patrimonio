@@ -490,19 +490,12 @@ export const AssetTableRowCard = ({
               {formattedXX}
             </span>
             
-            {/* Tags e Badges especiais (sem badge de conferido duplicado) */}
-            {(prefix || isBaixado) && (
+            {/* Prefixo especial de dígitos longos */}
+            {prefix && (
               <div className="mt-0.5 flex items-center gap-1">
-                {prefix && (
-                  <span className="text-[9px] font-mono text-slate-500">
-                    {prefix}
-                  </span>
-                )}
-                {isBaixado && (
-                  <span className="inline-flex items-center text-[9px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
-                    Baixado
-                  </span>
-                )}
+                <span className="text-[9px] font-mono text-slate-500">
+                  {prefix}
+                </span>
               </div>
             )}
           </div>

@@ -90,7 +90,8 @@ import {
   User,
   Calendar,
   DollarSign,
-  FileText
+  FileText,
+  Archive
 } from 'lucide-react';
 
 export function App() {
@@ -458,7 +459,7 @@ export function App() {
   };
 
   const sortedAssets = useMemo(() => {
-    return [...filteredAssets].sort((a, b) => {
+    const sortFn = (a, b) => {
       if (sortField === 'numeroPatrimonio') {
         const numA = parseInt(String(a.numeroPatrimonio || '').replace(/\D/g, '').slice(-5), 10) || 0;
         const numB = parseInt(String(b.numeroPatrimonio || '').replace(/\D/g, '').slice(-5), 10) || 0;
@@ -482,7 +483,23 @@ export function App() {
       return sortDirection === 'asc' 
         ? valA.localeCompare(valB, 'pt-BR') 
         : valB.localeCompare(valA, 'pt-BR');
+    };
+
+    const active = [];
+    const baixados = [];
+
+    filteredAssets.forEach(item => {
+      if (item.baixado || item.status === 'BAIXADO') {
+        baixados.push(item);
+      } else {
+        active.push(item);
+      }
     });
+
+    active.sort(sortFn);
+    baixados.sort(sortFn);
+
+    return [...active, ...baixados];
   }, [filteredAssets, sortField, sortDirection]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
@@ -1288,37 +1305,59 @@ export function App() {
             {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
               <div className="w-full flex-1 pb-8 border-t border-slate-800/80 -ml-1">
-                {sortedAssets.map((asset, index) => (
-                  <AssetTableRowCard
-                    key={asset.id}
-                    index={index}
-                    asset={asset}
-                    activeSector={activeSector}
-                    sectors={sectors}
-                    currentUserName={currentUser?.displayName || currentUser?.email}
-                    isGeneralView={filterMode === 'ALL_SECTORS'}
-                    onToggleConference={handleToggleConference}
-                    onOpenEdit={(a) => {
-                      setAssetToEdit(a);
-                      setIsAssetModalOpen(true);
-                    }}
-                    onOpenCautela={handleOpenCautela}
-                    onOpenBaixa={handleOpenBaixa}
-                    onPrintSingleLabel={handlePrintSingleLabel}
-                    onTransferSector={handleOpenTransferModal}
-                    onDeleteAsset={handleDeleteAsset}
-                    onUpdateLocation={handleUpdateAssetLocation}
-                    onUpdateObservation={handleUpdateAssetObservation}
-                    onUpdateCardColor={handleUpdateAssetColor}
-                    userRole={effectiveUserRole}
-                    userSectorId={effectiveUserSectorId}
-                    onOpenSolicitacao={(a) => {
-                      setAssetForSolicitacao(a);
-                      setIsSolicitacaoModalOpen(true);
-                    }}
-                    hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
-                  />
-                ))}
+                {sortedAssets.map((asset, index) => {
+                  const isBaixado = asset.baixado || asset.status === 'BAIXADO';
+                  const prevAsset = index > 0 ? sortedAssets[index - 1] : null;
+                  const isFirstBaixado = isBaixado && (!prevAsset || (!prevAsset.baixado && prevAsset.status !== 'BAIXADO'));
+
+                  return (
+                    <React.Fragment key={asset.id}>
+                      {isFirstBaixado && statusFilter !== 'BAIXADOS' && (
+                        <div className="py-2.5 px-6 my-3 mx-2 flex items-center justify-between border-y border-dashed border-rose-500/40 bg-gradient-to-r from-rose-950/40 via-rose-900/20 to-rose-950/40 rounded-lg shadow-sm">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1 rounded bg-rose-500/20 text-rose-400">
+                              <Archive className="w-3.5 h-3.5 shrink-0" />
+                            </div>
+                            <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
+                              Bens Baixados ({sortedAssets.filter(a => a.baixado || a.status === 'BAIXADO').length})
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                              — Itens desincorporados / baixados do setor (no final da lista)
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <AssetTableRowCard
+                        index={index}
+                        asset={asset}
+                        activeSector={activeSector}
+                        sectors={sectors}
+                        currentUserName={currentUser?.displayName || currentUser?.email}
+                        isGeneralView={filterMode === 'ALL_SECTORS'}
+                        onToggleConference={handleToggleConference}
+                        onOpenEdit={(a) => {
+                          setAssetToEdit(a);
+                          setIsAssetModalOpen(true);
+                        }}
+                        onOpenCautela={handleOpenCautela}
+                        onOpenBaixa={handleOpenBaixa}
+                        onPrintSingleLabel={handlePrintSingleLabel}
+                        onTransferSector={handleOpenTransferModal}
+                        onDeleteAsset={handleDeleteAsset}
+                        onUpdateLocation={handleUpdateAssetLocation}
+                        onUpdateObservation={handleUpdateAssetObservation}
+                        onUpdateCardColor={handleUpdateAssetColor}
+                        userRole={effectiveUserRole}
+                        userSectorId={effectiveUserSectorId}
+                        onOpenSolicitacao={(a) => {
+                          setAssetForSolicitacao(a);
+                          setIsSolicitacaoModalOpen(true);
+                        }}
+                        hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
+                      />
+                    </React.Fragment>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
