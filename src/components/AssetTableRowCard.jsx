@@ -22,7 +22,8 @@ import {
   FileText,
   Mic,
   X,
-  Send
+  Send,
+  Info
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -81,6 +82,12 @@ export const AssetTableRowCard = ({
   const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : digitsOnly.padStart(5, '0');
   const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
   const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
+
+  // Truncamento inteligente para descrições longas com hint bonito
+  const isDescLong = (asset.descricao || '').length > 42;
+  const shortDesc = isDescLong 
+    ? `${asset.descricao.slice(0, 39).trim()}...` 
+    : asset.descricao;
 
   const handleCopyTag = (e) => {
     e.stopPropagation();
@@ -208,9 +215,9 @@ export const AssetTableRowCard = ({
       <div className="p-3 sm:px-5 sm:py-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs w-full">
         
         {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS, SEM BADGE PENDENTE) */}
-        <div className="lg:w-44 shrink-0 flex items-center gap-2">
+        <div className="lg:w-32 shrink-0 flex items-center gap-1.5">
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-indigo-400 select-all leading-none">
                 {formattedXX}
               </span>
@@ -308,7 +315,7 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 2: Quantidade (SEM BORDAS, Centralizado) */}
-        <div className="lg:w-20 shrink-0 flex items-center lg:justify-center">
+        <div className="lg:w-14 shrink-0 flex items-center lg:justify-center">
           <div className="flex items-baseline gap-1">
             <span className="text-xs text-slate-400 lg:hidden">Qtde:</span>
             <span className="font-black text-xl sm:text-2xl text-cyan-300">
@@ -318,12 +325,40 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (A MAIOR COLUNA) + Localização Editável com Voz/Digitação */}
-        <div className="flex-[3] min-w-[280px]">
-          <div className="flex items-baseline gap-2">
-            <h4 className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug">
-              {asset.descricao}
+        {/* Coluna 3: Descrição do Bem (ESPAÇO MÁXIMO) + Hint Bonito para Descrição Longa */}
+        <div className="flex-1 min-w-[280px]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h4 
+              className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
+              title={asset.descricao}
+            >
+              {shortDesc}
             </h4>
+
+            {isDescLong && (
+              <div className="relative group/hint inline-flex items-center">
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1 rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm"
+                  title="Passe o mouse para ver a descrição completa"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Hint Bonito / Tooltip Flutuante */}
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/hint:flex flex-col z-50 w-72 sm:w-96 bg-slate-900/98 backdrop-blur-xl border border-indigo-500/50 rounded-2xl p-3.5 shadow-2xl shadow-indigo-950/80 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
+                  <div className="flex items-center gap-2 pb-1.5 mb-1.5 border-b border-indigo-500/20">
+                    <Info className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span className="font-bold text-white text-[11px] uppercase tracking-wider">Descrição Completa</span>
+                    <span className="ml-auto font-mono text-[10px] text-indigo-300 font-bold">{formattedXX}</span>
+                  </div>
+                  <p className="text-slate-200 leading-relaxed font-medium text-xs break-words">
+                    {asset.descricao}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1 text-xs text-slate-400">
@@ -439,11 +474,11 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 4: Responsável (Centralizado) */}
-        <div className="lg:w-44 shrink-0 flex items-center lg:justify-center">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
-              <User className="w-3.5 h-3.5" />
+        {/* Coluna 4: Responsável (Compacto) */}
+        <div className="lg:w-36 shrink-0 flex items-center lg:justify-center">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
+              <User className="w-3 h-3" />
             </div>
             <div className="truncate text-left">
               <span className="text-[10px] text-slate-400 block lg:hidden">Responsável:</span>
@@ -457,10 +492,10 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 5: Data de Aquisição (Centralizado) */}
-        <div className="lg:w-32 shrink-0 flex items-center lg:justify-center text-center">
-          <div className="flex items-center gap-1.5 text-slate-300">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        {/* Coluna 5: Data de Aquisição (Espremido) */}
+        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
+          <div className="flex items-center gap-1 text-slate-300">
+            <Calendar className="w-3 h-3 text-slate-400 shrink-0 hidden sm:block" />
             <div>
               <span className="text-[10px] text-slate-400 block lg:hidden">Data Aquisição:</span>
               <span className="font-medium text-xs">
@@ -470,8 +505,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 6: Valor Original (Centralizado) */}
-        <div className="lg:w-32 shrink-0 flex items-center lg:justify-center text-center">
+        {/* Coluna 6: Valor Original (Espremido) */}
+        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
           <div>
             <span className="text-[10px] text-slate-400 block lg:hidden">Valor Original:</span>
             <span className="font-semibold text-slate-200 text-xs">
@@ -480,8 +515,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 7: Valor Atual (Centralizado) */}
-        <div className="lg:w-32 shrink-0 flex items-center lg:justify-center text-center">
+        {/* Coluna 7: Valor Atual (Espremido) */}
+        <div className="lg:w-24 shrink-0 flex items-center lg:justify-center text-center">
           <div>
             <span className="text-[10px] text-slate-400 block lg:hidden">Valor Atual:</span>
             <span className="font-bold text-emerald-400 text-xs">
@@ -490,37 +525,37 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 8: Ações & Conferência (Centralizado) */}
-        <div className="lg:w-56 shrink-0 flex items-center justify-between lg:justify-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
+        {/* Coluna 8: Ações & Conferência (Colado na Direita) */}
+        <div className="lg:w-40 shrink-0 flex items-center justify-end gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800 pr-1">
           
           {/* Botão de Conferência ou Bloqueio / Pedido de Carga */}
           {!canManageAsset ? (
             hasPendingPedido ? (
-              <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
+              <span className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Pedido Enviado</span>
+                <span>Enviado</span>
               </span>
             ) : (
               <button
                 onClick={() => onOpenSolicitacao(asset)}
                 title="Este bem pertence a outro departamento. Clique para fazer um pedido e informar a qual setor ele pertence."
-                className="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Fazer Pedido</span>
+                <Send className="w-3 h-3" />
+                <span>Pedido</span>
               </button>
             )
           ) : isGeneralView ? (
             <div 
               title="Na aba Geral não se pode conferir carga. Entre no setor específico para conferir."
-              className="px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 text-slate-400 bg-slate-900/90 border border-slate-800 cursor-not-allowed select-none"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 text-slate-400 bg-slate-900/90 border border-slate-800 cursor-not-allowed select-none"
             >
-              <Lock className="w-3.5 h-3.5 text-slate-500" />
-              <span>Conferir Bloqueado</span>
+              <Lock className="w-3 h-3 text-slate-500" />
+              <span>Bloqueado</span>
             </div>
           ) : isBaixado ? (
-            <div className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
-              Item Baixado
+            <div className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
+              Baixado
             </div>
           ) : showUncheckConfirm ? (
             <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-1 rounded-xl">
@@ -544,18 +579,18 @@ export const AssetTableRowCard = ({
           ) : (
             <button
               onClick={handleConferenceClick}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
                 isConferido
                   ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                   : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
               }`}
             >
               <CheckCircle2 className={`w-3.5 h-3.5 ${isConferido ? 'text-emerald-400' : 'text-white'}`} />
-              <span>{isConferido ? 'Conferido' : 'Conferir Carga'}</span>
+              <span>{isConferido ? 'Conferido' : 'Conferir'}</span>
             </button>
           )}
 
-          {/* Menu Dropdown de Ações */}
+          {/* Menu Dropdown de Ações colado à direita */}
           <div className="relative">
             <button
               onClick={(e) => {
