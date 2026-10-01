@@ -982,12 +982,14 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col">
+        <main className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col z-10 transition-all duration-300 ${
+          isSidebarOpen ? '-ml-2 sm:-ml-2.5' : 'ml-0'
+        }`}>
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
-            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
-            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
-              <div className="px-4 w-full">
+            {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens (Aumentada em 40%) */}
+            <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
+              <div className="pl-0 pr-4 w-full">
                 <div className="px-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Coluna 1: Patrimônio (Alinhado exatamente na mesma largura e posição da esquerda) */}
@@ -1130,7 +1132,7 @@ export function App() {
 
             {/* Barra Informativa Compacta (quando há busca ou filtro ativo) */}
             {(searchTerm || statusFilter !== 'ALL') && (
-              <div className="px-2 sm:px-4 pt-3">
+              <div className="pl-0 pr-4 pt-3">
                 <div className="flex items-center justify-between px-4 py-2 bg-slate-900/70 border border-slate-800 rounded-xl text-xs text-slate-300 animate-in fade-in">
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400">Filtrando:</span>
@@ -1161,7 +1163,7 @@ export function App() {
 
             {/* Asset Cards or Empty State */}
             {filteredAssets.length > 0 ? (
-              <div className="px-4 py-3 space-y-2 flex-1 pb-8">
+              <div className="pl-0 pr-4 py-3 space-y-2 flex-1 pb-8">
                 {sortedAssets.map(asset => (
                   <AssetTableRowCard
                     key={asset.id}
