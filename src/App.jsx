@@ -70,7 +70,12 @@ import {
   loadAuthorizedUsers,
   saveAuthorizedUserToCloud,
   deleteAuthorizedUserFromCloud,
-  checkUserAuthorization
+  checkUserAuthorization,
+  subscribeToCloudAssets,
+  subscribeToCloudCautelas,
+  saveAssetToCloud,
+  deleteAssetFromCloud,
+  saveAssetsBatchToCloud
 } from './services/firebase';
 import { 
   generateLabelsPDF, 
@@ -364,6 +369,23 @@ export function App() {
 
     // Load authorized users and subscribe to Firebase Auth
     let unsubscribe = () => {};
+    let unsubAssets = () => {};
+    let unsubCautelas = () => {};
+
+    if (isConfigured) {
+      unsubAssets = subscribeToCloudAssets((cloudAssets) => {
+        if (cloudAssets && cloudAssets.length > 0) {
+          setAssets(cloudAssets);
+        }
+      });
+
+      unsubCautelas = subscribeToCloudCautelas((cloudCautelas) => {
+        if (cloudCautelas && cloudCautelas.length > 0) {
+          setCautelas(cloudCautelas);
+        }
+      });
+    }
+
     loadAuthorizedUsers().then(usersList => {
       setAuthorizedUsers(usersList);
 
@@ -386,7 +408,11 @@ export function App() {
       setAuthLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubAssets();
+      unsubCautelas();
+    };
   }, []);
 
   // Save to persistence whenever assets, cautelas or sectors change
@@ -749,7 +775,7 @@ export function App() {
       if (item.id === assetId) {
         const nowStr = new Date().toLocaleString('pt-BR');
         
-        return {
+        const updatedItem = {
           ...item,
           status: isNowConferido ? 'CONFERIDO' : 'PENDENTE',
           dataConferencia: isNowConferido ? nowStr : null,
@@ -762,6 +788,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return item;
     });
@@ -879,7 +907,7 @@ export function App() {
     const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        return {
+        const updatedItem = {
           ...item,
           setorId: transferDetails.setorId,
           setorNome: transferDetails.setorNome,
@@ -894,6 +922,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return item;
     });
@@ -906,10 +936,12 @@ export function App() {
   const handleUpdateAssetLocation = (assetId, newLocation) => {
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        return {
+        const updatedItem = {
           ...item,
           localizacao: newLocation
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return item;
     });
@@ -921,10 +953,12 @@ export function App() {
   const handleUpdateAssetObservation = (assetId, newObservation) => {
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        return {
+        const updatedItem = {
           ...item,
           observacao: newObservation
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return item;
     });
@@ -936,10 +970,12 @@ export function App() {
   const handleUpdateAssetColor = (assetId, color) => {
     const updated = assets.map(item => {
       if (item.id === assetId) {
-        return {
+        const updatedItem = {
           ...item,
           cardColor: color === 'default' ? null : color
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return item;
     });
@@ -957,7 +993,7 @@ export function App() {
     // Atualiza o histórico do bem informando o pedido
     const updatedAssets = assets.map(a => {
       if (a.id === pedidoData.assetId) {
-        return {
+        const updatedItem = {
           ...a,
           historico: [
             ...(a.historico || []),
@@ -968,6 +1004,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });
@@ -1000,8 +1038,10 @@ export function App() {
   // Save New or Edited Asset
   const handleSaveAsset = (assetData) => {
     if (assetToEdit) {
-      const updated = assets.map(a => a.id === assetToEdit.id ? { ...a, ...assetData } : a);
+      const updatedItem = { ...assetToEdit, ...assetData };
+      const updated = assets.map(a => a.id === assetToEdit.id ? updatedItem : a);
       setAssets(updated);
+      saveAssetToCloud(updatedItem);
       showToast('Patrimônio atualizado com sucesso!');
     } else {
       const newAsset = {
@@ -1014,11 +1054,12 @@ export function App() {
           {
             data: new Date().toLocaleString('pt-BR'),
             acao: 'Cadastro de Patrimônio no Sistema',
-            usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel
+            usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
           }
         ]
       };
       setAssets([newAsset, ...assets]);
+      saveAssetToCloud(newAsset);
       showToast('Novo bem cadastrado com sucesso!');
     }
     setIsAssetModalOpen(false);
@@ -1029,6 +1070,7 @@ export function App() {
   const handleDeleteAsset = (assetId) => {
     if (confirm('Tem certeza que deseja excluir este patrimônio do sistema?')) {
       setAssets(assets.filter(a => a.id !== assetId));
+      deleteAssetFromCloud(assetId);
       showToast('Patrimônio excluído com sucesso.', 'info');
     }
   };
@@ -1402,11 +1444,14 @@ export function App() {
       saveLocalAssets(merged);
       return merged;
     });
+    // Sincroniza em segundo plano com a nuvem para que todos os celulares recebam na hora
+    saveAssetsBatchToCloud(importedAssets).catch(err => console.warn('Erro sync nuvem:', err));
+
     if (targetSectorId && targetSectorId !== 'auto') {
       setActiveSectorId(targetSectorId);
       setFilterMode('MY_SECTOR');
     }
-    showToast(`🎉 ${importedAssets.length} itens importados com sucesso!`);
+    showToast(`🎉 ${importedAssets.length} itens importados e sincronizados na nuvem!`);
     try {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
     } catch {
@@ -1417,10 +1462,13 @@ export function App() {
 
   // Restore Backup Payload
   const handleRestoreBackup = (backupPayload) => {
-    if (backupPayload.assets) setAssets(backupPayload.assets);
+    if (backupPayload.assets) {
+      setAssets(backupPayload.assets);
+      saveAssetsBatchToCloud(backupPayload.assets).catch(err => console.warn('Erro sync backup nuvem:', err));
+    }
     if (backupPayload.sectors) setSectors(backupPayload.sectors);
     if (backupPayload.cautelas) setCautelas(backupPayload.cautelas);
-    showToast('Base de dados restaurada com sucesso!');
+    showToast('Base de dados restaurada e sincronizada na nuvem com sucesso!');
   };
 
 

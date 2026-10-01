@@ -8,6 +8,7 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
+  writeBatch,
   onSnapshot 
 } from 'firebase/firestore';
 import { 
@@ -307,7 +308,7 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
-const DATA_VERSION = 'v8_official_assets_2026';
+const DATA_VERSION = 'v9_production_real_sync';
 const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
 
 export const wipeAllOnlineAndLocalData = async () => {
@@ -316,8 +317,8 @@ export const wipeAllOnlineAndLocalData = async () => {
     localStorage.removeItem(STORAGE_KEY_ASSETS);
     localStorage.removeItem(STORAGE_KEY_CAUTELAS);
     localStorage.removeItem('carga_patrimonio_pedidos');
-    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
-    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
     localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
 
@@ -325,7 +326,6 @@ export const wipeAllOnlineAndLocalData = async () => {
     const { isConfigured, db } = initFirebase();
     if (isConfigured && db) {
       try {
-        const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
         const assetSnap = await getDocs(collection(db, 'assets'));
         const deletePromises = assetSnap.docs.map(d => deleteDoc(doc(db, 'assets', d.id)));
         const cautelaSnap = await getDocs(collection(db, 'cautelas'));
@@ -338,24 +338,15 @@ export const wipeAllOnlineAndLocalData = async () => {
   } catch (err) {
     console.error('Erro na limpeza de dados:', err);
   }
-  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
+  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
 };
 
 export const loadLocalData = () => {
-  let assets = INITIAL_ASSETS;
-  let cautelas = INITIAL_CAUTELAS;
+  let assets = [];
+  let cautelas = [];
   let sectors = DEFAULT_SECTORS;
 
   try {
-    const storedVersion = localStorage.getItem(STORAGE_KEY_VERSION);
-    if (storedVersion !== DATA_VERSION) {
-      localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
-      localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
-      return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
-    }
-
     const storedSectors = localStorage.getItem(STORAGE_KEY_SECTORS);
     if (storedSectors) {
       sectors = JSON.parse(storedSectors);
@@ -364,19 +355,13 @@ export const loadLocalData = () => {
     }
 
     const storedAssets = localStorage.getItem(STORAGE_KEY_ASSETS);
-    if (storedAssets && JSON.parse(storedAssets).length > 0) {
+    if (storedAssets) {
       assets = JSON.parse(storedAssets);
-    } else {
-      assets = INITIAL_ASSETS;
-      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
     }
 
     const storedCautelas = localStorage.getItem(STORAGE_KEY_CAUTELAS);
     if (storedCautelas) {
       cautelas = JSON.parse(storedCautelas);
-    } else {
-      cautelas = INITIAL_CAUTELAS;
-      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
     }
   } catch (e) {
     console.error('Error loading local data:', e);
@@ -388,14 +373,14 @@ export const loadLocalData = () => {
 export const resetToDefaultData = () => {
   try {
     localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
-    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
-    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify([]));
     localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([]));
     localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
   } catch (e) {
     console.error(e);
   }
-  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
+  return { assets: [], cautelas: [], sectors: DEFAULT_SECTORS };
 };
 
 export const saveLocalAssets = (assets) => {
@@ -419,6 +404,91 @@ export const saveLocalSectors = (sectors) => {
     localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(sectors));
   } catch (e) {
     console.error('Error saving local sectors:', e);
+  }
+};
+
+// --- REALTIME CLOUD SYNCHRONIZATION ---
+
+export const subscribeToCloudAssets = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(collection(db, 'assets'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudAssets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        callback(cloudAssets);
+        // Atualiza cache local
+        saveLocalAssets(cloudAssets);
+      }
+    }, (error) => {
+      console.warn('Realtime assets listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de bens:', e);
+    return () => {};
+  }
+};
+
+export const subscribeToCloudCautelas = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(collection(db, 'cautelas'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudCautelas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        callback(cloudCautelas);
+        saveLocalCautelas(cloudCautelas);
+      }
+    }, (error) => {
+      console.warn('Realtime cautelas listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de cautelas:', e);
+    return () => {};
+  }
+};
+
+export const saveAssetToCloud = async (asset) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !asset || !asset.id) return;
+  try {
+    await setDoc(doc(db, 'assets', String(asset.id)), asset, { merge: true });
+  } catch (e) {
+    console.warn('Erro ao salvar bem no Firestore:', e);
+  }
+};
+
+export const deleteAssetFromCloud = async (assetId) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !assetId) return;
+  try {
+    await deleteDoc(doc(db, 'assets', String(assetId)));
+  } catch (e) {
+    console.warn('Erro ao excluir bem no Firestore:', e);
+  }
+};
+
+export const saveAssetsBatchToCloud = async (assetsList, onProgress = null) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !assetsList || assetsList.length === 0) return;
+
+  const chunkSize = 300;
+  for (let i = 0; i < assetsList.length; i += chunkSize) {
+    const chunk = assetsList.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach(item => {
+      if (item && item.id) {
+        batch.set(doc(db, 'assets', String(item.id)), item, { merge: true });
+      }
+    });
+    await batch.commit();
+    if (onProgress) {
+      onProgress(Math.min(i + chunkSize, assetsList.length), assetsList.length);
+    }
   }
 };
 
