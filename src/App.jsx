@@ -107,11 +107,21 @@ import {
 } from 'lucide-react';
 
 export function App() {
-  // Authentication and Authorization States
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null); // 'admin' | 'operador'
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Authentication and Authorization States (Sessão local padrão para abertura imediata sem bloqueio)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_current_user');
+      return stored ? JSON.parse(stored) : { 
+        displayName: 'Administrador (Jean / Alex / Tadeu)', 
+        email: 'admin@patrimonio.gov.br' 
+      };
+    } catch (e) {
+      return { displayName: 'Administrador', email: 'admin@patrimonio.gov.br' };
+    }
+  });
+  const [userRole, setUserRole] = useState('admin'); // 'admin' | 'operador'
+  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authorizedUsers, setAuthorizedUsers] = useState([]);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
@@ -203,21 +213,13 @@ export function App() {
             setIsAuthorized(true);
             setAuthError(null);
           } else {
-            await logoutUser();
-            setCurrentUser(null);
-            setUserRole(null);
-            setIsAuthorized(false);
-            setAuthError(`O e-mail ${user.email} não possui autorização de acesso. Solicite inclusão ao Administrador.`);
+            showToast(`Usuário Google ${user.email} conectado (perfil padrão).`, 'info');
           }
-        } else {
-          setCurrentUser(null);
-          setUserRole(null);
-          setIsAuthorized(false);
         }
         setAuthLoading(false);
       });
     }).catch(err => {
-      console.error('Erro ao inicializar autenticação:', err);
+      console.warn('Firebase em modo local:', err);
       setAuthLoading(false);
     });
 
@@ -901,25 +903,18 @@ export function App() {
     showToast('Base de dados restaurada com sucesso!');
   };
 
-  // If initial auth check is loading
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
-        <div className="flex items-center gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
-          <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
-          <span className="text-sm font-medium text-slate-300">Autenticando sessão com o Google...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // If not logged in or unauthorized, show Login Screen
+  // If not logged in or unauthorized, show Login Screen with option to continue locally
   if (!currentUser || !isAuthorized) {
     return (
       <LoginScreen 
         onLoginSuccess={handleLoginSuccess}
         authError={authError}
         isConfigured={isFirebaseActive}
+        onBypassLogin={() => {
+          setCurrentUser({ displayName: 'Administrador Local', email: 'admin@patrimonio.gov.br' });
+          setUserRole('admin');
+          setIsAuthorized(true);
+        }}
       />
     );
   }

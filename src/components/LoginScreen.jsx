@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, LogIn, AlertTriangle, Lock, UserCheck, CheckCircle2 } from 'lucide-react';
 import { loginWithGoogle } from '../services/firebase';
 
-export function LoginScreen({ onLoginSuccess, authError, isConfigured }) {
+export function LoginScreen({ onLoginSuccess, authError, isConfigured, onBypassLogin }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(authError || null);
 
@@ -98,6 +98,18 @@ export function LoginScreen({ onLoginSuccess, authError, isConfigured }) {
             {loading ? 'Autenticando...' : 'Entrar com a Conta Google'}
           </span>
         </button>
+
+        {/* Botão de Acesso Local Direto */}
+        {onBypassLogin && (
+          <button
+            type="button"
+            onClick={onBypassLogin}
+            className="w-full mt-3 py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Acessar Diretamente como Administrador Local</span>
+          </button>
+        )}
 
         {/* Security Info Card */}
         <div className="mt-8 pt-6 border-t border-slate-800/80">
