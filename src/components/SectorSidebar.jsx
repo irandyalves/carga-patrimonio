@@ -134,7 +134,10 @@ export const SectorSidebar = ({
           {/* Aba: Todas as Áreas */}
           <div className="space-y-0.5">
             <button
-              onClick={() => onSelectFilterMode('ALL_SECTORS')}
+              onClick={() => {
+                onSelectFilterMode('ALL_SECTORS');
+                onSelectStatusFilter('ALL');
+              }}
               className={`w-full px-3 py-2.5 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
                 filterMode === 'ALL_SECTORS'
                   ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 ring-1 ring-blue-400'
@@ -154,7 +157,6 @@ export const SectorSidebar = ({
             {filterMode === 'ALL_SECTORS' && (
               <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
                 {[
-                  { id: 'ALL', label: 'Todos os Bens', count: totalAssetsCount, color: 'text-slate-300' },
                   { id: 'PENDENTES', label: 'Pendentes', count: assets.filter(a => a.status === 'PENDENTE').length, color: 'text-amber-400', dot: 'bg-amber-400' },
                   { id: 'CONFERIDOS', label: 'Conferidos', count: assets.filter(a => a.status === 'CONFERIDO').length, color: 'text-emerald-400', dot: 'bg-emerald-400' },
                   { id: 'CAUTELAS', label: 'Em Cautela', count: assets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length, color: 'text-blue-400', dot: 'bg-blue-400' },
@@ -204,6 +206,7 @@ export const SectorSidebar = ({
                   onClick={() => {
                     onSelectFilterMode('MY_SECTOR');
                     onSelectSector(sec.id);
+                    onSelectStatusFilter('ALL');
                   }}
                   className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
                     isSelected
@@ -258,11 +261,10 @@ export const SectorSidebar = ({
                   </div>
                 </button>
 
-                {/* Sub-opções indentadas abaixo do setor clicado */}
+                {/* Sub-opções de status indentadas abaixo do setor clicado */}
                 {isSelected && (
                   <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
                     {[
-                      { id: 'ALL', label: 'Todos os Bens', count: stats.total, color: 'text-slate-300' },
                       { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
                       { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
                       { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },

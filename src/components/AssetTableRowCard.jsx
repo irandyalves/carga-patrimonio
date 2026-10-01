@@ -327,10 +327,6 @@ export const AssetTableRowCard = ({
           </div>
           
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1 text-xs text-slate-400">
-            <span className="text-slate-300 font-medium">
-              {asset.categoria}
-            </span>
-
             {/* Localização Editável: Escolher / Digitar / Falar no Microfone */}
             {isEditingLocation ? (
               <div 
