@@ -96,7 +96,8 @@ import {
   Eye,
   EyeOff,
   Columns3,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 
 export function App() {
@@ -623,44 +624,26 @@ export function App() {
         : valB.localeCompare(valA, 'pt-BR');
     };
 
-    if (filterMode === 'ALL_SECTORS') {
-      const pendentes = [];
-      const conferidos = [];
-      const baixados = [];
-
-      filteredAssets.forEach(item => {
-        if (item.baixado || item.status === 'BAIXADO') {
-          baixados.push(item);
-        } else if (item.status === 'CONFERIDO') {
-          conferidos.push(item);
-        } else {
-          pendentes.push(item);
-        }
-      });
-
-      pendentes.sort(sortFn);
-      conferidos.sort(sortFn);
-      baixados.sort(sortFn);
-
-      return [...pendentes, ...conferidos, ...baixados];
-    }
-
-    const active = [];
+    const pendentes = [];
+    const conferidos = [];
     const baixados = [];
 
     filteredAssets.forEach(item => {
       if (item.baixado || item.status === 'BAIXADO') {
         baixados.push(item);
+      } else if (item.status === 'CONFERIDO') {
+        conferidos.push(item);
       } else {
-        active.push(item);
+        pendentes.push(item);
       }
     });
 
-    active.sort(sortFn);
+    pendentes.sort(sortFn);
+    conferidos.sort(sortFn);
     baixados.sort(sortFn);
 
-    return [...active, ...baixados];
-  }, [filteredAssets, sortField, sortDirection, filterMode]);
+    return [...pendentes, ...conferidos, ...baixados];
+  }, [filteredAssets, sortField, sortDirection]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {
@@ -1710,11 +1693,31 @@ export function App() {
               <div className="w-full flex-1 pb-8 border-t border-slate-800/80 -ml-1">
                 {sortedAssets.map((asset, index) => {
                   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
+                  const isConferido = asset.status === 'CONFERIDO' && !isBaixado;
                   const prevAsset = index > 0 ? sortedAssets[index - 1] : null;
+                  const isFirstConferido = isConferido && (!prevAsset || (prevAsset.status !== 'CONFERIDO' && !prevAsset.baixado && prevAsset.status !== 'BAIXADO'));
                   const isFirstBaixado = isBaixado && (!prevAsset || (!prevAsset.baixado && prevAsset.status !== 'BAIXADO'));
 
                   return (
                     <React.Fragment key={asset.id}>
+                      {/* Divisor Visual de Itens Conferidos (ao marcar como conferido, movidos para o fim) */}
+                      {isFirstConferido && statusFilter !== 'CONFERIDOS' && (
+                        <div className="py-2.5 px-6 my-3 mx-2 flex items-center justify-between border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1 rounded bg-emerald-500/20 text-emerald-400">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            </div>
+                            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                              Conferidos ({sortedAssets.filter(a => a.status === 'CONFERIDO' && !a.baixado && a.status !== 'BAIXADO').length})
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                              — Carga conferida do setor (no final da lista)
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Divisor Visual de Bens Baixados */}
                       {isFirstBaixado && statusFilter !== 'BAIXADOS' && (
                         <div className="py-2.5 px-6 my-3 mx-2 flex items-center justify-between border-y border-dashed border-rose-500/40 bg-gradient-to-r from-rose-950/40 via-rose-900/20 to-rose-950/40 rounded-lg shadow-sm">
                           <div className="flex items-center gap-2.5">
