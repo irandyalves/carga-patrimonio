@@ -98,7 +98,8 @@ import {
   Archive,
   Eye,
   EyeOff,
-  Columns3
+  Columns3,
+  Check
 } from 'lucide-react';
 
 export function App() {
@@ -204,6 +205,31 @@ export function App() {
     if (visibleColumns.valorAtual) base += 96;
     return `${base}px`;
   }, [visibleColumns]);
+
+  // Dropdown de Gerenciamento de Colunas
+  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
+  const columnDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(e.target)) {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+    if (isColumnDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isColumnDropdownOpen]);
 
   // Modal States
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -1535,73 +1561,99 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 10: Ações + Botão de Restauração de Colunas Ocultas */}
-                  <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
-                    {hiddenColumnsCount > 0 && (
-                      <div className="relative group/hiddenCols">
-                        <button
-                          type="button"
-                          className="px-1.5 py-0.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 rounded-md text-[9px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
-                          title="Clique para restaurar colunas ocultas"
-                        >
-                          <EyeOff className="w-2.5 h-2.5 text-indigo-400" />
+                  {/* Coluna 10: Ações + Botão de Gerenciamento e Restauração de Colunas */}
+                  <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1 relative" ref={columnDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsColumnDropdownOpen(!isColumnDropdownOpen);
+                      }}
+                      className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm ${
+                        isColumnDropdownOpen
+                          ? 'bg-indigo-600 text-white ring-2 ring-indigo-400/50'
+                          : hiddenColumnsCount > 0
+                            ? 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 animate-pulse hover:animate-none'
+                            : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/50'
+                      }`}
+                      title={hiddenColumnsCount > 0 ? `${hiddenColumnsCount} colunas ocultas (Clique para gerenciar/reexibir)` : "Gerenciar colunas visíveis"}
+                    >
+                      {hiddenColumnsCount > 0 ? (
+                        <>
+                          <EyeOff className="w-3 h-3 text-indigo-400" />
                           <span>{hiddenColumnsCount}</span>
-                        </button>
-                        
-                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover/hiddenCols:flex flex-col bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-2 z-50 min-w-[170px] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100">
-                          <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
-                            <span>Colunas Ocultas</span>
+                        </>
+                      ) : (
+                        <Columns3 className="w-3 h-3 text-slate-400" />
+                      )}
+                    </button>
+
+                    {/* Menu Dropdown de Colunas - Abre com clique e permanece aberto para marcar/desmarcar */}
+                    {isColumnDropdownOpen && (
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 top-full mt-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2.5 min-w-[210px] text-xs space-y-1.5 animate-in fade-in zoom-in-95 duration-100 text-left"
+                      >
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1.5 border-b border-slate-800 flex items-center justify-between">
+                          <span>Exibir Colunas</span>
+                          <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={showAllColumns}
-                              className="text-indigo-400 hover:text-indigo-300 text-[9px] lowercase font-semibold underline cursor-pointer"
+                              className="text-indigo-400 hover:text-indigo-300 text-[9.5px] lowercase font-semibold underline cursor-pointer"
                             >
                               exibir todas
                             </button>
                           </div>
-                          {!visibleColumns.responsavel && (
-                            <button
-                              type="button"
-                              onClick={() => toggleColumn('responsavel')}
-                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
-                            >
-                              <span>Responsável</span>
-                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
-                            </button>
-                          )}
-                          {!visibleColumns.dataAquisicao && (
-                            <button
-                              type="button"
-                              onClick={() => toggleColumn('dataAquisicao')}
-                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
-                            >
-                              <span>Aquisição</span>
-                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
-                            </button>
-                          )}
-                          {!visibleColumns.valorOriginal && (
-                            <button
-                              type="button"
-                              onClick={() => toggleColumn('valorOriginal')}
-                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
-                            >
-                              <span>$ Original</span>
-                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
-                            </button>
-                          )}
-                          {!visibleColumns.valorAtual && (
-                            <button
-                              type="button"
-                              onClick={() => toggleColumn('valorAtual')}
-                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
-                            >
-                              <span>$ Atual</span>
-                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
-                            </button>
-                          )}
+                        </div>
+
+                        <div className="space-y-1 pt-0.5">
+                          {[
+                            { key: 'responsavel', label: 'Responsável' },
+                            { key: 'dataAquisicao', label: 'Aquisição' },
+                            { key: 'valorOriginal', label: '$ Original' },
+                            { key: 'valorAtual', label: '$ Atual' }
+                          ].map(col => {
+                            const isVisible = visibleColumns[col.key] !== false;
+                            return (
+                              <button
+                                key={col.key}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleColumn(col.key);
+                                }}
+                                className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between text-[11px] cursor-pointer group/colitem ${
+                                  isVisible 
+                                    ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-200' 
+                                    : 'bg-slate-950/50 hover:bg-slate-800/60 text-slate-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${
+                                    isVisible 
+                                      ? 'bg-blue-600 border-blue-500 text-white' 
+                                      : 'border-slate-600 bg-slate-800 text-transparent'
+                                  }`}>
+                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                  </div>
+                                  <span className={isVisible ? 'font-semibold text-slate-100' : 'text-slate-400'}>
+                                    {col.label}
+                                  </span>
+                                </div>
+                                
+                                {isVisible ? (
+                                  <Eye className="w-3.5 h-3.5 text-emerald-400 group-hover/colitem:scale-110 transition-transform" />
+                                ) : (
+                                  <EyeOff className="w-3.5 h-3.5 text-rose-400/80 group-hover/colitem:scale-110 transition-transform" />
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
+
                     <span>Ações</span>
                   </div>
 
