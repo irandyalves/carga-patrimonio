@@ -2024,12 +2024,12 @@ export function App() {
                           }}
                           className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 border cursor-pointer transition-colors ${
                             conferidosSortField === 'numeroPatrimonio'
-                              ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-sm ring-1 ring-emerald-400/40'
+                              ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
                               : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
                           }`}
                           title={`Ordenar conferidos por Patrimônio (${conferidosSortDirection === 'asc' ? 'Crescente ▲' : 'Decrescente ▼'})`}
                         >
-                          <Hash className="w-3.5 h-3.5 text-emerald-400" />
+                          <Hash className={`w-3.5 h-3.5 ${conferidosSortField === 'numeroPatrimonio' ? 'text-blue-400' : 'text-slate-400'}`} />
                           <span className="text-[9px] leading-none select-none">
                             {conferidosSortField === 'numeroPatrimonio' ? (
                               conferidosSortDirection === 'asc' ? '▲' : '▼'
@@ -2050,12 +2050,12 @@ export function App() {
                           }}
                           className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 border cursor-pointer transition-colors ${
                             conferidosSortField === 'descricao'
-                              ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-sm ring-1 ring-emerald-400/40'
+                              ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
                               : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
                           }`}
                           title={`Ordenar conferidos por Item / Descrição (${conferidosSortDirection === 'asc' ? 'A-Z ▲' : 'Z-A ▼'})`}
                         >
-                          <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                          <FileText className={`w-3.5 h-3.5 ${conferidosSortField === 'descricao' ? 'text-blue-400' : 'text-slate-400'}`} />
                           <span className="text-[9px] leading-none select-none">
                             {conferidosSortField === 'descricao' ? (
                               conferidosSortDirection === 'asc' ? '▲' : '▼'
@@ -2096,63 +2096,72 @@ export function App() {
                       {isFirstConferido && statusFilter !== 'CONFERIDOS' && (
                         <div className="relative py-1.5 px-3 sm:px-4 my-2 mx-2 border-y border-dashed border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-emerald-950/40 rounded-lg shadow-sm flex items-center justify-between min-h-[38px]">
                           
-                          {/* Botões de Ordenação posicionados à esquerda acima das colunas Patrimônio e Item */}
+                          {/* Botões de Ordenação posicionados à esquerda alinhados com as colunas Patrimônio e Item */}
                           <div className="flex items-center gap-2 z-10">
-                            {/* Ordenar Patrimônio */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (conferidosSortField === 'numeroPatrimonio') {
-                                  setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-                                } else {
-                                  setConferidosSortField('numeroPatrimonio');
-                                  setConferidosSortDirection('asc');
-                                }
-                              }}
-                              className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
-                                conferidosSortField === 'numeroPatrimonio'
-                                  ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-sm ring-1 ring-emerald-400/40'
-                                  : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-emerald-300 hover:border-emerald-500/40'
-                              }`}
-                              title={`Ordenar conferidos por Nº de Patrimônio (${conferidosSortDirection === 'asc' ? 'Crescente ▲' : 'Decrescente ▼'})`}
-                            >
-                              <Hash className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-[9px] leading-none select-none">
-                                {conferidosSortField === 'numeroPatrimonio' ? (
-                                  conferidosSortDirection === 'asc' ? '▲' : '▼'
-                                ) : (
-                                  <span className="opacity-40">▲</span>
-                                )}
-                              </span>
-                            </button>
+                            {/* Ordenar Patrimônio - Alinhado com a Coluna 1 (w-28) */}
+                            <div className="w-28 shrink-0 flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (conferidosSortField === 'numeroPatrimonio') {
+                                    setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                                  } else {
+                                    setConferidosSortField('numeroPatrimonio');
+                                    setConferidosSortDirection('asc');
+                                  }
+                                }}
+                                className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                                  conferidosSortField === 'numeroPatrimonio'
+                                    ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
+                                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-blue-300 hover:border-blue-500/40'
+                                }`}
+                                title={`Ordenar conferidos por Nº de Patrimônio (${conferidosSortDirection === 'asc' ? 'Crescente ▲' : 'Decrescente ▼'})`}
+                              >
+                                <Hash className={`w-3.5 h-3.5 ${conferidosSortField === 'numeroPatrimonio' ? 'text-blue-400' : 'text-slate-400'}`} />
+                                <span className="text-[9px] leading-none select-none">
+                                  {conferidosSortField === 'numeroPatrimonio' ? (
+                                    conferidosSortDirection === 'asc' ? '▲' : '▼'
+                                  ) : (
+                                    <span className="opacity-40">▲</span>
+                                  )}
+                                </span>
+                              </button>
+                            </div>
 
-                            {/* Ordenar Item */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (conferidosSortField === 'descricao') {
-                                  setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-                                } else {
-                                  setConferidosSortField('descricao');
-                                  setConferidosSortDirection('asc');
-                                }
-                              }}
-                              className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
-                                conferidosSortField === 'descricao'
-                                  ? 'bg-emerald-500/30 border-emerald-400 text-emerald-200 shadow-sm ring-1 ring-emerald-400/40'
-                                  : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-emerald-300 hover:border-emerald-500/40'
-                              }`}
-                              title={`Ordenar conferidos por Item / Descrição (${conferidosSortDirection === 'asc' ? 'A-Z ▲' : 'Z-A ▼'})`}
-                            >
-                              <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-[9px] leading-none select-none">
-                                {conferidosSortField === 'descricao' ? (
-                                  conferidosSortDirection === 'asc' ? '▲' : '▼'
-                                ) : (
-                                  <span className="opacity-40">▲</span>
-                                )}
-                              </span>
-                            </button>
+                            {/* Espaçador para Coluna de Quantidade (w-12) */}
+                            {visibleColumns.quantidade !== false && (
+                              <div className="w-12 shrink-0 hidden md:block" />
+                            )}
+
+                            {/* Ordenar Item - Alinhado com a primeira letra da coluna Item/Descrição */}
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (conferidosSortField === 'descricao') {
+                                    setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                                  } else {
+                                    setConferidosSortField('descricao');
+                                    setConferidosSortDirection('asc');
+                                  }
+                                }}
+                                className={`px-2 py-1 rounded-md text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                                  conferidosSortField === 'descricao'
+                                    ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
+                                    : 'bg-slate-900/80 border-slate-700/80 text-slate-400 hover:text-blue-300 hover:border-blue-500/40'
+                                }`}
+                                title={`Ordenar conferidos por Item / Descrição (${conferidosSortDirection === 'asc' ? 'A-Z ▲' : 'Z-A ▼'})`}
+                              >
+                                <FileText className={`w-3.5 h-3.5 ${conferidosSortField === 'descricao' ? 'text-blue-400' : 'text-slate-400'}`} />
+                                <span className="text-[9px] leading-none select-none">
+                                  {conferidosSortField === 'descricao' ? (
+                                    conferidosSortDirection === 'asc' ? '▲' : '▼'
+                                  ) : (
+                                    <span className="opacity-40">▲</span>
+                                  )}
+                                </span>
+                              </button>
+                            </div>
                           </div>
 
                           {/* Centro: Ícone e CONFERIDOS perfeitamente centralizado horizontalmente */}
