@@ -25,7 +25,8 @@ import {
   Info,
   Sparkles,
   Building2,
-  Palette
+  Palette,
+  ExternalLink
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -115,6 +116,7 @@ export const AssetTableRowCard = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+  const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
@@ -226,7 +228,7 @@ export const AssetTableRowCard = ({
     };
   }, [asset.id]);
 
-  // Fechar ao clicar fora
+  // Fechar ao clicar fora ou tecla Escape
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (isEditingLocation && locContainerRef.current && !locContainerRef.current.contains(e.target)) {
@@ -239,8 +241,24 @@ export const AssetTableRowCard = ({
         setIsColorPickerOpen(false);
       }
     };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsBaixaResumoOpen(false);
+        setIsDescModalOpen(false);
+        setIsCautelaModalViewOpen(false);
+        setIsColorPickerOpen(false);
+        closeLocEdit();
+        closeObsEdit();
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isEditingLocation, isEditingObs, isColorPickerOpen]);
 
   // Permissões: Administrador pode tudo. Operador só altera bens do seu próprio departamento.
@@ -482,7 +500,21 @@ export const AssetTableRowCard = ({
       <div className="pl-10 pr-9 py-0.5 sm:py-1 flex items-center gap-2 text-[11px] w-full">
         
         {/* Coluna 1: Patrimônio */}
-        <div className="w-28 shrink-0 flex items-center gap-1">
+        <div className="w-28 shrink-0 flex items-center gap-1.5">
+          {isBaixado && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsBaixaResumoOpen(true);
+              }}
+              title="Clique para ver o resumo da baixa e documentos (PDF)"
+              className="p-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-400 hover:text-rose-200 transition-all cursor-pointer shadow-sm shrink-0 flex items-center justify-center hover:scale-110 active:scale-95 group/baixa"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           <div className="flex flex-col">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
               FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
@@ -1457,6 +1489,176 @@ export const AssetTableRowCard = ({
               <button
                 type="button"
                 onClick={() => setIsCautelaModalViewOpen(false)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Suspenso: Resumo da Baixa Patrimonial com Abertura Direta de PDF/Documento */}
+      {isBaixaResumoOpen && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsBaixaResumoOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-rose-500/30 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
+                  <Archive className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Resumo da Baixa Patrimonial</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-xs text-rose-300 font-bold bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                      Nº {formattedXX}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                      BAIXADO / DESINCORPORADO
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBaixaResumoOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="space-y-3.5 text-xs">
+              {/* Box Item Info */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item Baixado</span>
+                <p className="text-white font-medium text-sm">
+                  <strong className="font-mono text-rose-400 mr-1.5">{formattedXX}</strong>
+                  {asset.descricao}
+                </p>
+                <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                  <span>Setor: <strong className="text-slate-300 font-medium">{asset.setorNome || activeSector?.name}</strong></span>
+                  {asset.numeroSerie && <span>Série: <strong className="font-mono text-slate-300">{asset.numeroSerie}</strong></span>}
+                </div>
+              </div>
+
+              {/* Informações da Baixa */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Motivo da Baixa:</span>
+                  <strong className="text-rose-300 text-xs block leading-snug">
+                    {asset.dadosBaixa?.motivo || 'Baixa Patrimonial Oficial'}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Data do Registro:</span>
+                  <strong className="text-slate-200 text-xs block">
+                    {asset.dadosBaixa?.data || asset.dadosBaixa?.dataHoraRegistro || '01/10/2026'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Observações / Parecer */}
+              <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                  Justificativa / Parecer Técnico
+                </span>
+                <p className="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">
+                  {asset.dadosBaixa?.observacoes || asset.observacao || 'Processo de desincorporação patrimonial homologado.'}
+                </p>
+              </div>
+
+              {/* Documentos Comprobatórios / Anexos PDF */}
+              <div className="space-y-2">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                  Documento / Processo Comprobatório (PDF)
+                </span>
+
+                {asset.dadosBaixa?.anexos && asset.dadosBaixa.anexos.length > 0 ? (
+                  <div className="space-y-2">
+                    {asset.dadosBaixa.anexos.map((doc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (doc.url) {
+                            window.open(doc.url, '_blank');
+                          }
+                        }}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-700 hover:border-rose-500/50 hover:bg-rose-950/20 transition-all text-left group/doc cursor-pointer shadow-sm"
+                        title="Clique para abrir o documento/PDF"
+                      >
+                        <div className="flex items-center gap-2.5 truncate min-w-0">
+                          <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 group-hover/doc:bg-rose-500/20 group-hover/doc:text-rose-300 transition-colors shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="truncate">
+                            <div className="text-xs font-semibold text-slate-200 group-hover/doc:text-white truncate">
+                              {doc.nome || `Documento_Baixa_${idx + 1}.pdf`}
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                              {doc.tamanho && <span>{doc.tamanho}</span>}
+                              <span>• Clique para abrir PDF</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-bold text-rose-400 group-hover/doc:text-rose-300 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 shrink-0">
+                          <span>Abrir PDF</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (asset.dadosBaixa?.documento || asset.documento) ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const docUrl = asset.dadosBaixa?.documentoUrl || asset.documentoUrl || asset.dadosBaixa?.documento || asset.documento;
+                      if (docUrl && (docUrl.startsWith('http') || docUrl.startsWith('data:'))) {
+                        window.open(docUrl, '_blank');
+                      }
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-700 hover:border-rose-500/50 hover:bg-rose-950/20 transition-all text-left cursor-pointer group/doc"
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 group-hover/doc:bg-rose-500/20 shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-200 truncate">
+                        {asset.dadosBaixa?.documento || asset.documento}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-bold text-rose-400 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 shrink-0">
+                      <span>Visualizar</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-center text-slate-400 text-xs">
+                    Nenhum documento ou PDF anexado neste registro de baixa.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-end gap-2 mt-5 pt-3.5 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsBaixaResumoOpen(false)}
                 className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
