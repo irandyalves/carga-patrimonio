@@ -562,7 +562,7 @@ export const AssetTableRowCard = ({
             </div>
           ) : isEmCautela ? (
             <div className="relative group/cautela inline-block">
-              <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-1.5 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer transition-colors">
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
                 <span className="truncate max-w-[240px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
               </div>
