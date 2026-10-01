@@ -31,6 +31,9 @@ import {
   BaixaModal 
 } from './components/BaixaModal';
 import { 
+  DtinModal 
+} from './components/DtinModal';
+import { 
   LabelPrinterModal 
 } from './components/LabelPrinterModal';
 import { 
@@ -148,6 +151,9 @@ export function App() {
   
   const [isBaixaModalOpen, setIsBaixaModalOpen] = useState(false);
   const [assetForBaixa, setAssetForBaixa] = useState(null);
+
+  const [isDtinModalOpen, setIsDtinModalOpen] = useState(false);
+  const [assetForDtin, setAssetForDtin] = useState(null);
   
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [assetForTransfer, setAssetForTransfer] = useState(null);
@@ -264,7 +270,7 @@ export function App() {
 
       // Se algum modal estiver aberto, não intercepta
       if (
-        isAssetModalOpen || isCautelaModalOpen || isBaixaModalOpen || 
+        isAssetModalOpen || isCautelaModalOpen || isBaixaModalOpen || isDtinModalOpen ||
         isTransferModalOpen || isManageSectorsOpen || isLabelsModalOpen || 
         isExcelModalOpen || isBackupModalOpen || isFirebaseModalOpen || 
         isSolicitacaoModalOpen || isPedidosModalOpen || isQrOpen
@@ -1100,6 +1106,66 @@ export function App() {
     showToast('Baixa cancelada e bem reativado com sucesso!');
   };
 
+  // Open DTIN Modal
+  const handleOpenDtin = (asset) => {
+    setAssetForDtin(asset);
+    setIsDtinModalOpen(true);
+  };
+
+  // Confirm Envio ao DTIN
+  const handleConfirmDtin = (assetId, dadosDtin) => {
+    const updated = assets.map(a => {
+      if (a.id === assetId) {
+        return {
+          ...a,
+          status: 'ENVIADO_DTIN',
+          enviadoDtin: true,
+          dadosDtin: {
+            ...dadosDtin,
+            dataHoraRegistro: new Date().toISOString()
+          },
+          historico: [
+            ...(a.historico || []),
+            { 
+              data: dadosDtin.data, 
+              acao: `Envio ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
+          ]
+        };
+      }
+      return a;
+    });
+    setAssets(updated);
+    showToast('Equipamento enviado ao DTIN com sucesso!');
+  };
+
+  // Retorno / Reintegração do DTIN
+  const handleReturnDtin = (assetId) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const updated = assets.map(a => {
+      if (a.id === assetId) {
+        return {
+          ...a,
+          status: 'PENDENTE',
+          enviadoDtin: false,
+          dadosDtin: null,
+          historico: [
+            ...(a.historico || []),
+            { 
+              data: nowStr, 
+              acao: 'Retorno do DTIN: Equipamento reintegrado ao setor', 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+            }
+          ]
+        };
+      }
+      return a;
+    });
+    setAssets(updated);
+    showToast('Retorno do DTIN confirmado e equipamento reintegrado!');
+  };
+
   // Single label print
   const handlePrintSingleLabel = async (asset) => {
     await generateLabelsPDF([asset]);
@@ -1438,6 +1504,8 @@ export function App() {
                         onOpenCautela={handleOpenCautela}
                         onOpenBaixa={handleOpenBaixa}
                         onCancelBaixa={handleCancelBaixa}
+                        onOpenDtin={handleOpenDtin}
+                        onReturnDtin={handleReturnDtin}
                         onPrintSingleLabel={handlePrintSingleLabel}
                         onTransferSector={handleOpenTransferModal}
                         onDeleteAsset={handleDeleteAsset}
@@ -1562,6 +1630,17 @@ export function App() {
         }}
         asset={assetForBaixa}
         onConfirmBaixa={handleConfirmBaixa}
+      />
+
+      <DtinModal
+        isOpen={isDtinModalOpen}
+        onClose={() => {
+          setIsDtinModalOpen(false);
+          setAssetForDtin(null);
+        }}
+        asset={assetForDtin}
+        onConfirmDtin={handleConfirmDtin}
+        currentUserName={currentUser?.displayName || currentUser?.email}
       />
 
       <LabelPrinterModal

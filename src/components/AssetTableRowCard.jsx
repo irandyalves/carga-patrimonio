@@ -27,7 +27,9 @@ import {
   Building2,
   Palette,
   ExternalLink,
-  RotateCcw
+  RotateCcw,
+  Server,
+  Laptop
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -103,6 +105,8 @@ export const AssetTableRowCard = ({
   onOpenCautela,
   onOpenBaixa,
   onCancelBaixa,
+  onOpenDtin,
+  onReturnDtin,
   onPrintSingleLabel,
   onTransferSector,
   onDeleteAsset,
@@ -117,9 +121,11 @@ export const AssetTableRowCard = ({
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCancelBaixaConfirm, setShowCancelBaixaConfirm] = useState(false);
+  const [showReturnDtinConfirm, setShowReturnDtinConfirm] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
+  const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
@@ -248,6 +254,7 @@ export const AssetTableRowCard = ({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setIsBaixaResumoOpen(false);
+        setIsDtinResumoOpen(false);
         setIsDescModalOpen(false);
         setIsCautelaModalViewOpen(false);
         setIsColorPickerOpen(false);
@@ -273,6 +280,11 @@ export const AssetTableRowCard = ({
   const isConferido = asset.status === 'CONFERIDO';
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
+  const isEnviadoDtin = asset.status === 'ENVIADO_DTIN' || !!asset.enviadoDtin;
+  const isInformática = asset.categoria === 'Equipamentos de Informática' || 
+                        asset.setorId === 'sec-ti' || 
+                        (activeSector && activeSector.id === 'sec-ti') ||
+                        /monitor|computador|notebook|cpu|teclado|mouse|switch|servidor|impressora|nobreak|scanner|estabilizador|estação|gabinete|laptop|ti|rede|roteador|fonte|nobreak|patch/i.test(asset.descricao || '');
 
   // Informações da cautela para hover e exibição de "Está com: ASCOM (Jean)"
   const cautelaDestino = asset.cautelaAtual?.setorDestino || 'ASCOM';
@@ -571,6 +583,21 @@ export const AssetTableRowCard = ({
           >
             {asset.descricao}
           </h4>
+
+          {isEnviadoDtin && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDtinResumoOpen(true);
+              }}
+              title="Equipamento enviado ao DTIN (Clique para ver detalhes e documentos)"
+              className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 text-[10px] flex items-center gap-1 hover:bg-cyan-500/30 transition-all cursor-pointer shrink-0 shadow-sm animate-pulse hover:animate-none"
+            >
+              <Server className="w-3 h-3 text-cyan-400" />
+              <span>No DTIN</span>
+            </button>
+          )}
 
           {isDescLong && (
             <button
@@ -1256,6 +1283,76 @@ export const AssetTableRowCard = ({
                     <span>Imprimir Etiqueta</span>
                   </button>
 
+                  {/* Opção DTIN para Equipamentos de Informática ou dentro de TI */}
+                  {!isBaixado && isInformática && (
+                    isEnviadoDtin ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsActionsOpen(false);
+                            setIsDtinResumoOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                        >
+                          <Server className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Ver Detalhes DTIN</span>
+                        </button>
+
+                        {showReturnDtinConfirm ? (
+                          <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirmar retorno do DTIN?</p>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsActionsOpen(false);
+                                  setShowReturnDtinConfirm(false);
+                                  onReturnDtin && onReturnDtin(asset.id);
+                                }}
+                                className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                              >
+                                Retornar
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowReturnDtinConfirm(false);
+                                }}
+                                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowReturnDtinConfirm(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Retornar do DTIN</span>
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsActionsOpen(false);
+                          onOpenDtin && onOpenDtin(asset);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                      >
+                        <Server className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Enviar DTIN</span>
+                      </button>
+                    )
+                  )}
+
                   {isBaixado ? (
                     showCancelBaixaConfirm ? (
                       <div className="p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center my-1">
@@ -1730,6 +1827,185 @@ export const AssetTableRowCard = ({
               <button
                 type="button"
                 onClick={() => setIsBaixaResumoOpen(false)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Suspenso: Resumo do Envio ao DTIN com Abertura Direta de PDF/Documento */}
+      {isDtinResumoOpen && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsDtinResumoOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-cyan-500/30 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto"
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/30">
+                  <Server className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Equipamento Enviado ao DTIN</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-xs text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                      Nº {formattedXX}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                      EM ATENDIMENTO NO DTIN
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDtinResumoOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="space-y-3.5 text-xs">
+              {/* Box Item Info */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item de Informática</span>
+                <p className="text-white font-medium text-sm">
+                  <strong className="font-mono text-cyan-400 mr-1.5">{formattedXX}</strong>
+                  {asset.descricao}
+                </p>
+                <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                  <span>Setor: <strong className="text-slate-300 font-medium">{asset.setorNome || activeSector?.name}</strong></span>
+                  {asset.numeroSerie && <span>S/N: <strong className="font-mono text-slate-300">{asset.numeroSerie}</strong></span>}
+                </div>
+              </div>
+
+              {/* Informações do Envio */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Finalidade / Motivo:</span>
+                  <strong className="text-cyan-300 text-xs block leading-snug">
+                    {asset.dadosDtin?.motivo || 'Manutenção Corretiva / Suporte Técnico'}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Data do Envio:</span>
+                  <strong className="text-slate-200 text-xs block">
+                    {asset.dadosDtin?.data || '01/10/2026'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Chamado & Responsável */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {asset.dadosDtin?.chamado && (
+                  <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Nº Chamado / O.S.:</span>
+                    <strong className="text-indigo-300 font-mono text-xs block">
+                      {asset.dadosDtin.chamado}
+                    </strong>
+                  </div>
+                )}
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Solicitante / Responsável:</span>
+                  <strong className="text-slate-200 text-xs block">
+                    {asset.dadosDtin?.responsavel || activeSector?.responsavel || 'Operador'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Observações / Descrição do Defeito */}
+              <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                  Descrição do Problema / Procedimento
+                </span>
+                <p className="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">
+                  {asset.dadosDtin?.observacoes || 'Equipamento entregue ao DTIN para avaliação técnica.'}
+                </p>
+              </div>
+
+              {/* Documentos Comprobatórios / Anexos PDF */}
+              <div className="space-y-2">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
+                  Documento / Guia de Remessa / O.S. (PDF)
+                </span>
+
+                {asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0 ? (
+                  <div className="space-y-2">
+                    {asset.dadosDtin.anexos.map((doc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (doc.url) {
+                            window.open(doc.url, '_blank');
+                          }
+                        }}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-700 hover:border-cyan-500/50 hover:bg-cyan-950/20 transition-all text-left group/doc cursor-pointer shadow-sm"
+                        title="Clique para abrir o documento/PDF"
+                      >
+                        <div className="flex items-center gap-2.5 truncate min-w-0">
+                          <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover/doc:bg-cyan-500/20 group-hover/doc:text-cyan-300 transition-colors shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="truncate">
+                            <div className="text-xs font-semibold text-slate-200 group-hover/doc:text-white truncate">
+                              {doc.nome || `Documento_DTIN_${idx + 1}.pdf`}
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                              {doc.tamanho && <span>{doc.tamanho}</span>}
+                              <span>• Clique para abrir PDF</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-bold text-cyan-400 group-hover/doc:text-cyan-300 px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 shrink-0">
+                          <span>Abrir PDF</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-center text-slate-400 text-xs">
+                    Nenhum documento ou PDF anexado neste envio.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-between gap-2 mt-5 pt-3.5 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm('Deseja confirmar o retorno deste equipamento do DTIN para o setor?')) {
+                    setIsDtinResumoOpen(false);
+                    onReturnDtin && onReturnDtin(asset.id);
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Confirmar retorno do DTIN e reintegrar equipamento ao setor"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Confirmar Retorno do DTIN</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDtinResumoOpen(false)}
                 className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
