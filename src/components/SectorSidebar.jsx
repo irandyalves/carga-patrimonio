@@ -18,7 +18,8 @@ import {
   Volume2,
   PanelLeftClose,
   PanelLeftOpen,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 
 export const SectorSidebar = ({
@@ -30,7 +31,9 @@ export const SectorSidebar = ({
   filterMode, // 'MY_SECTOR' | 'ALL_SECTORS'
   onSelectFilterMode,
   assets = [],
-  onOpenManageSectors
+  onOpenManageSectors,
+  userRole = 'admin',
+  userSectorId = null
 }) => {
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
@@ -98,14 +101,16 @@ export const SectorSidebar = ({
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Botão Gerenciar Setores (+) */}
-            <button
-              onClick={onOpenManageSectors}
-              title="Adicionar ou Configurar Setores"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            {/* Botão Gerenciar Setores (+) visível apenas para admin */}
+            {userRole === 'admin' && (
+              <button
+                onClick={onOpenManageSectors}
+                title="Adicionar ou Configurar Setores"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Botão Recolher Slide Bar */}
             <button
@@ -147,6 +152,8 @@ export const SectorSidebar = ({
           {sectors.map((sec) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
+            const isMySector = userRole === 'operador' && userSectorId === sec.id;
+            const isOtherSector = userRole === 'operador' && userSectorId && userSectorId !== sec.id;
 
             return (
               <button
@@ -175,9 +182,21 @@ export const SectorSidebar = ({
                   ) : null}
 
                   <div className="truncate">
-                    <span className={isSelected ? 'font-bold' : 'font-medium'}>
-                      {sec.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={isSelected ? 'font-bold' : 'font-medium'}>
+                        {sec.name}
+                      </span>
+                      {isMySector && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
+                          Meu Setor
+                        </span>
+                      )}
+                      {isOtherSector && (
+                        <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
+                          <Lock className="w-3 h-3 inline" />
+                        </span>
+                      )}
+                    </div>
                     {isSelected && sec.responsavel && (
                       <span className="opacity-90 font-normal ml-1 text-[11px] block truncate">
                         {sec.responsavel}

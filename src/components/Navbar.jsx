@@ -16,7 +16,9 @@ import {
   Crown,
   Shield,
   X,
-  PanelLeft
+  PanelLeft,
+  Inbox,
+  ChevronDown
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -40,7 +42,12 @@ export const Navbar = ({
   onLogout,
   isFirebaseActive,
   cautelasCount = 0,
-  onToggleSidebar
+  onToggleSidebar,
+  onOpenPedidos,
+  pedidosCount = 0,
+  currentPersona,
+  onSelectPersona,
+  sectors = []
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -205,6 +212,21 @@ export const Navbar = ({
           {/* Quick Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             
+            {/* Pedidos & Solicitações de Carga */}
+            <button
+              onClick={onOpenPedidos}
+              title="Central de Pedidos e Solicitações de Carga"
+              className="relative px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Inbox className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="hidden md:inline">Pedidos</span>
+              {pedidosCount > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px] animate-pulse">
+                  {pedidosCount}
+                </span>
+              )}
+            </button>
+
             {/* Cautelas / Empréstimos Button with Badge */}
             <button
               onClick={onOpenCautelas}
@@ -273,21 +295,23 @@ export const Navbar = ({
             </button>
 
             {/* New Asset Button */}
-            <button
-              onClick={onOpenNewAsset}
-              title="Cadastrar Novo Bem Patrimonial"
-              className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Plus className="w-4 h-4 text-blue-400 shrink-0" />
-              <span className="hidden sm:inline">Novo Bem</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={onOpenNewAsset}
+                title="Cadastrar Novo Bem Patrimonial"
+                className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="hidden sm:inline">Novo Bem</span>
+              </button>
+            )}
 
-            {/* User Profile & Logout */}
+            {/* User Profile & Persona Switcher */}
             {currentUser && (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800 ml-1">
                 <div 
-                  className="flex items-center gap-2 cursor-pointer group"
-                  title={`${currentUser.displayName || currentUser.email} (${isAdmin ? 'Administrador' : 'Operador'})`}
+                  className="flex items-center gap-2"
+                  title={`${currentUser.displayName || currentUser.email} (${isAdmin ? 'Administrador' : `Operador: ${currentPersona?.sectorName || 'Setor'}`})`}
                 >
                   {currentUser.photoURL ? (
                     <img 
@@ -301,15 +325,32 @@ export const Navbar = ({
                     </div>
                   )}
                   <div className="hidden xl:block text-left">
-                    <p className="text-xs font-medium text-white truncate max-w-[100px]">
+                    <p className="text-xs font-medium text-white truncate max-w-[110px]">
                       {currentUser.displayName || currentUser.email.split('@')[0]}
                     </p>
                     <p className="text-[10px] text-indigo-400 uppercase font-semibold flex items-center gap-0.5">
                       {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline" />}
-                      {isAdmin ? 'Admin' : 'Operador'}
+                      {isAdmin ? 'Admin' : (currentPersona?.sectorName || 'Operador')}
                     </p>
                   </div>
                 </div>
+
+                {/* Persona Switcher Selector for Testing Operator Views */}
+                {onSelectPersona && (
+                  <select
+                    value={currentPersona?.id || 'admin'}
+                    onChange={(e) => onSelectPersona(e.target.value)}
+                    title="Alternar perfil de visão (Admin ou Operador de Setor)"
+                    className="hidden lg:block bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500 text-slate-300 text-[11px] rounded-lg px-2 py-1 focus:outline-none cursor-pointer font-medium"
+                  >
+                    <option value="admin">👑 Admin (Todos os Setores)</option>
+                    {sectors.map(sec => (
+                      <option key={sec.id} value={sec.id}>
+                        👤 {sec.responsavel} ({sec.name})
+                      </option>
+                    ))}
+                  </select>
+                )}
 
                 <button
                   onClick={onLogout}

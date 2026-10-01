@@ -51,6 +51,12 @@ import {
 import { 
   UserManagementModal 
 } from './components/UserManagementModal';
+import { 
+  SolicitacaoCargaModal 
+} from './components/SolicitacaoCargaModal';
+import { 
+  PedidosCargaModal 
+} from './components/PedidosCargaModal';
 import LoginScreen from './components/LoginScreen';
 
 import { 
@@ -143,8 +149,24 @@ export function App() {
   const [isManageSectorsOpen, setIsManageSectorsOpen] = useState(false);
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
-  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+
+  // Pedidos e Solicitações de Carga
+  const [pedidosCarga, setPedidosCarga] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_pedidos');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isSolicitacaoModalOpen, setIsSolicitacaoModalOpen] = useState(false);
+  const [assetForSolicitacao, setAssetForSolicitacao] = useState(null);
+  const [isPedidosModalOpen, setIsPedidosModalOpen] = useState(false);
+
+  // Persona Simulada para Teste de Operadores e Departamentos
+  const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
@@ -221,6 +243,41 @@ export function App() {
       saveLocalCautelas(cautelas);
     }
   }, [cautelas]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(pedidosCarga));
+    } catch (e) {}
+  }, [pedidosCarga]);
+
+  // Persona e Permissões Efetivas para Teste de Operadores e Departamentos
+  const simulatedPersona = useMemo(() => {
+    if (simulatedPersonaId === 'admin') {
+      return { id: 'admin', role: 'admin', sectorId: null, sectorName: 'Administrador' };
+    }
+    const sec = sectors.find(s => s.id === simulatedPersonaId);
+    return {
+      id: sec ? sec.id : 'operador',
+      role: 'operador',
+      sectorId: sec ? sec.id : null,
+      sectorName: sec ? `${sec.name} (${sec.responsavel})` : 'Operador'
+    };
+  }, [simulatedPersonaId, sectors]);
+
+  const effectiveUserRole = simulatedPersona?.role || userRole || 'admin';
+  const effectiveUserSectorId = simulatedPersona?.sectorId || null;
+
+  const handleSelectPersona = (personaId) => {
+    setSimulatedPersonaId(personaId);
+    if (personaId !== 'admin') {
+      setActiveSectorId(personaId);
+      setFilterMode('MY_SECTOR');
+      const sec = sectors.find(s => s.id === personaId);
+      showToast(`Visão de Operador ativada: ${sec?.responsavel} (${sec?.name}) - Limitado ao seu departamento`, 'info');
+    } else {
+      showToast('Visão de Administrador ativada (Acesso e alteração liberados em todos os departamentos)', 'success');
+    }
+  };
 
   // Auth Handlers
   const handleLoginSuccess = (user) => {
@@ -388,6 +445,11 @@ export function App() {
       showToast('Na visualização Geral não se confere carga. Selecione o setor correspondente.', 'warning');
       return;
     }
+    const itemToCheck = assets.find(a => a.id === assetId);
+    if (effectiveUserRole !== 'admin' && effectiveUserSectorId && itemToCheck && itemToCheck.setorId !== effectiveUserSectorId) {
+      showToast('Você só pode conferir bens do seu departamento. Use "Fazer Pedido" para este item.', 'warning');
+      return;
+    }
     const updated = assets.map(item => {
       if (item.id === assetId) {
         const isNowConferido = item.status !== 'CONFERIDO';
@@ -550,6 +612,57 @@ export function App() {
     });
     setAssets(updated);
     showToast(`Localização atualizada: "${newLocation}"`);
+  };
+
+  // Criar Pedido / Solicitação de Carga de Bem de Outro Setor
+  const handleCreatePedido = (pedidoData) => {
+    const newPedido = {
+      ...pedidoData,
+      id: `ped-${Date.now()}`
+    };
+    const nowStr = new Date().toLocaleString('pt-BR');
+    
+    // Atualiza o histórico do bem informando o pedido
+    const updatedAssets = assets.map(a => {
+      if (a.id === pedidoData.assetId) {
+        return {
+          ...a,
+          historico: [
+            ...(a.historico || []),
+            {
+              data: nowStr,
+              acao: `Pedido de Carga: Informado pertencer ao setor ${pedidoData.setorDestinoNome}. Motivo: ${pedidoData.motivo}`,
+              usuario: pedidoData.solicitanteNome
+            }
+          ]
+        };
+      }
+      return a;
+    });
+
+    setAssets(updatedAssets);
+    setPedidosCarga(prev => [newPedido, ...prev]);
+    showToast(`Pedido enviado com sucesso! O responsável do setor ${pedidoData.setorDestinoNome} e a administração foram informados.`, 'success');
+  };
+
+  // Aprovar Pedido de Carga
+  const handleAprovarPedido = (pedido) => {
+    handleConfirmTransfer(pedido.assetId, {
+      setorId: pedido.setorDestinoId,
+      setorNome: pedido.setorDestinoNome,
+      responsavel: pedido.responsavelDestino,
+      localizacao: pedido.localizacaoFisica || pedido.setorDestinoNome,
+      motivo: `Aprovação de pedido de carga enviado por ${pedido.solicitanteNome}: "${pedido.motivo}"`
+    });
+
+    setPedidosCarga(prev => prev.map(p => p.id === pedido.id ? { ...p, status: 'APROVADO' } : p));
+    showToast(`Pedido aprovado com sucesso! Bem ${formatLast5Patrimonio(pedido.numeroPatrimonio)} transferido para ${pedido.setorDestinoNome}.`, 'success');
+  };
+
+  // Recusar Pedido de Carga
+  const handleRecusarPedido = (pedidoId) => {
+    setPedidosCarga(prev => prev.map(p => p.id === pedidoId ? { ...p, status: 'RECUSADO' } : p));
+    showToast('Pedido arquivado como recusado.', 'info');
   };
 
   // Save New or Edited Asset
@@ -851,6 +964,11 @@ export function App() {
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onOpenPedidos={() => setIsPedidosModalOpen(true)}
+        pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
+        currentPersona={simulatedPersona}
+        onSelectPersona={handleSelectPersona}
+        sectors={sectors}
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}
@@ -867,6 +985,8 @@ export function App() {
           onSelectFilterMode={setFilterMode}
           assets={assets}
           onOpenManageSectors={() => setIsManageSectorsOpen(true)}
+          userRole={effectiveUserRole}
+          userSectorId={effectiveUserSectorId}
         />
 
         {/* Área Principal de Conteúdo */}
@@ -1148,6 +1268,13 @@ export function App() {
                       onTransferSector={handleOpenTransferModal}
                       onDeleteAsset={handleDeleteAsset}
                       onUpdateLocation={handleUpdateAssetLocation}
+                      userRole={effectiveUserRole}
+                      userSectorId={effectiveUserSectorId}
+                      onOpenSolicitacao={(a) => {
+                        setAssetForSolicitacao(a);
+                        setIsSolicitacaoModalOpen(true);
+                      }}
+                      hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
                     />
                   ))}
                 </div>
@@ -1315,6 +1442,30 @@ export function App() {
         currentUser={currentUser}
         onAddUser={handleAddUser}
         onDeleteUser={handleDeleteUser}
+      />
+
+      {/* Modal de Solicitação / Pedido de Carga (Operador informa que bem pertence a outro setor) */}
+      <SolicitacaoCargaModal
+        isOpen={isSolicitacaoModalOpen}
+        onClose={() => {
+          setIsSolicitacaoModalOpen(false);
+          setAssetForSolicitacao(null);
+        }}
+        asset={assetForSolicitacao}
+        sectors={sectors}
+        currentUser={currentUser}
+        userSector={sectors.find(s => s.id === effectiveUserSectorId)}
+        onSubmitPedido={handleCreatePedido}
+      />
+
+      {/* Modal Central de Pedidos de Carga (Visualização e Aprovação) */}
+      <PedidosCargaModal
+        isOpen={isPedidosModalOpen}
+        onClose={() => setIsPedidosModalOpen(false)}
+        pedidos={pedidosCarga}
+        isAdmin={effectiveUserRole === 'admin'}
+        onAprovarPedido={handleAprovarPedido}
+        onRecusarPedido={handleRecusarPedido}
       />
 
     </div>
