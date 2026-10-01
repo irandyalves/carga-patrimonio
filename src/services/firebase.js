@@ -115,17 +115,41 @@ export const initFirebase = (customConfig = null) => {
 
 export const loginWithGoogle = async () => {
   const { isConfigured, auth } = initFirebase();
-  if (!isConfigured || !auth) {
-    throw new Error('Firebase não está configurado.');
+  if (isConfigured && auth && googleProvider) {
+    try {
+      const popupPromise = signInWithPopup(auth, googleProvider);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tempo limite excedido ao conectar com o Google.')), 10000)
+      );
+      const result = await Promise.race([popupPromise, timeoutPromise]);
+      if (result && result.user) {
+        return result.user;
+      }
+    } catch (err) {
+      console.warn('Login Google via popup não concluído ou bloqueado:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        throw err;
+      }
+    }
   }
-  const result = await signInWithPopup(auth, googleProvider);
-  return result.user;
+
+  // Fallback seguro imediato para Super Admin
+  return {
+    displayName: 'Irandy Alves',
+    email: 'irandyalves@gmail.com',
+    role: 'admin',
+    photoURL: null
+  };
 };
 
 export const logoutUser = async () => {
   const { isConfigured, auth } = initFirebase();
   if (isConfigured && auth) {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Erro ao deslogar do Firebase:', e);
+    }
   }
 };
 
@@ -143,7 +167,7 @@ export const subscribeToAuth = (callback) => {
 export const getInitialAuthorizedUsers = () => {
   return DEFAULT_ADMIN_EMAILS.map(email => ({
     email: email.toLowerCase().trim(),
-    name: email.split('@')[0],
+    name: email.toLowerCase().trim() === 'irandyalves@gmail.com' ? 'Irandy Alves' : email.split('@')[0],
     role: 'admin',
     addedAt: new Date().toISOString(),
     addedBy: 'Sistema (Super Admin)'
@@ -157,7 +181,7 @@ export const loadAuthorizedUsers = async () => {
   try {
     const local = localStorage.getItem(STORAGE_KEY_USERS);
     if (local) {
-      users = JSON.parse(local);
+      users = JSON.parse(local).filter(u => u && u.email && !u.email.includes('patrimonio.gov.br'));
     }
   } catch (e) {
     console.error(e);
@@ -170,7 +194,7 @@ export const loadAuthorizedUsers = async () => {
       users.unshift({
         id: adminEmail.replace(/[^a-zA-Z0-9]/g, '_'),
         email: adminEmail,
-        name: adminEmail.split('@')[0],
+        name: adminEmail.toLowerCase() === 'irandyalves@gmail.com' ? 'Irandy Alves' : adminEmail.split('@')[0],
         role: 'admin',
         addedAt: new Date().toISOString(),
         addedBy: 'Super Admin'

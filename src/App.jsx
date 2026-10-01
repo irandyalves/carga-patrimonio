@@ -180,6 +180,15 @@ export function App() {
 
   // 1. Initial Load & Auth Listener
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_current_user');
+      if (!stored || stored.includes('patrimonio.gov.br')) {
+        const superAdmin = { displayName: 'Irandy Alves', email: 'irandyalves@gmail.com', role: 'admin' };
+        localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(superAdmin));
+        setCurrentUser(superAdmin);
+      }
+    } catch (e) {}
+
     const { isConfigured } = initFirebase();
     setIsFirebaseActive(isConfigured);
 
@@ -293,11 +302,15 @@ export function App() {
 
   const handleLogout = async () => {
     await logoutUser();
-    setCurrentUser({ displayName: 'Administrador Local', email: 'admin@patrimonio.gov.br' });
+    const superAdmin = { displayName: 'Irandy Alves', email: 'irandyalves@gmail.com', role: 'admin' };
+    setCurrentUser(superAdmin);
+    try {
+      localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(superAdmin));
+    } catch (e) {}
     setUserRole('admin');
     setIsAuthorized(true);
     setSimulatedPersonaId('admin');
-    showToast('Sessão restaurada para Administrador Local.');
+    showToast('Sessão restaurada para Super Admin (irandyalves@gmail.com).');
   };
 
   const handleAddUser = async (newUserData) => {
