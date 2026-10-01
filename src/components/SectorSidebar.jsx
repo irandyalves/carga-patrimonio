@@ -111,21 +111,18 @@ export const SectorSidebar = ({
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
                 Áreas & Setores
               </h3>
-              <p className="text-[10px] text-slate-400">
-                {sectors.length} setores cadastrados
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            {/* Botão Gerenciar Setores (+) visível apenas para admin */}
+          <div className="flex items-center gap-1.5">
+            {/* Botão Gerenciar Setores (+) Verde e Brilhoso */}
             {userRole === 'admin' && (
               <button
                 onClick={onOpenManageSectors}
                 title="Adicionar ou Configurar Setores"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_14px_rgba(16,185,129,0.75)] hover:shadow-[0_0_20px_rgba(16,185,129,0.95)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center border border-emerald-300/40"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[3]" />
               </button>
             )}
 
