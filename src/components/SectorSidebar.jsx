@@ -145,10 +145,10 @@ export const SectorSidebar = ({
                 onSelectFilterMode('ALL_SECTORS');
                 onSelectStatusFilter('ALL');
               }}
-              className={`w-full px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+              className={`w-full px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
                 filterMode === 'ALL_SECTORS'
-                  ? 'bg-blue-600/30 text-white font-bold border-l-4 border-l-blue-500 rounded-r-xl rounded-l-none backdrop-blur-sm shadow-sm'
-                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white rounded-xl border-l-4 border-l-transparent'
+                  ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
+                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white border-l-4 border-l-transparent'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
@@ -174,10 +174,10 @@ export const SectorSidebar = ({
                     <button
                       key={tab.id}
                       onClick={() => onSelectStatusFilter(tab.id)}
-                      className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left ${
+                      className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
                         isSubActive
-                          ? 'bg-indigo-600/30 text-white font-bold border-l-[3px] border-l-indigo-400 rounded-r-lg rounded-l-none shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 rounded-lg border-l-[3px] border-l-transparent'
+                          ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-1.5 truncate">
@@ -212,10 +212,6 @@ export const SectorSidebar = ({
             )}
           </div>
 
-          <div className="pt-2 pb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Setores com Carga
-          </div>
-
           {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
           {sectors.map((sec) => {
             const stats = getSectorStats(sec.id);
@@ -231,10 +227,10 @@ export const SectorSidebar = ({
                     onSelectSector(sec.id);
                     onSelectStatusFilter('ALL');
                   }}
-                  className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left ${
+                  className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
                     isSelected
-                      ? 'bg-blue-600/30 text-white font-bold border-l-4 border-l-blue-500 rounded-r-xl rounded-l-none backdrop-blur-sm shadow-sm'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white rounded-xl border-l-4 border-l-transparent'
+                      ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
+                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
                   }`}
                 >
                   {/* Nome do Setor */}
@@ -298,10 +294,10 @@ export const SectorSidebar = ({
                         <button
                           key={tab.id}
                           onClick={() => onSelectStatusFilter(tab.id)}
-                          className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left ${
+                          className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
                             isSubActive
-                              ? 'bg-indigo-600/30 text-white font-bold border-l-[3px] border-l-indigo-400 rounded-r-lg rounded-l-none shadow-sm'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 rounded-lg border-l-[3px] border-l-transparent'
+                              ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
                           }`}
                         >
                           <div className="flex items-center gap-1.5 truncate">
