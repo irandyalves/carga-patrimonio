@@ -95,7 +95,10 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  Archive
+  Archive,
+  Eye,
+  EyeOff,
+  Columns3
 } from 'lucide-react';
 
 export function App() {
@@ -139,6 +142,68 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Slide bar lateral esquerdo
+
+  // Visibilidade das Colunas [Responsável, Aquisição, $ Original, $ Atual]
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_visible_columns');
+      if (stored) {
+        return {
+          responsavel: true,
+          dataAquisicao: true,
+          valorOriginal: true,
+          valorAtual: true,
+          ...JSON.parse(stored)
+        };
+      }
+    } catch (e) {}
+    return {
+      responsavel: true,
+      dataAquisicao: true,
+      valorOriginal: true,
+      valorAtual: true
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carga_patrimonio_visible_columns', JSON.stringify(visibleColumns));
+    } catch (e) {}
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }));
+  };
+
+  const showAllColumns = () => {
+    setVisibleColumns({
+      responsavel: true,
+      dataAquisicao: true,
+      valorOriginal: true,
+      valorAtual: true
+    });
+  };
+
+  const hiddenColumnsCount = useMemo(() => {
+    let count = 0;
+    if (!visibleColumns.responsavel) count++;
+    if (!visibleColumns.dataAquisicao) count++;
+    if (!visibleColumns.valorOriginal) count++;
+    if (!visibleColumns.valorAtual) count++;
+    return count;
+  }, [visibleColumns]);
+
+  const tableMinWidth = useMemo(() => {
+    let base = 620;
+    if (visibleColumns.responsavel) base += 112;
+    if (visibleColumns.dataAquisicao) base += 96;
+    if (visibleColumns.valorOriginal) base += 96;
+    if (visibleColumns.valorAtual) base += 96;
+    return `${base}px`;
+  }, [visibleColumns]);
 
   // Modal States
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -1252,7 +1317,7 @@ export function App() {
 
         {/* Área Principal de Conteúdo */}
         <main ref={mainScrollRef} className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col relative">
-          <div className="min-w-[1100px] flex flex-col min-h-full">
+          <div style={{ minWidth: tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
             <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
@@ -1295,11 +1360,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (Flexível para empurrar Localização para a direita) */}
+                  {/* Coluna 3: Descrição do Bem (Expande dinamicamente para ocupar o espaço quando colunas da direita são ocultadas) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`flex-[1.2] min-w-[280px] shrink-0 flex items-center justify-start gap-1.5 transition-colors cursor-pointer group ${
+                    className={`flex-[1.5] min-w-[220px] shrink-0 flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1332,85 +1397,210 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 5: Observação (Afastada de localização, preenche espaço até as colunas da direita) */}
-                  <div className="flex-1 min-w-[220px] pl-6 shrink-0 flex items-center justify-start text-left">
+                  {/* Coluna 5: Observação (Expande suavemente preenchendo o espaço liberado) */}
+                  <div className="flex-1 min-w-[180px] pl-6 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 
-                  {/* Coluna 6: Responsável */}
-                  <button
-                    onClick={() => handleSort('responsavel')}
-                    title="Clique para ordenar por responsável"
-                    className={`w-28 shrink-0 flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
-                      sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>Responsável</span>
-                    <span className="shrink-0 ml-0.5">
-                      {sortField === 'responsavel' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 6: Responsável com Olhinho para Ocultar */}
+                  {visibleColumns.responsavel && (
+                    <div className="w-28 shrink-0 flex items-center justify-center gap-1 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('responsavel')}
+                        title="Clique para ordenar por responsável"
+                        className={`flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
+                          sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Responsável</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'responsavel' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('responsavel');
+                        }}
+                        title="Ocultar coluna Responsável"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Coluna 7: Data Aquisição */}
-                  <button
-                    onClick={() => handleSort('dataAquisicao')}
-                    title="Clique para ordenar por data de aquisição"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
-                      sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>Aquisição</span>
-                    <span className="shrink-0 ml-0.5">
-                      {sortField === 'dataAquisicao' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 7: Data Aquisição com Olhinho para Ocultar */}
+                  {visibleColumns.dataAquisicao && (
+                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('dataAquisicao')}
+                        title="Clique para ordenar por data de aquisição"
+                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>Aquisição</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'dataAquisicao' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('dataAquisicao');
+                        }}
+                        title="Ocultar coluna Aquisição"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Coluna 8: Valor Original */}
-                  <button
-                    onClick={() => handleSort('valorOriginal')}
-                    title="Clique para ordenar por valor original"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
-                      sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>$ Original</span>
-                    <span className="shrink-0 ml-0.5">
-                      {sortField === 'valorOriginal' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
+                  {visibleColumns.valorOriginal && (
+                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('valorOriginal')}
+                        title="Clique para ordenar por valor original"
+                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>$ Original</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'valorOriginal' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('valorOriginal');
+                        }}
+                        title="Ocultar coluna $ Original"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Coluna 9: Valor Atual */}
-                  <button
-                    onClick={() => handleSort('valorAtual')}
-                    title="Clique para ordenar por valor atual"
-                    className={`w-24 shrink-0 flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
-                      sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
-                    }`}
-                  >
-                    <span>$ Atual</span>
-                    <span className="shrink-0 ml-0.5">
-                      {sortField === 'valorAtual' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                      )}
-                    </span>
-                  </button>
+                  {/* Coluna 9: Valor Atual com Olhinho para Ocultar */}
+                  {visibleColumns.valorAtual && (
+                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                      <button
+                        onClick={() => handleSort('valorAtual')}
+                        title="Clique para ordenar por valor atual"
+                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span>$ Atual</span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'valorAtual' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleColumn('valorAtual');
+                        }}
+                        title="Ocultar coluna $ Atual"
+                        className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Coluna 10: Ações */}
-                  <div className="w-28 shrink-0 flex items-center justify-end pr-1">
+                  {/* Coluna 10: Ações + Botão de Restauração de Colunas Ocultas */}
+                  <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
+                    {hiddenColumnsCount > 0 && (
+                      <div className="relative group/hiddenCols">
+                        <button
+                          type="button"
+                          className="px-1.5 py-0.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 rounded-md text-[9px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
+                          title="Clique para restaurar colunas ocultas"
+                        >
+                          <EyeOff className="w-2.5 h-2.5 text-indigo-400" />
+                          <span>{hiddenColumnsCount}</span>
+                        </button>
+                        
+                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover/hiddenCols:flex flex-col bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-2 z-50 min-w-[170px] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                          <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
+                            <span>Colunas Ocultas</span>
+                            <button
+                              type="button"
+                              onClick={showAllColumns}
+                              className="text-indigo-400 hover:text-indigo-300 text-[9px] lowercase font-semibold underline cursor-pointer"
+                            >
+                              exibir todas
+                            </button>
+                          </div>
+                          {!visibleColumns.responsavel && (
+                            <button
+                              type="button"
+                              onClick={() => toggleColumn('responsavel')}
+                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
+                            >
+                              <span>Responsável</span>
+                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
+                            </button>
+                          )}
+                          {!visibleColumns.dataAquisicao && (
+                            <button
+                              type="button"
+                              onClick={() => toggleColumn('dataAquisicao')}
+                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
+                            >
+                              <span>Aquisição</span>
+                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
+                            </button>
+                          )}
+                          {!visibleColumns.valorOriginal && (
+                            <button
+                              type="button"
+                              onClick={() => toggleColumn('valorOriginal')}
+                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
+                            >
+                              <span>$ Original</span>
+                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
+                            </button>
+                          )}
+                          {!visibleColumns.valorAtual && (
+                            <button
+                              type="button"
+                              onClick={() => toggleColumn('valorAtual')}
+                              className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-between text-[11px] cursor-pointer group/item"
+                            >
+                              <span>$ Atual</span>
+                              <Eye className="w-3 h-3 text-emerald-400 group-hover/item:scale-110 transition-transform" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <span>Ações</span>
                   </div>
 
@@ -1505,6 +1695,7 @@ export function App() {
                         }}
                         hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
                         searchTerm={searchTerm}
+                        visibleColumns={visibleColumns}
                       />
                     </React.Fragment>
                   );

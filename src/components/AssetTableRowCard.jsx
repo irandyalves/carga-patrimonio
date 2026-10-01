@@ -117,6 +117,12 @@ export const AssetTableRowCard = ({
   onOpenSolicitacao,
   hasPendingPedido = false,
   searchTerm = '',
+  visibleColumns = {
+    responsavel: true,
+    dataAquisicao: true,
+    valorOriginal: true,
+    valorAtual: true
+  },
   index = 0
 }) => {
   const [copied, setCopied] = useState(false);
@@ -572,7 +578,7 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 3: Descrição do Bem (Nunca quebra linha, clique para abrir modal) */}
-        <div className="flex-[1.2] min-w-[200px] shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
+        <div className="flex-[1.5] min-w-[200px] shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
           <h4 
             onClick={(e) => {
               e.stopPropagation();
@@ -1008,39 +1014,47 @@ export const AssetTableRowCard = ({
         </div>
 
         {/* Coluna 6: Responsável */}
-        <div className="w-28 shrink-0 flex items-center justify-center text-center">
-          <div className="truncate w-full">
-            <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
-              <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
-            </span>
-            {isGeneralView && asset.setorNome && (
-              <span className="text-[8.5px] text-slate-400 block truncate">
-                <HighlightText text={asset.setorNome} query={searchTerm} />
+        {visibleColumns?.responsavel !== false && (
+          <div className="w-28 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <div className="truncate w-full">
+              <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
+                <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
               </span>
-            )}
+              {isGeneralView && asset.setorNome && (
+                <span className="text-[8.5px] text-slate-400 block truncate">
+                  <HighlightText text={asset.setorNome} query={searchTerm} />
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Coluna 7: Data de Aquisição */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <span className="font-medium text-[11px] text-slate-300">
-            {asset.dataAquisicao || asset.anoAquisicao || '---'}
-          </span>
-        </div>
+        {visibleColumns?.dataAquisicao !== false && (
+          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <span className="font-medium text-[11px] text-slate-300">
+              {asset.dataAquisicao || asset.anoAquisicao || '---'}
+            </span>
+          </div>
+        )}
 
         {/* Coluna 8: Valor Original */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <span className="font-semibold text-slate-200 text-[11px]">
-            {formatCurrency(asset.valorOriginal)}
-          </span>
-        </div>
+        {visibleColumns?.valorOriginal !== false && (
+          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <span className="font-semibold text-slate-200 text-[11px]">
+              {formatCurrency(asset.valorOriginal)}
+            </span>
+          </div>
+        )}
 
         {/* Coluna 9: Valor Atual */}
-        <div className="w-24 shrink-0 flex items-center justify-center text-center">
-          <span className="font-bold text-emerald-400 text-[11px]">
-            {formatCurrency(asset.valorAtual || asset.valorOriginal)}
-          </span>
-        </div>
+        {visibleColumns?.valorAtual !== false && (
+          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <span className="font-bold text-emerald-400 text-[11px]">
+              {formatCurrency(asset.valorAtual || asset.valorOriginal)}
+            </span>
+          </div>
+        )}
 
         {/* Coluna 10: Ações & Conferência */}
         <div className="w-28 shrink-0 flex items-center justify-end gap-1.5 pr-1">
