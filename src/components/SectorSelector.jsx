@@ -64,11 +64,11 @@ export const SectorSelector = ({
             <select
               value={activeSectorId}
               onChange={(e) => onSelectSector(e.target.value)}
-              className="w-full appearance-none bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-medium rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer transition-all"
+              className="w-full appearance-none bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-emerald-400 text-xs font-bold rounded-xl px-3.5 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer transition-all"
             >
               {sectors.map((sec) => (
-                <option key={sec.id} value={sec.id} className="bg-slate-900 text-slate-200">
-                  {sec.name} ({sec.responsavel})
+                <option key={sec.id} value={sec.id} className="bg-slate-900 text-emerald-400 font-semibold py-1">
+                  🏢 {sec.name} ({sec.responsavel})
                 </option>
               ))}
             </select>

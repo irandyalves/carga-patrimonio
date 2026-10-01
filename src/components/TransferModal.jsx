@@ -81,11 +81,11 @@ export const TransferModal = ({
                 const s = sectors.find(sec => sec.id === e.target.value);
                 if (s) setNovaLocalizacao(s.sala || '');
               }}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
             >
               {sectors.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — Resp: {s.responsavel}
+                <option key={s.id} value={s.id} className="bg-slate-900 text-emerald-400 font-semibold py-1">
+                  🏢 {s.name} — Resp: {s.responsavel}
                 </option>
               ))}
             </select>

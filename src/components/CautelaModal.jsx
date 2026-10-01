@@ -171,16 +171,16 @@ export const CautelaModal = ({
               <select
                 value={formData.setorDestino}
                 onChange={(e) => setFormData({ ...formData, setorDestino: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
               >
-                <option value="ASCOM">ASCOM (Assessoria de Comunicação)</option>
+                <option value="ASCOM" className="bg-slate-900 text-emerald-400 font-semibold">🏢 ASCOM (Assessoria de Comunicação)</option>
                 {sectors.map((s) => (
-                  <option key={s.id} value={s.name}>{s.name}</option>
+                  <option key={s.id} value={s.name} className="bg-slate-900 text-emerald-400 font-semibold">🏢 {s.name}</option>
                 ))}
-                <option value="Gabinete">Gabinete</option>
-                <option value="Cerimonial">Cerimonial</option>
-                <option value="Evento Externo">Evento Externo</option>
-                <option value="Manutenção">Manutenção Especializada</option>
+                <option value="Gabinete" className="bg-slate-900 text-slate-300">Gabinete</option>
+                <option value="Cerimonial" className="bg-slate-900 text-slate-300">Cerimonial</option>
+                <option value="Evento Externo" className="bg-slate-900 text-slate-300">Evento Externo</option>
+                <option value="Manutenção" className="bg-slate-900 text-slate-300">Manutenção Especializada</option>
               </select>
             </div>
 

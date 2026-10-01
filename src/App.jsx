@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Navbar 
@@ -6,6 +6,9 @@ import {
 import { 
   SectorSidebar 
 } from './components/SectorSidebar';
+import { 
+  AlphabetFastScroller 
+} from './components/AlphabetFastScroller';
 import { 
   ConferenceStats 
 } from './components/ConferenceStats';
@@ -170,6 +173,9 @@ export function App() {
 
   // Persona Simulada para Teste de Operadores e Departamentos
   const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
+
+  // Referência do scroll principal para navegação rápida
+  const mainScrollRef = useRef(null);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
@@ -1067,7 +1073,7 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col">
+        <main ref={mainScrollRef} className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col relative">
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
@@ -1327,6 +1333,13 @@ export function App() {
             )}
 
           </div>
+
+          {/* Barra de rolagem alfabética rápida (A-Z) com indicador visual */}
+          <AlphabetFastScroller
+            items={sortedAssets}
+            sortField={sortField}
+            scrollContainerRef={mainScrollRef}
+          />
         </main>
 
       </div>

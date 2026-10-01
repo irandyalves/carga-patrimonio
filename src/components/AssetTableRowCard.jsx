@@ -276,7 +276,9 @@ export const AssetTableRowCard = ({
   };
 
   return (
-    <div className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
+    <div 
+      id={`asset-row-${asset.id}`}
+      className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
       isOutOfPlace 
         ? 'bg-amber-950/20 hover:bg-amber-950/30' 
         : isConferido 

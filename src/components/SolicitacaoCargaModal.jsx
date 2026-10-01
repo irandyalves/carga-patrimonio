@@ -171,12 +171,12 @@ export const SolicitacaoCargaModal = ({
             <select
               value={destSectorId}
               onChange={(e) => handleSectorChange(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-medium focus:outline-none focus:border-amber-400"
+              className="w-full bg-slate-800 border border-slate-700 text-emerald-400 font-bold rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-400 cursor-pointer"
               required
             >
               {sectors.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name} - Responsável: {s.responsavel}
+                <option key={s.id} value={s.id} className="bg-slate-900 text-emerald-400 font-semibold py-1">
+                  🏢 {s.name} - Responsável: {s.responsavel}
                 </option>
               ))}
             </select>

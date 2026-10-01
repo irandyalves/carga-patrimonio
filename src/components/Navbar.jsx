@@ -16,7 +16,9 @@ import {
   X,
   PanelLeft,
   Inbox,
-  ChevronDown
+  ChevronDown,
+  Check,
+  UserCheck
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -49,7 +51,23 @@ export const Navbar = ({
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = React.useRef(null);
   const recognitionRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -271,71 +289,187 @@ export const Navbar = ({
               </button>
             )}
 
-            {/* New Asset Button */}
+            {/* New Asset Button with Vibrant Glowing Green + */}
             {isAdmin && (
               <button
                 onClick={onOpenNewAsset}
                 title="Cadastrar Novo Bem Patrimonial"
-                className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-600/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-black text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1.5 transition-all cursor-pointer group border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] hover:shadow-[0_0_18px_rgba(16,185,129,0.45)]"
               >
-                <Plus className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="hidden sm:inline">Novo Bem</span>
+                <Plus className="w-5 h-5 text-emerald-400 stroke-[3.5] shrink-0 drop-shadow-[0_0_10px_rgba(52,211,153,0.95)] group-hover:scale-115 transition-transform" />
+                <span className="hidden sm:inline font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)] tracking-wide">Novo Bem</span>
               </button>
             )}
 
-            {/* User Profile & Persona Switcher */}
+            {/* User Profile Avatar with Click-to-Switch Listbox */}
             {currentUser && (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800 ml-1">
-                <div 
-                  className="flex items-center gap-2"
-                  title={`${currentUser.displayName || currentUser.email} (${isAdmin ? 'Administrador' : `Operador: ${currentPersona?.sectorName || 'Setor'}`})`}
+              <div className="relative flex items-center gap-2 pl-2 border-l border-slate-800 ml-1" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 group cursor-pointer p-1 rounded-xl hover:bg-slate-800/60 transition-all focus:outline-none"
+                  title="Clique na foto para alternar usuário/setor ou gerenciar perfil"
                 >
                   {currentUser.photoURL ? (
                     <img 
                       src={currentUser.photoURL} 
                       alt="Avatar" 
-                      className="w-8 h-8 rounded-full ring-2 ring-indigo-500/50 object-cover" 
+                      className="w-8 h-8 rounded-full ring-2 ring-indigo-500 group-hover:ring-emerald-400 object-cover transition-all shadow-md" 
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500 group-hover:ring-emerald-400 transition-all shadow-md">
                       {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
                     </div>
                   )}
                   <div className="hidden xl:block text-left">
-                    <p className="text-xs font-medium text-white truncate max-w-[110px]">
+                    <p className="text-xs font-semibold text-white truncate max-w-[110px] group-hover:text-emerald-300 transition-colors">
                       {currentUser.displayName || currentUser.email.split('@')[0]}
                     </p>
-                    <p className="text-[10px] text-indigo-400 uppercase font-semibold flex items-center gap-0.5">
-                      {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline" />}
-                      {isAdmin ? 'Admin' : (currentPersona?.sectorName || 'Operador')}
+                    <p className="text-[10px] text-indigo-400 uppercase font-bold flex items-center gap-0.5">
+                      {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline text-emerald-400" />}
+                      <span className={isAdmin ? 'text-amber-400' : 'text-emerald-400'}>
+                        {isAdmin ? 'Admin' : (currentPersona?.sectorName || 'Operador')}
+                      </span>
                     </p>
                   </div>
-                </div>
-
-                {/* Persona Switcher Selector for Testing Operator Views */}
-                {onSelectPersona && (
-                  <select
-                    value={currentPersona?.id || 'admin'}
-                    onChange={(e) => onSelectPersona(e.target.value)}
-                    title="Alternar perfil de visão (Admin ou Operador de Setor)"
-                    className="hidden lg:block bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500 text-slate-300 text-[11px] rounded-lg px-2 py-1 focus:outline-none cursor-pointer font-medium"
-                  >
-                    <option value="admin">👑 Admin (Todos os Setores)</option>
-                    {sectors.map(sec => (
-                      <option key={sec.id} value={sec.id}>
-                        👤 {sec.responsavel} ({sec.name})
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                <button
-                  onClick={onLogout}
-                  title="Sair / Fazer Logout"
-                  className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 hidden sm:block ${isUserMenuOpen ? 'rotate-180 text-emerald-400' : ''}`} />
                 </button>
+
+                {/* Popover Dropdown Menu Opened on Avatar Click */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/90 p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    
+                    {/* Header do Usuário Atual */}
+                    <div className="flex items-center gap-3 p-2 bg-slate-800/60 rounded-xl border border-slate-700/50 mb-2">
+                      {currentUser.photoURL ? (
+                        <img 
+                          src={currentUser.photoURL} 
+                          alt="Avatar" 
+                          className="w-10 h-10 rounded-full ring-2 ring-emerald-400 object-cover" 
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm ring-2 ring-emerald-400">
+                          {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white truncate">
+                          {currentUser.displayName || currentUser.email.split('@')[0]}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          {currentUser.email}
+                        </p>
+                        <div className="mt-1 flex items-center gap-1">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.2 rounded-full ${
+                            isAdmin 
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          }`}>
+                            {isAdmin ? <Crown className="w-2.5 h-2.5" /> : <Shield className="w-2.5 h-2.5" />}
+                            {isAdmin ? 'Administrador' : `Operador: ${currentPersona?.sectorName || 'Setor'}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Alternador de Perfis / Setores (10 opções visíveis no listbox com setor em verdinho) */}
+                    {onSelectPersona && (
+                      <div className="mt-2 pt-2 border-t border-slate-800">
+                        <div className="px-2 pb-1.5 flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3 text-emerald-400" />
+                            Trocar Visão de Setor
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 font-mono">
+                            {sectors.length + 1} opções
+                          </span>
+                        </div>
+
+                        {/* Listbox com altura para 10 opções simultâneas */}
+                        <div className="max-h-[380px] overflow-y-auto scrollbar-thin pr-0.5 space-y-1">
+                          {/* Opção Admin */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onSelectPersona('admin');
+                              setIsUserMenuOpen(false);
+                            }}
+                            className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
+                              (!currentPersona || currentPersona.id === 'admin')
+                                ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold'
+                                : 'hover:bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">👑</span>
+                              <div>
+                                <span className="text-amber-300 font-bold">Admin Geral</span>
+                                <span className="text-[10px] text-slate-400 block font-normal">Acesso total a todos os setores</span>
+                              </div>
+                            </div>
+                            {(!currentPersona || currentPersona.id === 'admin') && (
+                              <Check className="w-4 h-4 text-amber-400 shrink-0" />
+                            )}
+                          </button>
+
+                          {/* Opções dos Setores - Setor em verdinho e 10 opções visíveis */}
+                          {sectors.map((sec) => {
+                            const isSelected = currentPersona?.id === sec.id;
+                            return (
+                              <button
+                                key={sec.id}
+                                type="button"
+                                onClick={() => {
+                                  onSelectPersona(sec.id);
+                                  setIsUserMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-emerald-500/20 border border-emerald-500/40 font-bold'
+                                    : 'hover:bg-slate-800 text-slate-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-sm shrink-0">👤</span>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      {/* Setor em verdinho bold */}
+                                      <span className="text-emerald-400 font-bold text-xs tracking-wide">
+                                        {sec.name}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10.5px] text-slate-300 block truncate font-medium">
+                                      {sec.responsavel || 'Sem responsável'}
+                                    </span>
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botão de Logout */}
+                    <div className="mt-2 pt-2 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          onLogout();
+                        }}
+                        className="w-full px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500/20 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sair da Conta (Logout)</span>
+                      </button>
+                    </div>
+
+                  </div>
+                )}
               </div>
             )}
 
