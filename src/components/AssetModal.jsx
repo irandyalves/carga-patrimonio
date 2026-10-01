@@ -12,12 +12,14 @@ export const AssetModal = ({
 }) => {
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
+    quantidade: 1,
     descricao: '',
     categoria: CATEGORIES[0],
     setorId: defaultSectorId || sectors[0]?.id || 'sec-ti',
     setorNome: '',
     localizacao: '',
     responsavel: '',
+    dataAquisicao: '',
     anoAquisicao: new Date().getFullYear(),
     valorOriginal: '',
     valorAtual: '',
@@ -28,27 +30,33 @@ export const AssetModal = ({
     if (assetToEdit) {
       setFormData({
         numeroPatrimonio: assetToEdit.numeroPatrimonio || '',
+        quantidade: assetToEdit.quantidade || 1,
         descricao: assetToEdit.descricao || '',
         categoria: assetToEdit.categoria || CATEGORIES[0],
         setorId: assetToEdit.setorId || sectors[0]?.id || 'sec-ti',
         setorNome: assetToEdit.setorNome || '',
         localizacao: assetToEdit.localizacao || '',
         responsavel: assetToEdit.responsavel || '',
+        dataAquisicao: assetToEdit.dataAquisicao || '',
         anoAquisicao: assetToEdit.anoAquisicao || new Date().getFullYear(),
         valorOriginal: assetToEdit.valorOriginal || '',
         valorAtual: assetToEdit.valorAtual || assetToEdit.valorOriginal || '',
         foto: assetToEdit.foto || ''
       });
     } else {
-      const selectedSec = sectors.find(s => s.id === (defaultSectorId || sectors[0]?.id)) || sectors[0] || { id: 'sec-ti', name: 'Geral', sala: 'Sala 01', responsavel: 'Responsável' };
+      const selectedSec = sectors.find(s => s.id === (defaultSectorId || sectors[0]?.id)) || sectors[0] || { id: 'sec-ti', name: 'TI', sala: 'Data Center & TI', responsavel: 'Santana' };
+      // Sugerir número inicial de 5 dígitos na faixa 42542 a 52425
+      const suggestedNum = String(Math.floor(42542 + Math.random() * 200));
       setFormData({
-        numeroPatrimonio: `PAT-${Math.floor(1000 + Math.random() * 9000)}`,
+        numeroPatrimonio: suggestedNum,
+        quantidade: 1,
         descricao: '',
         categoria: CATEGORIES[0],
         setorId: selectedSec.id,
         setorNome: selectedSec.name,
         localizacao: selectedSec.sala || '',
         responsavel: selectedSec.responsavel || '',
+        dataAquisicao: new Date().toLocaleDateString('pt-BR'),
         anoAquisicao: new Date().getFullYear(),
         valorOriginal: '',
         valorAtual: '',
@@ -91,6 +99,8 @@ export const AssetModal = ({
 
     onSave({
       ...formData,
+      quantidade: parseInt(formData.quantidade, 10) || 1,
+      dataAquisicao: formData.dataAquisicao || `${formData.anoAquisicao}`,
       valorOriginal: parseFloat(formData.valorOriginal) || 0,
       valorAtual: parseFloat(formData.valorAtual || formData.valorOriginal) || 0,
       anoAquisicao: parseInt(formData.anoAquisicao, 10) || new Date().getFullYear(),
@@ -129,32 +139,47 @@ export const AssetModal = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             
             {/* Tag / Number */}
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Nº de Patrimônio *
+                Nº de Patrimônio (5 dígitos) *
               </label>
               <input
                 type="text"
                 required
                 value={formData.numeroPatrimonio}
                 onChange={(e) => setFormData({ ...formData, numeroPatrimonio: e.target.value.toUpperCase() })}
-                placeholder="Ex: PAT-1045"
+                placeholder="Ex: 42542"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-indigo-300 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
 
-            {/* Category */}
-            <div className="sm:col-span-2">
+            {/* Quantidade */}
+            <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Categoria do Bem
+                Quantidade *
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={formData.quantidade}
+                onChange={(e) => setFormData({ ...formData, quantidade: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-cyan-300 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Categoria
               </label>
               <select
                 value={formData.categoria}
                 onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
                 {CATEGORIES.map((cat, idx) => (
                   <option key={idx} value={cat}>{cat}</option>
@@ -229,12 +254,26 @@ export const AssetModal = ({
           </div>
 
           {/* Acquisition & Financial Values */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                Ano de Aquisição
+                Data de Aquisição
+              </label>
+              <input
+                type="text"
+                value={formData.dataAquisicao}
+                onChange={(e) => setFormData({ ...formData, dataAquisicao: e.target.value })}
+                placeholder="Ex: 12/04/2023"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                Ano
               </label>
               <input
                 type="number"

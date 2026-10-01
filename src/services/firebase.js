@@ -268,6 +268,8 @@ export const checkUserAuthorization = (email, userList = []) => {
 };
 
 // --- DATA HELPERS ---
+const DATA_VERSION = 'v2_carga_areas_2026';
+const STORAGE_KEY_VERSION = 'carga_patrimonio_data_version';
 
 export const loadLocalData = () => {
   let assets = INITIAL_ASSETS;
@@ -275,6 +277,16 @@ export const loadLocalData = () => {
   let sectors = DEFAULT_SECTORS;
 
   try {
+    const storedVersion = localStorage.getItem(STORAGE_KEY_VERSION);
+    if (storedVersion !== DATA_VERSION) {
+      // Migração automática para a nova lista de setores e patrimônios fornecidos
+      localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
+      localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+      localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+      localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
+      return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
+    }
+
     const storedSectors = localStorage.getItem(STORAGE_KEY_SECTORS);
     if (storedSectors) {
       sectors = JSON.parse(storedSectors);
@@ -300,6 +312,18 @@ export const loadLocalData = () => {
   }
 
   return { assets, cautelas, sectors };
+};
+
+export const resetToDefaultData = () => {
+  try {
+    localStorage.setItem(STORAGE_KEY_SECTORS, JSON.stringify(DEFAULT_SECTORS));
+    localStorage.setItem(STORAGE_KEY_ASSETS, JSON.stringify(INITIAL_ASSETS));
+    localStorage.setItem(STORAGE_KEY_CAUTELAS, JSON.stringify(INITIAL_CAUTELAS));
+    localStorage.setItem(STORAGE_KEY_VERSION, DATA_VERSION);
+  } catch (e) {
+    console.error(e);
+  }
+  return { assets: INITIAL_ASSETS, cautelas: INITIAL_CAUTELAS, sectors: DEFAULT_SECTORS };
 };
 
 export const saveLocalAssets = (assets) => {

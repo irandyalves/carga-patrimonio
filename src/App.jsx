@@ -13,6 +13,9 @@ import {
   AssetCard 
 } from './components/AssetCard';
 import { 
+  AssetTableRowCard 
+} from './components/AssetTableRowCard';
+import { 
   VoiceSearchModal 
 } from './components/VoiceSearchModal';
 import { 
@@ -55,6 +58,7 @@ import LoginScreen from './components/LoginScreen';
 
 import { 
   loadLocalData, 
+  resetToDefaultData,
   saveLocalAssets, 
   saveLocalCautelas, 
   saveLocalSectors,
@@ -76,12 +80,16 @@ import {
   Layers, 
   CheckCircle2, 
   Sparkles, 
-  AlertTriangle,
-  RotateCcw,
-  SlidersHorizontal,
-  PackageSearch,
-  ShieldCheck,
-  Loader2
+  AlertTriangle, 
+  RotateCcw, 
+  SlidersHorizontal, 
+  PackageSearch, 
+  ShieldCheck, 
+  Loader2,
+  List,
+  LayoutGrid,
+  Hash,
+  RefreshCw
 } from 'lucide-react';
 
 export function App() {
@@ -101,10 +109,11 @@ export function App() {
   const [isFirebaseActive, setIsFirebaseActive] = useState(false);
 
   // Sector and View Filters
-  const [activeSectorId, setActiveSectorId] = useState('sec-ti');
+  const [activeSectorId, setActiveSectorId] = useState('sec-foyer');
   const [filterMode, setFilterMode] = useState('MY_SECTOR'); // 'MY_SECTOR' | 'ALL_SECTORS'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
+  const [displayMode, setDisplayMode] = useState('TABLE_ROWS'); // 'TABLE_ROWS' (padrão) | 'GRID'
 
   // Modal States
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
@@ -288,7 +297,9 @@ export function App() {
       // Text search filter
       if (searchTerm) {
         const q = searchTerm.toLowerCase().trim();
-        const matchesNumber = item.numeroPatrimonio.toLowerCase().includes(q);
+        const numStr = String(item.numeroPatrimonio || '').toLowerCase();
+        const last5 = numStr.length >= 5 ? numStr.slice(-5) : numStr;
+        const matchesNumber = numStr.includes(q) || last5.includes(q);
         const matchesDesc = item.descricao.toLowerCase().includes(q);
         const matchesSerial = item.numeroSerie && item.numeroSerie.toLowerCase().includes(q);
         const matchesSector = item.setorNome && item.setorNome.toLowerCase().includes(q);
@@ -300,6 +311,18 @@ export function App() {
       return true;
     });
   }, [assets, activeSectorId, filterMode, statusFilter, searchTerm]);
+
+  // Recarregar os dados padrões das áreas e bens fornecidos
+  const handleResetOfficialData = () => {
+    if (confirm('Deseja recarregar a lista oficial de setores e patrimônios das áreas (Studio, Foyer, SACADI, TI, etc.)?')) {
+      const { assets: newAssets, cautelas: newCautelas, sectors: newSectors } = resetToDefaultData();
+      setSectors(newSectors);
+      setAssets(newAssets);
+      setCautelas(newCautelas);
+      if (newSectors.length > 0) setActiveSectorId(newSectors[0].id);
+      showToast('Setores e patrimônios das áreas atualizados com sucesso!');
+    }
+  };
 
   // Toggle Conference Status
   const handleToggleConference = (assetId) => {
@@ -347,17 +370,26 @@ export function App() {
 
   // Handle QR Code / Barcode Scan Result
   const handleScanSuccess = (code) => {
-    setSearchTerm(code);
-    const found = assets.find(a => a.numeroPatrimonio.toLowerCase() === code.toLowerCase());
+    const rawClean = String(code || '').trim();
+    // Extrai os dígitos para verificar os últimos 5 dígitos de patrimônio
+    const digitsOnly = rawClean.replace(/\D/g, '');
+    const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : rawClean;
+
+    setSearchTerm(last5 || rawClean);
+    const found = assets.find(a => {
+      const aNum = String(a.numeroPatrimonio || '').toLowerCase();
+      const aLast5 = aNum.length >= 5 ? aNum.slice(-5) : aNum;
+      return aNum === rawClean.toLowerCase() || (last5 && aLast5 === last5);
+    });
 
     if (found) {
       if (found.setorId === activeSectorId) {
-        showToast(`Item ${found.numeroPatrimonio} localizado no seu setor!`);
+        showToast(`Item ${found.numeroPatrimonio} (${found.descricao}) localizado!`);
       } else {
-        showToast(`⚠️ Atenção: Item pertence a outro setor (${found.setorNome})!`, 'warning');
+        showToast(`⚠️ Atenção: Item ${found.numeroPatrimonio} pertence ao setor ${found.setorNome} (${found.responsavel})!`, 'warning');
       }
     } else {
-      showToast(`Código ${code} lido. Não encontrado na base atual.`, 'info');
+      showToast(`Código ${rawClean} lido. Não encontrado na base atual.`, 'info');
     }
   };
 
@@ -698,10 +730,10 @@ export function App() {
         />
 
         {/* Filter and View Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
           
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
             {[
               { id: 'ALL', label: 'Todos os Bens', count: assets.filter(a => filterMode === 'ALL_SECTORS' || a.setorId === activeSectorId).length },
               { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400' },
@@ -733,11 +765,54 @@ export function App() {
             })}
           </div>
 
-          {/* Quick Actions (Reset Filter / Results count) */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 text-xs text-slate-400">
-            <span>
-              Mostrando <strong className="text-white">{filteredAssets.length}</strong> {filteredAssets.length === 1 ? 'item' : 'itens'}
+          {/* View Mode Switcher & Quick Actions */}
+          <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 text-xs text-slate-400">
+            
+            {/* View Mode Toggle: Linhas (Cards de Tabela) vs Grade */}
+            <div className="flex items-center p-1 bg-slate-950/80 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setDisplayMode('TABLE_ROWS')}
+                title="Visualização em Cards tipo Linha de Tabela (Recomendado)"
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  displayMode === 'TABLE_ROWS'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Linhas de Tabela</span>
+              </button>
+
+              <button
+                onClick={() => setDisplayMode('GRID')}
+                title="Visualização em Grade de Cards"
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  displayMode === 'GRID'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Grade</span>
+              </button>
+            </div>
+
+            {/* Itens Count */}
+            <span className="hidden sm:inline">
+              <strong className="text-white">{filteredAssets.length}</strong> {filteredAssets.length === 1 ? 'item' : 'itens'}
             </span>
+
+            {/* Reset Official Data Button */}
+            <button
+              onClick={handleResetOfficialData}
+              title="Restaurar setores e patrimônios das áreas oficiais"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-indigo-950/50 hover:text-indigo-300 border border-slate-700/60 text-slate-300 transition-colors text-xs cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3 text-indigo-400" />
+              <span>Restaurar Áreas</span>
+            </button>
+
+            {/* Clear Filters */}
             {(statusFilter !== 'ALL' || searchTerm || filterMode !== 'MY_SECTOR') && (
               <button
                 onClick={() => {
@@ -748,34 +823,94 @@ export function App() {
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-xs cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
-                Limpar Filtros
+                Limpar
               </button>
             )}
           </div>
 
         </div>
 
-        {/* Asset Cards Grid or Empty State */}
+        {/* Asset Cards or Empty State */}
         {filteredAssets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAssets.map(asset => (
-              <AssetCard
-                key={asset.id}
-                asset={asset}
-                activeSectorId={activeSectorId}
-                onToggleConference={handleToggleConference}
-                onOpenTransfer={handleOpenTransferModal}
-                onOpenCautela={handleOpenCautela}
-                onOpenBaixa={handleOpenBaixa}
-                onPrintLabel={handlePrintSingleLabel}
-                onEditAsset={(a) => {
-                  setAssetToEdit(a);
-                  setIsAssetModalOpen(true);
-                }}
-                onDeleteAsset={handleDeleteAsset}
-              />
-            ))}
-          </div>
+          displayMode === 'TABLE_ROWS' ? (
+            /* ================= VISUALIZAÇÃO EM CARDS TIPO LINHA DE TABELA ================= */
+            <div className="space-y-2">
+              
+              {/* Table Header Bar */}
+              <div className="hidden lg:flex items-center justify-between px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="w-44 shrink-0 flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Patrimônio</span>
+                </div>
+                <div className="w-20 shrink-0 text-center">
+                  <span>Qtde</span>
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <span>Descrição do Bem</span>
+                </div>
+                <div className="w-44 shrink-0">
+                  <span>Responsável</span>
+                </div>
+                <div className="w-32 shrink-0">
+                  <span>Data Aquisição</span>
+                </div>
+                <div className="w-32 shrink-0">
+                  <span>Valor Original</span>
+                </div>
+                <div className="w-32 shrink-0">
+                  <span>Valor Atual</span>
+                </div>
+                <div className="w-56 shrink-0 text-right pr-2">
+                  <span>Ações & Conferência</span>
+                </div>
+              </div>
+
+              {/* Rows List */}
+              <div className="space-y-2">
+                {filteredAssets.map(asset => (
+                  <AssetTableRowCard
+                    key={asset.id}
+                    asset={asset}
+                    activeSector={activeSector}
+                    currentUserName={currentUser?.displayName || currentUser?.email}
+                    onToggleConference={handleToggleConference}
+                    onOpenEdit={(a) => {
+                      setAssetToEdit(a);
+                      setIsAssetModalOpen(true);
+                    }}
+                    onOpenCautela={handleOpenCautela}
+                    onOpenBaixa={handleOpenBaixa}
+                    onPrintSingleLabel={handlePrintSingleLabel}
+                    onTransferSector={handleOpenTransferModal}
+                    onDeleteAsset={handleDeleteAsset}
+                  />
+                ))}
+              </div>
+
+            </div>
+          ) : (
+            /* ================= VISUALIZAÇÃO EM GRADE DE CARDS ================= */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredAssets.map(asset => (
+                <AssetCard
+                  key={asset.id}
+                  asset={asset}
+                  activeSector={activeSector}
+                  currentUserName={currentUser?.displayName || currentUser?.email}
+                  onToggleConference={handleToggleConference}
+                  onOpenEdit={(a) => {
+                    setAssetToEdit(a);
+                    setIsAssetModalOpen(true);
+                  }}
+                  onOpenCautela={handleOpenCautela}
+                  onOpenBaixa={handleOpenBaixa}
+                  onPrintSingleLabel={handlePrintSingleLabel}
+                  onTransferSector={handleOpenTransferModal}
+                  onDeleteAsset={handleDeleteAsset}
+                />
+              ))}
+            </div>
+          )
         ) : (
           <div className="flex flex-col items-center justify-center p-12 bg-slate-900/40 border border-slate-800/80 rounded-3xl text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500">

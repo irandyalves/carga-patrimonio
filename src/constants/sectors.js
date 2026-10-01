@@ -1,14 +1,15 @@
 export const SECTORS = [
-  { id: 'sec-ti', name: 'Tecnologia da Informação (TI)', responsavel: 'Carlos Silva', email: 'carlos.ti@empresa.com.br', sala: 'Bloco A - Sala 101', cor: 'indigo' },
-  { id: 'sec-adm', name: 'Administrativo', responsavel: 'Mariana Souza', email: 'mariana.adm@empresa.com.br', sala: 'Bloco A - Sala 102', cor: 'blue' },
-  { id: 'sec-fin', name: 'Financeiro / Contabilidade', responsavel: 'Roberto Mendes', email: 'roberto.fin@empresa.com.br', sala: 'Bloco A - Sala 103', cor: 'emerald' },
-  { id: 'sec-rh', name: 'Recursos Humanos (RH)', responsavel: 'Fernanda Lima', email: 'fernanda.rh@empresa.com.br', sala: 'Bloco A - Sala 104', cor: 'pink' },
-  { id: 'sec-almox', name: 'Almoxarifado Central', responsavel: 'João Pereira', email: 'joao.almox@empresa.com.br', sala: 'Galpão 01', cor: 'amber' },
-  { id: 'sec-op', name: 'Operações e Logística', responsavel: 'André Santos', email: 'andre.op@empresa.com.br', sala: 'Galpão 02', cor: 'orange' },
-  { id: 'sec-jur', name: 'Jurídico & Compliance', responsavel: 'Dra. Beatriz Ramos', email: 'beatriz.jur@empresa.com.br', sala: 'Bloco B - Sala 201', cor: 'purple' },
-  { id: 'sec-mkt', name: 'Marketing & Comunicação', responsavel: 'Lucas Rocha', email: 'lucas.mkt@empresa.com.br', sala: 'Bloco B - Sala 202', cor: 'cyan' },
-  { id: 'sec-eng', name: 'Engenharia & Manutenção', responsavel: 'Eng. Paulo Vieira', email: 'paulo.eng@empresa.com.br', sala: 'Oficina Central', cor: 'teal' },
-  { id: 'sec-dir', name: 'Diretoria Executiva', responsavel: 'Dra. Helena Martins', email: 'helena.dir@empresa.com.br', sala: 'Bloco Executivo - Cobertura', cor: 'rose' },
+  { id: 'sec-studio', name: 'Studio', responsavel: 'Tadeu', email: 'tadeu@empresa.gov.br', sala: 'Studio de Gravação', cor: 'purple' },
+  { id: 'sec-auditorio', name: 'Auditório', responsavel: 'Tadeu', email: 'tadeu@empresa.gov.br', sala: 'Auditório Principal', cor: 'indigo' },
+  { id: 'sec-foyer', name: 'Foyer', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Foyer de Entrada', cor: 'cyan' },
+  { id: 'sec-recepcao', name: 'Recepção', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Recepção Térreo', cor: 'blue' },
+  { id: 'sec-lab-inovacao', name: 'Laboratório Inovação', responsavel: 'Ricardo Mello', email: 'ricardo.mello@empresa.gov.br', sala: 'Laboratório de Inovação', cor: 'emerald' },
+  { id: 'sec-revista-jmu', name: 'Revista JMU', responsavel: 'Alexandre', email: 'alexandre@empresa.gov.br', sala: 'Redação Revista JMU', cor: 'pink' },
+  { id: 'sec-sacadi-cadmi', name: 'SACADI E CADMI', responsavel: 'Alex e Siqueira (substituto)', email: 'alex.siqueira@empresa.gov.br', sala: 'Salão SACADI / CADMI', cor: 'amber' },
+  { id: 'sec-ti', name: 'TI', responsavel: 'Santana', email: 'santana.ti@empresa.gov.br', sala: 'Data Center & TI', cor: 'indigo' },
+  { id: 'sec-reunioes', name: 'Sala de Reuniões', responsavel: 'Alex / Santana', email: 'alex@empresa.gov.br', sala: 'Sala de Reuniões Principal', cor: 'violet' },
+  { id: 'sec-copa-terreo', name: 'Copa Cozinha Térreo', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Copa Térreo', cor: 'orange' },
+  { id: 'sec-copa-1piso', name: 'Copa 1º Piso', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Copa 1º Andar', cor: 'teal' },
 ];
 
 export const CATEGORIES = [

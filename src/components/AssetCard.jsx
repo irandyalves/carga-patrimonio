@@ -147,14 +147,27 @@ export const AssetCard = ({
             
             {/* Tag Badge */}
             <div className="flex items-center gap-1.5">
+              {/* Tag Badge com destaque nos últimos 5 dígitos */}
               <button
                 onClick={handleCopyTag}
                 title="Copiar número do patrimônio"
-                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-indigo-300 flex items-center gap-1.5 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-slate-850 hover:bg-slate-750 border border-slate-700 text-xs font-mono font-bold text-indigo-300 flex items-center gap-1.5 transition-colors"
               >
-                <span>{asset.numeroPatrimonio}</span>
+                <span>
+                  {String(asset.numeroPatrimonio || '').length > 5 && (
+                    <span className="opacity-50">{String(asset.numeroPatrimonio || '').slice(0, -5)}</span>
+                  )}
+                  <strong className="text-white font-bold bg-slate-900 px-1 py-0.5 rounded text-indigo-300">
+                    {String(asset.numeroPatrimonio || '').slice(-5)}
+                  </strong>
+                </span>
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
               </button>
+
+              {/* Quantidade Pill */}
+              <span className="text-[11px] px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">
+                {asset.quantidade || 1} un
+              </span>
 
               <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-400 border border-slate-700/60 font-medium hidden sm:inline">
                 {asset.categoria || 'Geral'}
@@ -192,7 +205,7 @@ export const AssetCard = ({
           <div className="grid grid-cols-3 gap-2 text-center bg-slate-900/40 p-2 rounded-xl border border-slate-800/80 mb-3 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 block">Aquisição</span>
-              <span className="font-semibold text-slate-200">{asset.anoAquisicao || '-'}</span>
+              <span className="font-semibold text-slate-200">{asset.dataAquisicao || asset.anoAquisicao || '-'}</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block">Vlr Original</span>
