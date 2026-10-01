@@ -172,14 +172,14 @@ export const AssetTableRowCard = ({
   };
 
   return (
-    <div className={`relative rounded-xl border transition-all duration-200 overflow-visible group w-full ${
+    <div className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
       isOutOfPlace 
-        ? 'bg-amber-950/20 border-amber-500/40 hover:border-amber-400/60' 
+        ? 'bg-amber-950/20 hover:bg-amber-950/30' 
         : isConferido 
-          ? 'bg-slate-850/90 border-blue-500/40 shadow-sm shadow-blue-950/20 hover:border-blue-400/60' 
+          ? 'bg-slate-900/40 hover:bg-slate-850/60' 
           : isBaixado
-            ? 'bg-slate-900/60 border-rose-500/30 opacity-75'
-            : 'bg-slate-850/90 border-slate-800 hover:border-slate-700 shadow-sm'
+            ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
+            : 'hover:bg-slate-850/50'
     }`}>
       
       {/* Aviso se for item fora da seção oficial */}
@@ -211,39 +211,39 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Linha Principal (Colunas alinhadas ocupando toda a largura da tela) */}
-      <div className="px-5 py-3.5 flex items-center gap-3 text-xs w-full">
+      {/* Linha Principal (Altura reduzida em >20%, fontes reduzidas em 10%) */}
+      <div className="px-5 py-2 flex items-center gap-3 text-[11px] w-full">
         
         {/* Coluna 1: Patrimônio (Fonte Dobrada, SEM BORDAS, SEM BADGE PENDENTE) */}
         <div className="w-32 shrink-0 flex items-center gap-1.5">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-indigo-400 select-all leading-none">
+              <span className="font-mono text-xl sm:text-[25px] font-black tracking-tight text-indigo-400 select-all leading-none">
                 {formattedXX}
               </span>
               <button
                 onClick={handleCopyTag}
                 title="Copiar número do patrimônio"
-                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
             
-            {/* Tags e Badges especiais (Pendente removido conforme solicitado) */}
-            <div className="mt-1 flex items-center gap-1.5">
+            {/* Tags e Badges especiais */}
+            <div className="mt-0.5 flex items-center gap-1">
               {prefix && (
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-[9px] font-mono text-slate-500">
                   {prefix}
                 </span>
               )}
               {isConferido ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                  <CheckCircle2 className="w-3 h-3" /> Conferido
+                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                  <CheckCircle2 className="w-2.5 h-2.5" /> Conferido
                 </span>
               ) : isBaixado ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
-                  <Archive className="w-3 h-3" /> Baixado
+                <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
+                  <Archive className="w-2.5 h-2.5" /> Baixado
                 </span>
               ) : null}
             </div>
@@ -253,242 +253,232 @@ export const AssetTableRowCard = ({
         {/* Coluna 2: Quantidade (SEM BORDAS, Centralizado) */}
         <div className="w-14 shrink-0 flex items-center justify-center">
           <div className="flex items-baseline gap-1">
-            <span className="text-xs text-slate-400 lg:hidden">Qtde:</span>
-            <span className="font-black text-xl sm:text-2xl text-cyan-300">
+            <span className="text-[10px] text-slate-400 lg:hidden">Qtde:</span>
+            <span className="font-black text-lg sm:text-[21px] text-cyan-300">
               {asset.quantidade || 1}
             </span>
-            <span className="text-[11px] font-semibold text-slate-400">un</span>
+            <span className="text-[10px] font-semibold text-slate-400">un</span>
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (AMPLIADA EM 40%) + Hint Bonito para Descrição Longa */}
-        <div className="flex-1 min-w-[400px]">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h4 
-              className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
-              title={asset.descricao}
-            >
-              {shortDesc}
-            </h4>
+        {/* Coluna 3: Descrição do Bem + Localizador, Onde Está, Editar e Mic à DIREITA */}
+        <div className="flex-1 min-w-[400px] flex items-center gap-2 flex-wrap">
+          <h4 
+            className="text-xs sm:text-[13px] font-semibold text-slate-100 group-hover:text-white transition-colors leading-snug"
+            title={asset.descricao}
+          >
+            {shortDesc}
+          </h4>
 
-            {isDescLong && (
-              <div className="relative group/hint inline-flex items-center">
-                <button
-                  type="button"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1 rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm"
-                  title="Passe o mouse para ver a descrição completa"
-                >
-                  <Info className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Hint Bonito / Tooltip Flutuante */}
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/hint:flex flex-col z-50 w-72 sm:w-96 bg-slate-900/98 backdrop-blur-xl border border-indigo-500/50 rounded-2xl p-3.5 shadow-2xl shadow-indigo-950/80 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
-                  <div className="flex items-center gap-2 pb-1.5 mb-1.5 border-b border-indigo-500/20">
-                    <Info className="w-4 h-4 text-indigo-400 shrink-0" />
-                    <span className="font-bold text-white text-[11px] uppercase tracking-wider">Descrição Completa</span>
-                    <span className="ml-auto font-mono text-[10px] text-indigo-300 font-bold">{formattedXX}</span>
-                  </div>
-                  <p className="text-slate-200 leading-relaxed font-medium text-xs break-words">
-                    {asset.descricao}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Tag / Badge "Está com: ASCOM (Jean)" movida para a direita da descrição */}
-            {isEmCautela && (
-              <div className="relative group/cautela inline-block ml-1">
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-2 py-0.5 rounded-lg border border-amber-500/30 cursor-pointer transition-all shadow-sm">
-                  <Handshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
-                </div>
-
-                {/* Floating Document Popover on Hover */}
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3.5 shadow-2xl shadow-purple-950/60 text-xs text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-purple-500/20">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded-lg bg-purple-500/20 text-purple-400">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-white text-xs">Doc. de Cautela / Empréstimo</div>
-                        <div className="text-[10px] text-purple-300 font-mono">#{asset.cautelaAtual?.id || 'CAUTELA'}</div>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                      EM ANDAMENTO
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-[11px]">
-                    <div>
-                      <span className="text-slate-400">Item: </span>
-                      <strong className="text-white font-mono">{formattedXX}</strong> - {asset.descricao}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Cautelado por:</span>
-                        <strong className="text-purple-300">{cautelaPessoa}</strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Setor de Destino:</span>
-                        <strong className="text-amber-300">{cautelaDestino}</strong>
-                      </div>
-                    </div>
-                    {cautelaDoc && (
-                      <div>
-                        <span className="text-slate-400 text-[10px]">Doc / Matrícula: </span>
-                        <span className="font-mono text-slate-300">{cautelaDoc}</span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Data Retirada:</span>
-                        <span className="text-slate-300">{cautelaRetirada}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Previsão Devolução:</span>
-                        <span className="text-amber-400 font-semibold">{cautelaDevolucao}</span>
-                      </div>
-                    </div>
-                    {asset.cautelaAtual?.finalidade && (
-                      <div className="pt-1 border-t border-slate-800">
-                        <span className="text-slate-400 block text-[10px]">Finalidade:</span>
-                        <span className="text-slate-300 italic">"{asset.cautelaAtual.finalidade}"</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1 text-xs text-slate-400">
-            {/* Localização Editável: Escolher / Digitar / Falar no Microfone */}
-            {isEditingLocation ? (
-              <div 
-                onClick={(e) => e.stopPropagation()} 
-                className="inline-flex items-center gap-1 bg-slate-900 border border-blue-500/70 rounded-xl p-1 shadow-xl z-20"
+          {isDescLong && (
+            <div className="relative group/hint inline-flex items-center">
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="p-0.5 rounded text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm"
+                title="Passe o mouse para ver a descrição completa"
               >
-                <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 ml-1" />
-                <input
-                  type="text"
-                  list={`loc-presets-${asset.id}`}
-                  value={locationValue}
-                  onChange={(e) => setLocationValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveLocation(e);
-                    if (e.key === 'Escape') setIsEditingLocation(false);
-                  }}
-                  placeholder="Ex: Está na sala de reuniões"
-                  className="bg-slate-800 text-white text-xs px-2 py-1 rounded-lg border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[190px] sm:min-w-[240px]"
-                  autoFocus
-                />
-                
-                {/* Opções rápidas de escolha */}
-                <datalist id={`loc-presets-${asset.id}`}>
-                  <option value="Está na Sala de Reuniões" />
-                  <option value="Está na Copa Cozinha Térreo" />
-                  <option value="Está na Copa 1º Piso" />
-                  <option value="Está no Studio" />
-                  <option value="Está no Auditório" />
-                  <option value="Está no Foyer" />
-                  <option value="Está na Recepção" />
-                  <option value="Está no Laboratório Inovação" />
-                  <option value="Está na Revista JMU" />
-                  <option value="Está no SACADI" />
-                  <option value="Está no CADMI" />
-                  <option value="Está na TI" />
-                  <option value="Almoxarifado" />
-                </datalist>
+                <Info className="w-3 h-3" />
+              </button>
 
-                {/* Microfone para ditar por voz */}
-                <button
-                  type="button"
-                  onClick={startLocationVoice}
-                  title="Falar por voz no celular ou computador"
-                  className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                    isListeningLoc 
-                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
-                  }`}
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Salvar */}
-                <button
-                  type="button"
-                  onClick={handleSaveLocation}
-                  title="Salvar Localização"
-                  className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Cancelar */}
-                <button
-                  type="button"
-                  onClick={() => setIsEditingLocation(false)}
-                  title="Cancelar"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+              {/* Hint Bonito / Tooltip Flutuante */}
+              <div className="absolute left-0 bottom-full mb-2 hidden group-hover/hint:flex flex-col z-50 w-72 sm:w-96 bg-slate-900/98 backdrop-blur-xl border border-indigo-500/50 rounded-2xl p-3 shadow-2xl shadow-indigo-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
+                <div className="flex items-center gap-1.5 pb-1 mb-1 border-b border-indigo-500/20">
+                  <Info className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="font-bold text-white text-[10px] uppercase tracking-wider">Descrição Completa</span>
+                  <span className="ml-auto font-mono text-[9px] text-indigo-300 font-bold">{formattedXX}</span>
+                </div>
+                <p className="text-slate-200 leading-relaxed font-medium text-[11px] break-words">
+                  {asset.descricao}
+                </p>
               </div>
-            ) : (
-              <div className="inline-flex items-center gap-1 group/loc">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!canManageAsset) {
-                      onOpenSolicitacao(asset);
-                    } else {
-                      setIsEditingLocation(true);
-                    }
-                  }}
-                  title={canManageAsset ? "Clique para editar a localização (digitar ou escolher)" : "Bem de outro departamento: clique para informar localização e fazer pedido de carga"}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs cursor-pointer border-none"
-                >
-                  <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                  <span className="truncate max-w-[200px]">
-                    {asset.localizacao || 'Definir localização...'}
+            </div>
+          )}
+
+          {/* Tag / Badge "Está com: ASCOM (Jean)" se em cautela */}
+          {isEmCautela && (
+            <div className="relative group/cautela inline-block">
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-1.5 py-0.5 rounded border border-amber-500/30 cursor-pointer transition-all shadow-sm">
+                <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+              </div>
+
+              {/* Floating Document Popover */}
+              <div className="absolute left-0 bottom-full mb-2 hidden group-hover/cautela:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-purple-500/50 rounded-2xl p-3 shadow-2xl shadow-purple-950/60 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
+                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-purple-500/20">
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1 rounded bg-purple-500/20 text-purple-400">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-white text-[11px]">Doc. de Cautela / Empréstimo</div>
+                      <div className="text-[9px] text-purple-300 font-mono">#{asset.cautelaAtual?.id || 'CAUTELA'}</div>
+                    </div>
+                  </div>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                    EM ANDAMENTO
                   </span>
-                  <Edit3 className="w-3 h-3 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
-                </button>
+                </div>
 
-                {/* Botão de microfone direto para ditar no mobile */}
-                <button
-                  type="button"
-                  onClick={startLocationVoice}
-                  title="Ditar localização por voz (ex: 'Está na sala de reuniões')"
-                  className={`p-1.5 rounded-lg transition-all cursor-pointer border-none ${
-                    isListeningLoc 
-                      ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                      : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
-                  }`}
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                </button>
+                <div className="space-y-1 text-[10px]">
+                  <div>
+                    <span className="text-slate-400">Item: </span>
+                    <strong className="text-white font-mono">{formattedXX}</strong> - {asset.descricao}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">Cautelado por:</span>
+                      <strong className="text-purple-300">{cautelaPessoa}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">Setor de Destino:</span>
+                      <strong className="text-amber-300">{cautelaDestino}</strong>
+                    </div>
+                  </div>
+                  {cautelaDoc && (
+                    <div>
+                      <span className="text-slate-400 text-[9px]">Doc / Matrícula: </span>
+                      <span className="font-mono text-slate-300">{cautelaDoc}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-1.5 pt-0.5 border-t border-slate-800">
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">Data Retirada:</span>
+                      <span className="text-slate-300">{cautelaRetirada}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[9px]">Previsão Devolução:</span>
+                      <span className="text-amber-400 font-semibold">{cautelaDevolucao}</span>
+                    </div>
+                  </div>
+                  {asset.cautelaAtual?.finalidade && (
+                    <div className="pt-0.5 border-t border-slate-800">
+                      <span className="text-slate-400 block text-[9px]">Finalidade:</span>
+                      <span className="text-slate-300 italic">"{asset.cautelaAtual.finalidade}"</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Localizador, Onde Está, Ícone de Editar e Microfone MOVIDOS PARA A DIREITA DA DESCRIÇÃO */}
+          {isEditingLocation ? (
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              className="inline-flex items-center gap-1 bg-slate-900 border border-blue-500/70 rounded-lg p-0.5 shadow-xl z-20 ml-1"
+            >
+              <MapPin className="w-3 h-3 text-rose-500 shrink-0 ml-1" />
+              <input
+                type="text"
+                list={`loc-presets-${asset.id}`}
+                value={locationValue}
+                onChange={(e) => setLocationValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveLocation(e);
+                  if (e.key === 'Escape') setIsEditingLocation(false);
+                }}
+                placeholder="Ex: Está na sala de reuniões"
+                className="bg-slate-800 text-white text-[11px] px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[170px]"
+                autoFocus
+              />
+              <datalist id={`loc-presets-${asset.id}`}>
+                <option value="Está na Sala de Reuniões" />
+                <option value="Está na Copa Cozinha Térreo" />
+                <option value="Está na Copa 1º Piso" />
+                <option value="Está no Studio" />
+                <option value="Está no Auditório" />
+                <option value="Está no Foyer" />
+                <option value="Está na Recepção" />
+                <option value="Está no Laboratório Inovação" />
+                <option value="Está na Revista JMU" />
+                <option value="Está no SACADI" />
+                <option value="Está no CADMI" />
+                <option value="Está na TI" />
+                <option value="Almoxarifado" />
+              </datalist>
+
+              <button
+                type="button"
+                onClick={startLocationVoice}
+                title="Falar por voz"
+                className={`p-1 rounded border transition-all cursor-pointer ${
+                  isListeningLoc 
+                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveLocation}
+                title="Salvar Localização"
+                className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingLocation(false)}
+                title="Cancelar"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-0.5 group/loc ml-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!canManageAsset) {
+                    onOpenSolicitacao(asset);
+                  } else {
+                    setIsEditingLocation(true);
+                  }
+                }}
+                title={canManageAsset ? "Clique para editar a localização (digitar ou escolher)" : "Clique para informar localização"}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
+              >
+                <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                <span className="truncate max-w-[170px]">
+                  {asset.localizacao || 'Onde está?'}
+                </span>
+                <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={startLocationVoice}
+                title="Ditar localização por voz"
+                className={`p-1 rounded-md transition-all cursor-pointer ${
+                  isListeningLoc 
+                    ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Coluna 4: Responsável (Compacto) */}
         <div className="w-36 shrink-0 flex items-center justify-center">
           <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
-              <User className="w-3 h-3" />
+            <div className="w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
+              <User className="w-2.5 h-2.5" />
             </div>
             <div className="truncate text-left">
-              <span className="font-semibold text-slate-200 truncate block text-xs" title={asset.responsavel}>
+              <span className="font-semibold text-slate-200 truncate block text-[11px]" title={asset.responsavel}>
                 {asset.responsavel || 'Não definido'}
               </span>
               {isGeneralView && asset.setorNome && (
-                <span className="text-[10px] text-slate-400 block truncate">
+                <span className="text-[9px] text-slate-400 block truncate">
                   {asset.setorNome}
                 </span>
               )}
@@ -501,7 +491,7 @@ export const AssetTableRowCard = ({
           <div className="flex items-center gap-1 text-slate-300">
             <Calendar className="w-3 h-3 text-slate-400 shrink-0 hidden sm:block" />
             <div>
-              <span className="font-medium text-xs">
+              <span className="font-medium text-[11px]">
                 {asset.dataAquisicao || asset.anoAquisicao || '---'}
               </span>
             </div>
@@ -511,7 +501,7 @@ export const AssetTableRowCard = ({
         {/* Coluna 6: Valor Original (Espremido) */}
         <div className="w-24 shrink-0 flex items-center justify-center text-center">
           <div>
-            <span className="font-semibold text-slate-200 text-xs">
+            <span className="font-semibold text-slate-200 text-[11px]">
               {formatCurrency(asset.valorOriginal)}
             </span>
           </div>
@@ -520,7 +510,7 @@ export const AssetTableRowCard = ({
         {/* Coluna 7: Valor Atual (Espremido) */}
         <div className="w-24 shrink-0 flex items-center justify-center text-center">
           <div>
-            <span className="font-bold text-emerald-400 text-xs">
+            <span className="font-bold text-emerald-400 text-[11px]">
               {formatCurrency(asset.valorAtual || asset.valorOriginal)}
             </span>
           </div>
@@ -532,15 +522,15 @@ export const AssetTableRowCard = ({
           {/* Botão de Conferência ou Bloqueio / Pedido de Carga */}
           {!canManageAsset ? (
             hasPendingPedido ? (
-              <span className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span className="px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
+                <Clock className="w-3 h-3 text-amber-400" />
                 <span>Enviado</span>
               </span>
             ) : (
               <button
                 onClick={() => onOpenSolicitacao(asset)}
                 title="Este bem pertence a outro departamento. Clique para fazer um pedido e informar a qual setor ele pertence."
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
+                className="px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
               >
                 <Send className="w-3 h-3" />
                 <span>Pedido</span>
@@ -549,21 +539,21 @@ export const AssetTableRowCard = ({
           ) : isGeneralView ? (
             <div 
               title="Na aba Geral não se pode conferir carga. Entre no setor específico para conferir."
-              className="px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 text-slate-400 bg-slate-900/90 border border-slate-800 cursor-not-allowed select-none"
+              className="px-2 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 text-slate-400 bg-slate-900/90 border border-slate-800 cursor-not-allowed select-none"
             >
               <Lock className="w-3 h-3 text-slate-500" />
               <span>Bloqueado</span>
             </div>
           ) : isBaixado ? (
-            <div className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
+            <div className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
               Baixado
             </div>
           ) : showUncheckConfirm ? (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-1 rounded-xl">
-              <span className="text-[10px] text-amber-200 font-bold px-1">Desmarcar?</span>
+            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 p-1 rounded-lg">
+              <span className="text-[9px] text-amber-200 font-bold px-1">Desmarcar?</span>
               <button
                 onClick={handleConfirmUncheck}
-                className="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[9px] font-bold cursor-pointer"
               >
                 Sim
               </button>
@@ -572,7 +562,7 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setShowUncheckConfirm(false);
                 }}
-                className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                className="px-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[9px] cursor-pointer"
               >
                 Não
               </button>
@@ -580,7 +570,7 @@ export const AssetTableRowCard = ({
           ) : (
             <button
               onClick={handleConferenceClick}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
                 isConferido
                   ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                   : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'

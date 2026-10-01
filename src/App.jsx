@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Navbar 
@@ -173,6 +173,27 @@ export function App() {
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Ref da área de rolagem para ajuste de scroll invertido
+  const mainScrollRef = useRef(null);
+
+  useEffect(() => {
+    const mainEl = mainScrollRef.current;
+    if (!mainEl) return;
+
+    const handleWheel = (e) => {
+      // Inverte o movimento vertical do scroll conforme solicitado
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        mainEl.scrollTop -= e.deltaY;
+      }
+    };
+
+    mainEl.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      mainEl.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   const showToast = (msg, type = 'success') => {
     setToastMessage({ msg, type });
@@ -982,15 +1003,18 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col z-10 transition-all duration-300 ${
-          isSidebarOpen ? '-ml-2 sm:-ml-2.5' : 'ml-0'
-        }`}>
+        <main 
+          ref={mainScrollRef}
+          className={`flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col z-10 transition-all duration-300 ${
+            isSidebarOpen ? '-ml-2 sm:-ml-2.5' : 'ml-0'
+          }`}
+        >
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens (Aumentada em 40%) */}
             <div className="sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] flex items-center">
               <div className="pl-0 pr-4 w-full">
-                <div className="px-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+                <div className="px-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Coluna 1: Patrimônio (Alinhado exatamente na mesma largura e posição da esquerda) */}
                   <button
@@ -1161,9 +1185,9 @@ export function App() {
               </div>
             )}
 
-            {/* Asset Cards or Empty State */}
+            {/* Asset Cards or Empty State (Sem espaço entre cards, separados por linha) */}
             {filteredAssets.length > 0 ? (
-              <div className="pl-0 pr-4 py-3 space-y-2 flex-1 pb-8">
+              <div className="pl-0 pr-4 flex-1 pb-8 border-t border-slate-800/80">
                 {sortedAssets.map(asset => (
                   <AssetTableRowCard
                     key={asset.id}
