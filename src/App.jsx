@@ -198,7 +198,7 @@ export function App() {
   }, [visibleColumns]);
 
   const tableMinWidth = useMemo(() => {
-    let base = 620;
+    let base = 960;
     if (visibleColumns.responsavel) base += 112;
     if (visibleColumns.dataAquisicao) base += 96;
     if (visibleColumns.valorOriginal) base += 96;
@@ -1387,11 +1387,11 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 3: Descrição do Bem (Expande dinamicamente para ocupar o espaço quando colunas da direita são ocultadas) */}
+                  {/* Coluna 3: Descrição do Bem (Expande dinamicamente para ocupar todo o espaço liberado pelas colunas ocultadas) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pela descrição"
-                    className={`flex-[1.5] min-w-[220px] shrink-0 flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
+                    className={`flex-1 min-w-0 shrink flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -1424,8 +1424,8 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 5: Observação (Expande suavemente preenchendo o espaço liberado) */}
-                  <div className="flex-1 min-w-[180px] pl-6 shrink-0 flex items-center justify-start text-left">
+                  {/* Coluna 5: Observação */}
+                  <div className="w-64 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 

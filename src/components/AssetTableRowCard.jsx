@@ -577,8 +577,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Coluna 3: Descrição do Bem (Nunca quebra linha, clique para abrir modal) */}
-        <div className="flex-[1.5] min-w-[200px] shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
+        {/* Coluna 3: Descrição do Bem (Expande e ocupa o espaço liberado pelas colunas ocultadas) */}
+        <div className="flex-1 min-w-0 shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
           <h4 
             onClick={(e) => {
               e.stopPropagation();
@@ -758,8 +758,8 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 5: Observação (Afastada de localização, com listbox separado, 10 opções e setor em verde) */}
-        <div className="flex-1 min-w-[220px] pl-6 shrink-0 flex items-center justify-start text-left">
+        {/* Coluna 5: Observação (Alinhada perfeitamente com cabeçalho) */}
+        <div className="w-64 shrink-0 flex items-center justify-start text-left">
           {isEditingObs ? (
             <div 
               ref={obsContainerRef}
