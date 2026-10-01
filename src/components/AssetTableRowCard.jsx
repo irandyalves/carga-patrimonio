@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CheckCircle2, 
   Clock, 
@@ -24,9 +24,31 @@ import {
   Send,
   Info,
   Sparkles,
-  Building2
+  Building2,
+  Palette
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
+
+const COLOR_OPTIONS = [
+  { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
+  { id: 'emerald', label: 'Verde Esmeralda', bg: 'bg-emerald-500', border: 'border-emerald-400' },
+  { id: 'blue', label: 'Azul Real', bg: 'bg-blue-500', border: 'border-blue-400' },
+  { id: 'amber', label: 'Amarelo / Dourado', bg: 'bg-amber-500', border: 'border-amber-400' },
+  { id: 'rose', label: 'Vermelho / Rosa', bg: 'bg-rose-500', border: 'border-rose-400' },
+  { id: 'purple', label: 'Roxo / Violeta', bg: 'bg-purple-500', border: 'border-purple-400' },
+  { id: 'cyan', label: 'Ciano / Turquesa', bg: 'bg-cyan-500', border: 'border-cyan-400' },
+  { id: 'orange', label: 'Laranja / Coral', bg: 'bg-orange-500', border: 'border-orange-400' }
+];
+
+const CARD_COLOR_CLASSES = {
+  emerald: 'bg-emerald-950/25 border-l-4 border-l-emerald-400 hover:bg-emerald-950/40',
+  blue: 'bg-blue-950/25 border-l-4 border-l-blue-400 hover:bg-blue-950/40',
+  amber: 'bg-amber-950/25 border-l-4 border-l-amber-400 hover:bg-amber-950/40',
+  rose: 'bg-rose-950/25 border-l-4 border-l-rose-400 hover:bg-rose-950/40',
+  purple: 'bg-purple-950/25 border-l-4 border-l-purple-400 hover:bg-purple-950/40',
+  cyan: 'bg-cyan-950/25 border-l-4 border-l-cyan-400 hover:bg-cyan-950/40',
+  orange: 'bg-orange-950/25 border-l-4 border-l-orange-400 hover:bg-orange-950/40'
+};
 
 export const AssetTableRowCard = ({
   asset,
@@ -45,6 +67,7 @@ export const AssetTableRowCard = ({
   onDeleteAsset,
   onUpdateLocation,
   onUpdateObservation,
+  onUpdateCardColor,
   onOpenSolicitacao,
   hasPendingPedido = false,
   index = 0
@@ -55,6 +78,7 @@ export const AssetTableRowCard = ({
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
   // Posicionamento inteligente para nunca ser cortado pelo cabeçalho
   const [cautelaPlacement, setCautelaPlacement] = useState(() => (index < 4 ? 'bottom' : 'top'));
@@ -70,23 +94,116 @@ export const AssetTableRowCard = ({
     }
   };
 
-  // Estados de edição inline de localização com suporte a voz
+  // Estados de edição inline de localização com suporte a voz e auto-close
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [locationValue, setLocationValue] = useState(asset.localizacao || '');
+  const [showLocListbox, setShowLocListbox] = useState(false);
   const [isListeningLoc, setIsListeningLoc] = useState(false);
+  const locTimerRef = useRef(null);
+  const locContainerRef = useRef(null);
 
   useEffect(() => {
     setLocationValue(asset.localizacao || '');
   }, [asset.localizacao]);
 
-  // Estados de edição inline de observação com inteligência de setor e voz
+  // Estados de edição inline de observação com inteligência de setor, voz e auto-close
   const [isEditingObs, setIsEditingObs] = useState(false);
   const [obsValue, setObsValue] = useState(asset.observacao || '');
+  const [showObsListbox, setShowObsListbox] = useState(false);
   const [isListeningObs, setIsListeningObs] = useState(false);
+  const obsTimerRef = useRef(null);
+  const obsContainerRef = useRef(null);
+  const colorPickerRef = useRef(null);
 
   useEffect(() => {
     setObsValue(asset.observacao || '');
   }, [asset.observacao]);
+
+  // Temporizador de inatividade de 8 segundos para fechar edições inline automaticamente
+  const resetLocTimer = () => {
+    if (locTimerRef.current) clearTimeout(locTimerRef.current);
+    locTimerRef.current = setTimeout(() => {
+      setIsEditingLocation(false);
+      setShowLocListbox(false);
+    }, 8000);
+  };
+
+  const resetObsTimer = () => {
+    if (obsTimerRef.current) clearTimeout(obsTimerRef.current);
+    obsTimerRef.current = setTimeout(() => {
+      setIsEditingObs(false);
+      setShowObsListbox(false);
+    }, 8000);
+  };
+
+  const openLocEdit = (e) => {
+    e?.stopPropagation();
+    window.dispatchEvent(new CustomEvent('close-inlines', { detail: { id: asset.id, field: 'location' } }));
+    setIsEditingObs(false);
+    setShowObsListbox(false);
+    setIsEditingLocation(true);
+    setShowLocListbox(true);
+    resetLocTimer();
+  };
+
+  const closeLocEdit = () => {
+    if (locTimerRef.current) clearTimeout(locTimerRef.current);
+    setIsEditingLocation(false);
+    setShowLocListbox(false);
+  };
+
+  const openObsEdit = (e) => {
+    e?.stopPropagation();
+    window.dispatchEvent(new CustomEvent('close-inlines', { detail: { id: asset.id, field: 'obs' } }));
+    setIsEditingLocation(false);
+    setShowLocListbox(false);
+    setIsEditingObs(true);
+    setShowObsListbox(true);
+    resetObsTimer();
+  };
+
+  const closeObsEdit = () => {
+    if (obsTimerRef.current) clearTimeout(obsTimerRef.current);
+    setIsEditingObs(false);
+    setShowObsListbox(false);
+  };
+
+  // Escuta evento global: ao clicar para editar em um campo/card, fecha edições anteriores
+  useEffect(() => {
+    const handleCloseInlines = (e) => {
+      if (e.detail?.id !== asset.id || e.detail?.field !== 'location') {
+        setIsEditingLocation(false);
+        setShowLocListbox(false);
+      }
+      if (e.detail?.id !== asset.id || e.detail?.field !== 'obs') {
+        setIsEditingObs(false);
+        setShowObsListbox(false);
+      }
+    };
+    window.addEventListener('close-inlines', handleCloseInlines);
+    return () => {
+      window.removeEventListener('close-inlines', handleCloseInlines);
+      if (locTimerRef.current) clearTimeout(locTimerRef.current);
+      if (obsTimerRef.current) clearTimeout(obsTimerRef.current);
+    };
+  }, [asset.id]);
+
+  // Fechar ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isEditingLocation && locContainerRef.current && !locContainerRef.current.contains(e.target)) {
+        closeLocEdit();
+      }
+      if (isEditingObs && obsContainerRef.current && !obsContainerRef.current.contains(e.target)) {
+        closeObsEdit();
+      }
+      if (isColorPickerOpen && colorPickerRef.current && !colorPickerRef.current.contains(e.target)) {
+        setIsColorPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditingLocation, isEditingObs, isColorPickerOpen]);
 
   // Permissões: Administrador pode tudo. Operador só altera bens do seu próprio departamento.
   const isAdmin = userRole === 'admin';
@@ -189,12 +306,13 @@ export const AssetTableRowCard = ({
     }
   };
 
-  const handleSaveLocation = (e) => {
+  const handleSaveLocation = (e, directVal = null) => {
     e?.stopPropagation();
-    if (onUpdateLocation && locationValue.trim()) {
-      onUpdateLocation(asset.id, locationValue.trim());
+    const val = (directVal !== null ? directVal : locationValue).trim();
+    if (onUpdateLocation && val) {
+      onUpdateLocation(asset.id, val);
     }
-    setIsEditingLocation(false);
+    closeLocEdit();
   };
 
   // Detecção Inteligente de Setor na Observação (ex: "está no studio" -> reconhece o setor Studio)
@@ -222,13 +340,13 @@ export const AssetTableRowCard = ({
     return null;
   };
 
-  const handleSaveObservation = (e) => {
+  const handleSaveObservation = (e, directVal = null) => {
     e?.stopPropagation();
-    const trimmed = obsValue.trim();
+    const val = (directVal !== null ? directVal : obsValue).trim();
     if (onUpdateObservation) {
-      onUpdateObservation(asset.id, trimmed);
+      onUpdateObservation(asset.id, val);
     }
-    setIsEditingObs(false);
+    closeObsEdit();
   };
 
   const startObservationVoice = (e) => {
@@ -238,6 +356,7 @@ export const AssetTableRowCard = ({
       return;
     }
     setIsEditingObs(true);
+    resetObsTimer();
     try {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -248,13 +367,13 @@ export const AssetTableRowCard = ({
       setIsListeningObs(true);
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        const transcript = event.results[0]?.[0]?.transcript;
         if (transcript) {
           const formatted = transcript.charAt(0).toUpperCase() + transcript.slice(1);
           setObsValue(formatted);
           if (onUpdateObservation) {
             onUpdateObservation(asset.id, formatted);
-            setIsEditingObs(false);
+            closeObsEdit();
           }
         }
         setIsListeningObs(false);
@@ -275,18 +394,22 @@ export const AssetTableRowCard = ({
     }
   };
 
+  const cardColorClass = asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null;
+
   return (
     <div 
       id={`asset-row-${asset.id}`}
       className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
-      isOutOfPlace 
-        ? 'bg-amber-950/20 hover:bg-amber-950/30' 
-        : isConferido 
-          ? 'bg-slate-900/40 hover:bg-slate-850/60' 
-          : isBaixado
-            ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
-            : 'hover:bg-slate-850/50'
-    }`}>
+        cardColorClass
+          ? cardColorClass
+          : isOutOfPlace 
+            ? 'bg-amber-950/20 hover:bg-amber-950/30' 
+            : isConferido 
+              ? 'bg-slate-900/40 hover:bg-slate-850/60' 
+              : isBaixado
+                ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
+                : 'hover:bg-slate-850/50'
+      }`}>
       
       {/* Aviso se for item fora da seção oficial */}
       {isOutOfPlace && (
@@ -390,79 +513,140 @@ export const AssetTableRowCard = ({
         <div className="w-56 shrink-0 flex items-center justify-start text-left">
           {isEditingLocation ? (
             <div 
+              ref={locContainerRef}
               onClick={(e) => e.stopPropagation()} 
-              className="inline-flex items-center gap-1 bg-slate-900 border border-blue-500/70 rounded-lg p-0.5 shadow-xl z-20"
+              className="relative flex items-center z-30 animate-in fade-in zoom-in-95 duration-100"
             >
-              <input
-                type="text"
-                list={`loc-presets-${asset.id}`}
-                value={locationValue}
-                onChange={(e) => setLocationValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveLocation(e);
-                  if (e.key === 'Escape') setIsEditingLocation(false);
-                }}
-                placeholder="Ex: Sala de reuniões"
-                className="bg-slate-800 text-white text-[11px] px-1.5 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[140px]"
-                autoFocus
-              />
-              <datalist id={`loc-presets-${asset.id}`}>
-                <option value="Está na Sala de Reuniões" />
-                <option value="Está na Copa Cozinha Térreo" />
-                <option value="Está na Copa 1º Piso" />
-                <option value="Está no Studio" />
-                <option value="Está no Auditório" />
-                <option value="Está no Foyer" />
-                <option value="Está na Recepção" />
-                <option value="Está no Laboratório Inovação" />
-                <option value="Está na Revista JMU" />
-                <option value="Está no SACADI" />
-                <option value="Está no CADMI" />
-                <option value="Está na TI" />
-                <option value="Almoxarifado" />
-              </datalist>
+              {/* Campo de Entrada e Botão Dropdown */}
+              <div className="relative inline-flex items-center">
+                <input
+                  type="text"
+                  value={locationValue}
+                  onChange={(e) => {
+                    setLocationValue(e.target.value);
+                    resetLocTimer();
+                    setShowLocListbox(true);
+                  }}
+                  onFocus={() => {
+                    resetLocTimer();
+                    setShowLocListbox(true);
+                  }}
+                  onKeyDown={(e) => {
+                    resetLocTimer();
+                    if (e.key === 'Enter') handleSaveLocation(e);
+                    if (e.key === 'Escape') closeLocEdit();
+                  }}
+                  placeholder="Ex: Sala de reuniões..."
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-blue-400 min-w-[140px] pr-6 shadow-xl"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLocListbox(!showLocListbox);
+                    resetLocTimer();
+                  }}
+                  className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
+                  title="Mostrar opções de localização"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-blue-400' : ''}`} />
+                </button>
 
-              <button
-                type="button"
-                onClick={startLocationVoice}
-                title="Falar por voz"
-                className={`p-1 rounded border transition-all cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-              </button>
+                {/* Listbox customizado com 10 opções visíveis e setor em verdinho */}
+                {showLocListbox && (
+                  <div className="absolute left-0 top-full mt-1.5 w-64 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
+                      <span>Sugestões de Localização</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
+                    </div>
+                    <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
+                      {sectors.map((s) => (
+                        <button
+                          key={`loc-sec-${s.id}`}
+                          type="button"
+                          onClick={(e) => {
+                            const val = `Está no ${s.name}`;
+                            setLocationValue(val);
+                            handleSaveLocation(e, val);
+                          }}
+                          className="w-full text-left px-2 py-1.5 rounded-lg text-[11px] hover:bg-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="text-slate-300">Está no</span>
+                          <span className="text-emerald-400 font-bold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">{s.name}</span>
+                        </button>
+                      ))}
+                      {[
+                        'Sala de Reuniões',
+                        'Copa Cozinha Térreo',
+                        'Copa 1º Piso',
+                        'Auditório Principal',
+                        'Foyer',
+                        'Recepção',
+                        'Laboratório de Inovação',
+                        'Almoxarifado'
+                      ].map((loc) => (
+                        <button
+                          key={`loc-preset-${loc}`}
+                          type="button"
+                          onClick={(e) => {
+                            setLocationValue(loc);
+                            handleSaveLocation(e, loc);
+                          }}
+                          className="w-full text-left px-2 py-1.5 rounded-lg text-[11px] text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <button
-                type="button"
-                onClick={handleSaveLocation}
-                title="Salvar"
-                className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
-              >
-                <Check className="w-3 h-3" />
-              </button>
+              {/* Botões de Ação Separados do Listbox */}
+              <div className="inline-flex items-center gap-1 ml-1.5">
+                <button
+                  type="button"
+                  onClick={startLocationVoice}
+                  title="Ditar localização por voz"
+                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
+                    isListeningLoc 
+                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" />
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setIsEditingLocation(false)}
-                title="Cancelar"
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
+                <button
+                  type="button"
+                  onClick={handleSaveLocation}
+                  title="Salvar Localização"
+                  className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm"
+                >
+                  <Check className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={closeLocEdit}
+                  title="Cancelar"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 cursor-pointer transition-colors shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="inline-flex items-center gap-0.5 group/loc">
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
                   if (!canManageAsset) {
                     onOpenSolicitacao(asset);
                   } else {
-                    setIsEditingLocation(true);
+                    openLocEdit(e);
                   }
                 }}
                 title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
@@ -476,7 +660,10 @@ export const AssetTableRowCard = ({
 
               <button
                 type="button"
-                onClick={startLocationVoice}
+                onClick={(e) => {
+                  openLocEdit(e);
+                  startLocationVoice(e);
+                }}
                 title="Ditar localização por voz"
                 className={`p-1 rounded transition-all cursor-pointer ${
                   isListeningLoc 
@@ -490,46 +677,109 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 5: Observação (Afastada de localização, com edição inline e detecção inteligente de setor) */}
+        {/* Coluna 5: Observação (Afastada de localização, com listbox separado, 10 opções e setor em verde) */}
         <div className="flex-1 min-w-[220px] pl-6 shrink-0 flex items-center justify-start text-left">
           {isEditingObs ? (
             <div 
+              ref={obsContainerRef}
               onClick={(e) => e.stopPropagation()} 
-              className="inline-flex flex-col gap-1 bg-slate-900 border border-blue-500/80 rounded-lg p-1 shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100"
+              className="relative flex items-center z-30 animate-in fade-in zoom-in-95 duration-100"
             >
-              <div className="inline-flex items-center gap-1">
+              {/* Campo de Entrada e Botão Dropdown */}
+              <div className="relative inline-flex items-center">
                 <input
                   type="text"
-                  list={`obs-presets-${asset.id}`}
                   value={obsValue}
-                  onChange={(e) => setObsValue(e.target.value)}
+                  onChange={(e) => {
+                    setObsValue(e.target.value);
+                    resetObsTimer();
+                    setShowObsListbox(true);
+                  }}
+                  onFocus={() => {
+                    resetObsTimer();
+                    setShowObsListbox(true);
+                  }}
                   onKeyDown={(e) => {
+                    resetObsTimer();
                     if (e.key === 'Enter') handleSaveObservation(e);
-                    if (e.key === 'Escape') setIsEditingObs(false);
+                    if (e.key === 'Escape') closeObsEdit();
                   }}
                   placeholder="Ex: Está no Studio..."
-                  className="bg-slate-800 text-white text-[11px] px-2 py-0.5 rounded border border-slate-700 focus:outline-none focus:border-blue-400 min-w-[170px]"
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[180px] pr-6 shadow-xl"
                   autoFocus
                 />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowObsListbox(!showObsListbox);
+                    resetObsTimer();
+                  }}
+                  className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
+                  title="Mostrar opções de observação"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showObsListbox ? 'rotate-180 text-emerald-400' : ''}`} />
+                </button>
 
-                <datalist id={`obs-presets-${asset.id}`}>
-                  {sectors.map(s => (
-                    <option key={s.id} value={`Está no ${s.name}`} />
-                  ))}
-                  <option value="Em manutenção técnica" />
-                  <option value="Emprestado provisoriamente" />
-                  <option value="Aguardando recolhimento" />
-                  <option value="Sem etiqueta patrimonial" />
-                </datalist>
+                {/* Listbox customizado de 10 opções visíveis com SOMENTE o setor em verdinho */}
+                {showObsListbox && (
+                  <div className="absolute left-0 top-full mt-1.5 w-72 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
+                      <span>Sugestões de Observação</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
+                    </div>
+                    <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
+                      {sectors.map((s) => (
+                        <button
+                          key={`obs-sec-${s.id}`}
+                          type="button"
+                          onClick={(e) => {
+                            const val = `Está no ${s.name}`;
+                            setObsValue(val);
+                            handleSaveObservation(e, val);
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="text-slate-300 font-normal">Está no</span>
+                          <span className="text-emerald-400 font-bold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">{s.name}</span>
+                        </button>
+                      ))}
+                      {[
+                        'Em manutenção técnica',
+                        'Emprestado provisoriamente',
+                        'Aguardando recolhimento',
+                        'Sem etiqueta patrimonial',
+                        'Em uso constante no setor',
+                        'Aguardando vistoria / baixa'
+                      ].map((opt) => (
+                        <button
+                          key={`obs-preset-${opt}`}
+                          type="button"
+                          onClick={(e) => {
+                            setObsValue(opt);
+                            handleSaveObservation(e, opt);
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
+              {/* Botões de Ação Separados do Listbox */}
+              <div className="inline-flex items-center gap-1 ml-1.5">
                 <button
                   type="button"
                   onClick={startObservationVoice}
                   title="Ditar observação por voz"
-                  className={`p-1 rounded border transition-all cursor-pointer ${
+                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
                     isListeningObs 
                       ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700'
+                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
                   }`}
                 >
                   <Mic className="w-3 h-3" />
@@ -539,35 +789,20 @@ export const AssetTableRowCard = ({
                   type="button"
                   onClick={handleSaveObservation}
                   title="Salvar Observação"
-                  className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors"
+                  className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm"
                 >
                   <Check className="w-3 h-3" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setIsEditingObs(false)}
+                  onClick={closeObsEdit}
                   title="Cancelar"
-                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 cursor-pointer transition-colors shadow-sm"
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
-
-              {/* Detecção inteligente de setor na observação */}
-              {(() => {
-                const detected = detectSectorInText(obsValue);
-                if (!detected) return null;
-                return (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-[9.5px] text-cyan-300">
-                    <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
-                    <span>Setor identificado: <strong className="text-white font-semibold">{detected.name}</strong></span>
-                    {detected.id !== asset.setorId && (
-                      <span className="text-[9px] text-amber-300 font-bold ml-auto">(Outro setor)</span>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
           ) : isEmCautela ? (
             <div 
@@ -649,10 +884,7 @@ export const AssetTableRowCard = ({
                 <div className="inline-flex items-center gap-1 group/obs">
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingObs(true);
-                    }}
+                    onClick={(e) => openObsEdit(e)}
                     title="Clique para editar a observação"
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer ${
                       detected 
@@ -671,7 +903,10 @@ export const AssetTableRowCard = ({
 
                   <button
                     type="button"
-                    onClick={startObservationVoice}
+                    onClick={(e) => {
+                      openObsEdit(e);
+                      startObservationVoice(e);
+                    }}
                     title="Ditar observação por voz"
                     className={`p-1 rounded transition-all cursor-pointer ${
                       isListeningObs 
@@ -688,10 +923,7 @@ export const AssetTableRowCard = ({
             <div className="inline-flex items-center gap-1 group/obs">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditingObs(true);
-                }}
+                onClick={(e) => openObsEdit(e)}
                 title="Clique para adicionar observação"
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-800/80 text-slate-500 hover:text-slate-300 transition-all text-[11px] cursor-pointer"
               >
@@ -701,7 +933,10 @@ export const AssetTableRowCard = ({
 
               <button
                 type="button"
-                onClick={startObservationVoice}
+                onClick={(e) => {
+                  openObsEdit(e);
+                  startObservationVoice(e);
+                }}
                 title="Ditar observação por voz"
                 className={`p-1 rounded opacity-0 group-hover/obs:opacity-100 hover:opacity-100 transition-all cursor-pointer ${
                   isListeningObs 
@@ -810,6 +1045,76 @@ export const AssetTableRowCard = ({
               <span>{isConferido ? 'Conferido' : 'Conferir'}</span>
             </button>
           )}
+
+          {/* Seletor de Cor da Linha / Card */}
+          <div className="relative" ref={colorPickerRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsColorPickerOpen(!isColorPickerOpen);
+              }}
+              title="Marcar / destacar linha com uma cor"
+              className={`p-1 rounded-lg transition-all cursor-pointer ${
+                asset.cardColor 
+                  ? 'text-white bg-slate-800 ring-1 ring-white/30' 
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Palette className={`w-3.5 h-3.5 ${
+                asset.cardColor === 'emerald' ? 'text-emerald-400' :
+                asset.cardColor === 'blue' ? 'text-blue-400' :
+                asset.cardColor === 'amber' ? 'text-amber-400' :
+                asset.cardColor === 'rose' ? 'text-rose-400' :
+                asset.cardColor === 'purple' ? 'text-purple-400' :
+                asset.cardColor === 'cyan' ? 'text-cyan-400' :
+                asset.cardColor === 'orange' ? 'text-orange-400' : 'text-slate-400'
+              }`} />
+            </button>
+
+            {isColorPickerOpen && (
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 bottom-full mb-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 flex flex-col gap-1.5 min-w-[170px] animate-in fade-in zoom-in-95 duration-100"
+              >
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
+                  <span>Destacar Card</span>
+                  {asset.cardColor && (
+                    <button 
+                      onClick={() => {
+                        onUpdateCardColor?.(asset.id, 'default');
+                        setIsColorPickerOpen(false);
+                      }}
+                      className="text-[9px] text-rose-400 hover:underline cursor-pointer"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 p-1">
+                  {COLOR_OPTIONS.map((opt) => {
+                    const isSelected = (asset.cardColor || 'default') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          onUpdateCardColor?.(asset.id, opt.id);
+                          setIsColorPickerOpen(false);
+                        }}
+                        title={opt.label}
+                        className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
+                          isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-105'
+                        } flex items-center justify-center transition-all cursor-pointer`}
+                      >
+                        {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Menu Dropdown de Ações colado à direita */}
           <div className="relative">

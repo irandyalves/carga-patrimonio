@@ -688,6 +688,20 @@ export function App() {
     showToast(newObservation ? `Observação salva: "${newObservation}"` : 'Observação limpa');
   };
 
+  // Alterar cor de destaque da linha/card do bem
+  const handleUpdateAssetColor = (assetId, color) => {
+    const updated = assets.map(item => {
+      if (item.id === assetId) {
+        return {
+          ...item,
+          cardColor: color === 'default' ? null : color
+        };
+      }
+      return item;
+    });
+    setAssets(updated);
+  };
+
   // Criar Pedido / Solicitação de Carga de Bem de Outro Setor
   const handleCreatePedido = (pedidoData) => {
     const newPedido = {
@@ -1295,6 +1309,7 @@ export function App() {
                     onDeleteAsset={handleDeleteAsset}
                     onUpdateLocation={handleUpdateAssetLocation}
                     onUpdateObservation={handleUpdateAssetObservation}
+                    onUpdateCardColor={handleUpdateAssetColor}
                     userRole={effectiveUserRole}
                     userSectorId={effectiveUserSectorId}
                     onOpenSolicitacao={(a) => {
