@@ -257,8 +257,9 @@ export const SectorSidebar = ({
                           {sec.name}
                         </span>
                         {sec.responsavel && (
-                          <span className="text-orange-400 font-semibold text-[11px] truncate shrink-0">
-                            | {sec.responsavel}
+                          <span className="flex items-center gap-1.5 text-orange-400 font-semibold text-[11px] truncate shrink-0">
+                            <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                            <span>{sec.responsavel}</span>
                           </span>
                         )}
                         {isMySector && (
