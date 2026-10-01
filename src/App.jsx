@@ -790,30 +790,56 @@ export function App() {
 
   // Save Sector
   const handleSaveSector = (sectorData) => {
-    if (sectorData.id) {
-      setSectors(sectors.map(s => s.id === sectorData.id ? sectorData : s));
-      showToast('Setor atualizado com sucesso!');
+    const isExisting = sectors.some(s => s.id === sectorData.id);
+    if (isExisting) {
+      const updated = sectors.map(s => s.id === sectorData.id ? sectorData : s);
+      setSectors(updated);
+      saveLocalSectors(updated);
+      showToast(`Setor "${sectorData.name}" atualizado com sucesso!`);
     } else {
       const newSector = {
         ...sectorData,
-        id: `sec-${Date.now()}`
+        id: sectorData.id || `sec-${Date.now()}`
       };
-      setSectors([...sectors, newSector]);
-      showToast('Novo setor cadastrado!');
+      const updated = [...sectors, newSector];
+      setSectors(updated);
+      saveLocalSectors(updated);
+      setActiveSectorId(newSector.id);
+      setFilterMode('MY_SECTOR');
+      showToast(`Novo setor "${newSector.name}" cadastrado com sucesso!`);
     }
   };
 
   // Delete Sector
-  const handleDeleteSector = (sectorId) => {
-    const count = assets.filter(a => a.setorId === sectorId).length;
-    if (count > 0) {
-      alert(`Não é possível excluir este setor porque existem ${count} bens vinculados a ele.`);
-      return;
+  const handleDeleteSector = (sectorId, reassignToSectorId) => {
+    if (reassignToSectorId) {
+      const targetSec = sectors.find(s => s.id === reassignToSectorId);
+      const reassignedAssets = assets.map(a => {
+        if (a.setorId === sectorId) {
+          return {
+            ...a,
+            setorId: reassignToSectorId,
+            setorNome: targetSec?.name || a.setorNome,
+            responsavel: targetSec?.responsavel || a.responsavel
+          };
+        }
+        return a;
+      });
+      setAssets(reassignedAssets);
+      saveLocalAssets(reassignedAssets);
+    } else {
+      const count = assets.filter(a => a.setorId === sectorId).length;
+      if (count > 0) {
+        alert(`Não é possível excluir este setor porque existem ${count} bens vinculados a ele sem reatribuição.`);
+        return;
+      }
     }
-    setSectors(sectors.filter(s => s.id !== sectorId));
+
+    const updatedSectors = sectors.filter(s => s.id !== sectorId);
+    setSectors(updatedSectors);
+    saveLocalSectors(updatedSectors);
     if (activeSectorId === sectorId) {
-      const remaining = sectors.filter(s => s.id !== sectorId);
-      if (remaining.length > 0) setActiveSectorId(remaining[0].id);
+      if (updatedSectors.length > 0) setActiveSectorId(updatedSectors[0].id);
     }
     showToast('Setor removido com sucesso.', 'info');
   };

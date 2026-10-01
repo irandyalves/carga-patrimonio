@@ -90,7 +90,7 @@ export const SectorsManagementModal = ({
     setIsCreating(true);
     setEditingSector(null);
     setFormData({
-      id: `sec-${Date.now()}`,
+      id: '',
       name: '',
       responsavel: '',
       email: '',
@@ -121,7 +121,7 @@ export const SectorsManagementModal = ({
 
     onSaveSector({
       ...formData,
-      id: formData.id || `sec-${Date.now()}`
+      id: editingSector ? editingSector.id : (formData.id || `sec-${Date.now()}`)
     });
 
     handleCancelForm();
