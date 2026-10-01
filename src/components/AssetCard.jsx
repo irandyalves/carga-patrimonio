@@ -17,7 +17,8 @@ import {
   ExternalLink,
   ShieldAlert,
   Info,
-  Trash2
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 
@@ -25,6 +26,7 @@ export const AssetCard = ({
   asset,
   activeSector,
   currentUserName,
+  isGeneralView = false,
   onToggleConference,
   onOpenEdit,
   onOpenCautela,
@@ -37,8 +39,8 @@ export const AssetCard = ({
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Check if asset belongs to another sector (Sobra / Fora da seção)
-  const isOutOfPlace = activeSector && asset.setorId !== activeSector.id;
+  // Check if asset belongs to another sector (não se aplica na visualização Geral)
+  const isOutOfPlace = !isGeneralView && activeSector && asset.setorId !== activeSector.id;
   const isConferido = asset.status === 'CONFERIDO';
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
@@ -125,11 +127,11 @@ export const AssetCard = ({
           <div className="flex items-center gap-1.5 font-medium truncate">
             <Handshake className="w-3.5 h-3.5 text-purple-400 shrink-0" />
             <span className="truncate">
-              Em Cautela com: <strong className="text-purple-200">{asset.cautelaAtual?.responsavelRetirada || 'Retirado'}</strong>
+              Está com: <strong className="text-white">{asset.cautelaAtual?.setorDestino || 'ASCOM'}</strong> ({asset.cautelaAtual?.responsavelRetirada || asset.cautelaAtual?.responsavel || 'Jean'})
             </span>
           </div>
           <span className="text-[10px] text-purple-300 font-mono shrink-0">
-            Devolução: {asset.cautelaAtual?.dataPrevistaDevolucao?.split(' ')[0] || 'A definir'}
+            Devolução: {asset.cautelaAtual?.dataPrevistaDevolucao?.split(' ')[0] || asset.cautelaAtual?.dataPrevisaoDevolucao?.split(' ')[0] || '08/10/2026'}
           </span>
         </div>
       )}
@@ -264,10 +266,18 @@ export const AssetCard = ({
           {/* Main Conference Button with Anti-accidental uncheck */}
           {!isBaixado ? (
             <div>
-              {!showUncheckConfirm ? (
+              {isGeneralView ? (
+                <div 
+                  title="Na aba Geral não se pode conferir carga. Entre no setor específico para conferir."
+                  className="w-full py-2.5 px-3 rounded-xl text-xs font-medium flex items-center justify-center gap-2 text-slate-400 bg-slate-900/80 border border-slate-800 cursor-not-allowed select-none"
+                >
+                  <Lock className="w-4 h-4 text-slate-500" />
+                  <span>{isConferido ? 'Conferido' : 'Conferência no Setor'}</span>
+                </div>
+              ) : !showUncheckConfirm ? (
                 <button
                   onClick={handleConferenceClick}
-                  className={`w-full py-2.5 px-3 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                  className={`w-full py-2.5 px-3 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     isConferido
                       ? 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
                       : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20'
@@ -289,13 +299,13 @@ export const AssetCard = ({
                   <div className="flex gap-2">
                     <button
                       onClick={handleConfirmUncheck}
-                      className="flex-1 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium"
+                      className="flex-1 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium cursor-pointer"
                     >
                       Sim, Desmarcar
                     </button>
                     <button
                       onClick={() => setShowUncheckConfirm(false)}
-                      className="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium"
+                      className="flex-1 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer"
                     >
                       Cancelar
                     </button>
@@ -349,14 +359,16 @@ export const AssetCard = ({
                 )}
 
                 {/* Transfer Action */}
-                <button
-                  onClick={() => onTransferSector(asset)}
-                  title="Transferir para outro setor / responsável"
-                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-indigo-300 text-xs flex items-center gap-1 transition-colors"
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5" />
-                  <span className="text-[11px]">Transferir</span>
-                </button>
+                {!isGeneralView && (
+                  <button
+                    onClick={() => onTransferSector(asset)}
+                    title="Transferir para outro setor / responsável"
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-indigo-300 text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                    <span className="text-[11px]">Transferir</span>
+                  </button>
+                )}
 
                 {/* Baixa Action */}
                 {!isBaixado && (

@@ -383,6 +383,10 @@ export function App() {
 
   // Toggle Conference Status
   const handleToggleConference = (assetId) => {
+    if (filterMode === 'ALL_SECTORS') {
+      showToast('Na visualização Geral não se confere carga. Selecione o setor correspondente.', 'warning');
+      return;
+    }
     const updated = assets.map(item => {
       if (item.id === assetId) {
         const isNowConferido = item.status !== 'CONFERIDO';
@@ -496,6 +500,10 @@ export function App() {
 
   // Open Transfer Modal for an asset
   const handleOpenTransferModal = (asset) => {
+    if (filterMode === 'ALL_SECTORS') {
+      showToast('Na visualização Geral não se transfere carga. Entre na aba do setor do bem.', 'warning');
+      return;
+    }
     setAssetForTransfer(asset);
     setIsTransferModalOpen(true);
   };
@@ -602,9 +610,18 @@ export function App() {
 
   // Save Cautela
   const handleSaveCautela = (cautelaData) => {
+    const pessoa = cautelaData.responsavelRetirada || cautelaData.nomeResponsavel || 'Jean';
+    const destino = cautelaData.setorDestino || 'ASCOM';
+    const doc = cautelaData.documento || cautelaData.matricula || '';
+
     const newCautela = {
       ...cautelaData,
       id: `caut-${Date.now()}`,
+      responsavelRetirada: pessoa,
+      nomeResponsavel: pessoa,
+      setorDestino: destino,
+      documento: doc,
+      matricula: doc,
       dataEmissao: new Date().toISOString().split('T')[0],
       status: 'EM_ANDAMENTO'
     };
@@ -619,15 +636,24 @@ export function App() {
           status: 'EM_CAUTELA',
           cautelaAtual: {
             id: newCautela.id,
-            responsavel: cautelaData.nomeResponsavel,
-            matricula: cautelaData.matricula,
-            dataPrevisaoDevolucao: cautelaData.dataPrevisaoDevolucao
+            responsavel: pessoa,
+            responsavelRetirada: pessoa,
+            setorDestino: destino,
+            setorOrigem: cautelaData.setorOrigem || a.setorNome,
+            documento: doc,
+            matricula: doc,
+            telefone: cautelaData.telefone,
+            dataRetirada: cautelaData.dataRetirada || new Date().toLocaleString('pt-BR'),
+            dataPrevisaoDevolucao: cautelaData.dataPrevistaDevolucao || cautelaData.dataPrevisaoDevolucao,
+            dataPrevistaDevolucao: cautelaData.dataPrevistaDevolucao || cautelaData.dataPrevisaoDevolucao,
+            finalidade: cautelaData.finalidade,
+            observacoes: cautelaData.observacoes
           },
           historico: [
             ...(a.historico || []),
             { 
               data: new Date().toLocaleString('pt-BR'), 
-              acao: `Empréstimo (Cautela) emitido para ${cautelaData.nomeResponsavel} (${cautelaData.matricula})`, 
+              acao: `Empréstimo (Cautela): Está com ${destino} (${pessoa})`, 
               usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
             }
           ]
@@ -639,7 +665,7 @@ export function App() {
     setAssets(updated);
     setIsCautelaModalOpen(false);
     setAssetForCautela(null);
-    showToast(`Cautela para ${cautelaData.nomeResponsavel} gerada com sucesso!`);
+    showToast(`Cautela registrada: Está com ${destino} (${pessoa})!`);
   };
 
   // Return Cautela
@@ -936,171 +962,174 @@ export function App() {
         {filteredAssets.length > 0 ? (
           displayMode === 'TABLE_ROWS' ? (
             /* ================= VISUALIZAÇÃO EM CARDS TIPO LINHA DE TABELA ================= */
-            <div className="space-y-2">
-              
-              {/* Table Header Bar com Ordenação e Ícones */}
-              <div className="hidden lg:flex items-center justify-between px-4 sm:px-5 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none shadow-sm w-full">
+            <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
+              <div className="min-w-[1260px] space-y-2">
                 
-                {/* Coluna 1: Patrimônio */}
-                <button
-                  onClick={() => handleSort('numeroPatrimonio')}
-                  title="Clique para ordenar por patrimônio"
-                  className={`w-44 shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'numeroPatrimonio' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <Hash className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span>Patrimônio</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'numeroPatrimonio' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                {/* Table Header Bar com Títulos Centralizados, Divisores Verticais e Ordenação */}
+                <div className="hidden lg:flex items-center justify-between px-4 sm:px-5 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-[11px] font-bold uppercase tracking-wider text-slate-400 select-none shadow-sm w-full divide-x divide-slate-750">
+                  
+                  {/* Coluna 1: Patrimônio (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('numeroPatrimonio')}
+                    title="Clique para ordenar por patrimônio"
+                    className={`w-44 shrink-0 flex items-center justify-center gap-1.5 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'numeroPatrimonio' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <Hash className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span>Patrimônio</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'numeroPatrimonio' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 2: Quantidade */}
-                <button
-                  onClick={() => handleSort('quantidade')}
-                  title="Clique para ordenar por quantidade"
-                  className={`w-20 shrink-0 flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
-                    sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <span>Qtde</span>
-                  <span className="shrink-0">
-                    {sortField === 'quantidade' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 2: Quantidade (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('quantidade')}
+                    title="Clique para ordenar por quantidade"
+                    className={`w-20 shrink-0 flex items-center justify-center gap-1 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <span>Qtde</span>
+                    <span className="shrink-0">
+                      {sortField === 'quantidade' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 3: Descrição do Bem (A MAIOR COLUNA) */}
-                <button
-                  onClick={() => handleSort('descricao')}
-                  title="Clique para ordenar alfabeticamente pela descrição"
-                  className={`flex-[3] min-w-[280px] flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span>Descrição do Bem</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'descricao' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 3: Descrição do Bem (Centralizado em relação à descrição) */}
+                  <button
+                    onClick={() => handleSort('descricao')}
+                    title="Clique para ordenar alfabeticamente pela descrição"
+                    className={`flex-[3] min-w-[280px] flex items-center justify-center gap-1.5 px-3 transition-colors cursor-pointer group ${
+                      sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span>Descrição do Bem</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'descricao' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 4: Responsável */}
-                <button
-                  onClick={() => handleSort('responsavel')}
-                  title="Clique para ordenar por responsável"
-                  className={`w-44 shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span>Responsável</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'responsavel' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 4: Responsável (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('responsavel')}
+                    title="Clique para ordenar por responsável"
+                    className={`w-44 shrink-0 flex items-center justify-center gap-1.5 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span>Responsável</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'responsavel' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 5: Data Aquisição */}
-                <button
-                  onClick={() => handleSort('dataAquisicao')}
-                  title="Clique para ordenar por data de aquisição"
-                  className={`w-32 shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span>Data Aquisição</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'dataAquisicao' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 5: Data Aquisição (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('dataAquisicao')}
+                    title="Clique para ordenar por data de aquisição"
+                    className={`w-32 shrink-0 flex items-center justify-center gap-1.5 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'dataAquisicao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span>Data Aquisição</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'dataAquisicao' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 6: Valor Original */}
-                <button
-                  onClick={() => handleSort('valorOriginal')}
-                  title="Clique para ordenar por valor original"
-                  className={`w-32 shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <DollarSign className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span>Valor Original</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'valorOriginal' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 6: Valor Original (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('valorOriginal')}
+                    title="Clique para ordenar por valor original"
+                    className={`w-32 shrink-0 flex items-center justify-center gap-1.5 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <DollarSign className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span>Valor Original</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'valorOriginal' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 7: Valor Atual */}
-                <button
-                  onClick={() => handleSort('valorAtual')}
-                  title="Clique para ordenar por valor atual"
-                  className={`w-32 shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer group text-left ${
-                    sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
-                  }`}
-                >
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Valor Atual</span>
-                  <span className="shrink-0 ml-0.5">
-                    {sortField === 'valorAtual' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                    )}
-                  </span>
-                </button>
+                  {/* Coluna 7: Valor Atual (Centralizado) */}
+                  <button
+                    onClick={() => handleSort('valorAtual')}
+                    title="Clique para ordenar por valor atual"
+                    className={`w-32 shrink-0 flex items-center justify-center gap-1.5 px-2 transition-colors cursor-pointer group ${
+                      sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
+                    }`}
+                  >
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Valor Atual</span>
+                    <span className="shrink-0 ml-0.5">
+                      {sortField === 'valorAtual' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                      )}
+                    </span>
+                  </button>
 
-                {/* Coluna 8: Ações & Conferência */}
-                <div className="w-56 shrink-0 text-right pr-2">
-                  <span>Ações & Conferência</span>
+                  {/* Coluna 8: Ações & Conferência (Centralizado) */}
+                  <div className="w-56 shrink-0 flex items-center justify-center gap-1.5 px-2">
+                    <span>Ações & Conferência</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Rows List (Ordenada conforme coluna selecionada) */}
-              <div className="space-y-2">
-                {sortedAssets.map(asset => (
-                  <AssetTableRowCard
-                    key={asset.id}
-                    asset={asset}
-                    activeSector={activeSector}
-                    currentUserName={currentUser?.displayName || currentUser?.email}
-                    onToggleConference={handleToggleConference}
-                    onOpenEdit={(a) => {
-                      setAssetToEdit(a);
-                      setIsAssetModalOpen(true);
-                    }}
-                    onOpenCautela={handleOpenCautela}
-                    onOpenBaixa={handleOpenBaixa}
-                    onPrintSingleLabel={handlePrintSingleLabel}
-                    onTransferSector={handleOpenTransferModal}
-                    onDeleteAsset={handleDeleteAsset}
-                  />
-                ))}
-              </div>
+                {/* Rows List (Ordenada conforme coluna selecionada) */}
+                <div className="space-y-2">
+                  {sortedAssets.map(asset => (
+                    <AssetTableRowCard
+                      key={asset.id}
+                      asset={asset}
+                      activeSector={activeSector}
+                      currentUserName={currentUser?.displayName || currentUser?.email}
+                      isGeneralView={filterMode === 'ALL_SECTORS'}
+                      onToggleConference={handleToggleConference}
+                      onOpenEdit={(a) => {
+                        setAssetToEdit(a);
+                        setIsAssetModalOpen(true);
+                      }}
+                      onOpenCautela={handleOpenCautela}
+                      onOpenBaixa={handleOpenBaixa}
+                      onPrintSingleLabel={handlePrintSingleLabel}
+                      onTransferSector={handleOpenTransferModal}
+                      onDeleteAsset={handleDeleteAsset}
+                    />
+                  ))}
+                </div>
 
+              </div>
             </div>
           ) : (
             /* ================= VISUALIZAÇÃO EM GRADE DE CARDS ================= */
@@ -1111,6 +1140,7 @@ export function App() {
                   asset={asset}
                   activeSector={activeSector}
                   currentUserName={currentUser?.displayName || currentUser?.email}
+                  isGeneralView={filterMode === 'ALL_SECTORS'}
                   onToggleConference={handleToggleConference}
                   onOpenEdit={(a) => {
                     setAssetToEdit(a);

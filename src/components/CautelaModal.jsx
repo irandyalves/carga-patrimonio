@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Handshake, Calendar, User, Phone, FileText, Download, CheckCircle } from 'lucide-react';
 import { generateCautelaPDF } from '../services/pdfGenerator';
+import { formatLast5Patrimonio } from '../utils/formatters';
 
 export const CautelaModal = ({
   isOpen,
@@ -13,7 +14,7 @@ export const CautelaModal = ({
     responsavelRetirada: '',
     documento: '',
     telefone: '',
-    setorDestino: sectors[1]?.name || sectors[0]?.name || 'Geral',
+    setorDestino: 'ASCOM',
     dataRetirada: new Date().toISOString().slice(0, 16).replace('T', ' '),
     dataPrevistaDevolucao: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' '),
     finalidade: '',
@@ -62,17 +63,17 @@ export const CautelaModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      {/* Modal aumentado em 15% (max-w-2xl) */}
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         
-        {/* Header */}
+        {/* Header (Sem o subtítulo de geração de termo) */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-inner">
               <Handshake className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-lg">Emissão de Cautela / Empréstimo</h3>
-              <p className="text-xs text-slate-400">Geração de termo com QR Code e assinatura</p>
+              <h3 className="font-bold text-white text-lg tracking-tight">Emissão de Cautela / Empréstimo</h3>
             </div>
           </div>
 
@@ -84,13 +85,32 @@ export const CautelaModal = ({
           </button>
         </div>
 
-        {/* Selected Asset Header Box */}
-        <div className="bg-slate-850 border border-slate-700/80 rounded-2xl p-3.5 mb-4 text-xs">
-          <div className="flex items-center justify-between font-mono font-bold text-indigo-300 mb-1">
-            <span>{asset.numeroPatrimonio}</span>
-            <span className="text-slate-400 font-sans font-normal">{asset.setorNome}</span>
+        {/* Selected Asset Header Box: Nr Patrimônio à esquerda e grande + Descrição do bem e Origem */}
+        <div className="bg-slate-850 border border-slate-750 rounded-2xl p-4 mb-4 flex items-center gap-4 shadow-sm">
+          {/* Nr Patrimônio à esquerda e grande */}
+          <div className="shrink-0 flex flex-col items-center justify-center bg-slate-900/90 border border-slate-700/80 px-4 py-2.5 rounded-xl shadow-inner min-w-[130px]">
+            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Patrimônio</span>
+            <span className="font-mono text-2xl sm:text-3xl font-black text-indigo-400 tracking-tight">
+              {formatLast5Patrimonio(asset.numeroPatrimonio)}
+            </span>
           </div>
-          <p className="font-semibold text-slate-200 text-sm">{asset.descricao}</p>
+
+          {/* Grande descrição do bem e a origem */}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-white text-base sm:text-lg leading-snug mb-1.5">
+              {asset.descricao}
+            </h4>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-semibold">
+                Origem: <strong className="text-white">{asset.setorNome}</strong> {asset.responsavel ? `(${asset.responsavel})` : ''}
+              </span>
+              {asset.localizacao && (
+                <span className="text-slate-400">
+                  • {asset.localizacao}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Form */}
@@ -153,9 +173,14 @@ export const CautelaModal = ({
                 onChange={(e) => setFormData({ ...formData, setorDestino: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               >
+                <option value="ASCOM">ASCOM (Assessoria de Comunicação)</option>
                 {sectors.map((s) => (
                   <option key={s.id} value={s.name}>{s.name}</option>
                 ))}
+                <option value="Gabinete">Gabinete</option>
+                <option value="Cerimonial">Cerimonial</option>
+                <option value="Evento Externo">Evento Externo</option>
+                <option value="Manutenção">Manutenção Especializada</option>
               </select>
             </div>
 
@@ -223,15 +248,15 @@ export const CautelaModal = ({
             <button
               type="submit"
               disabled={isGeneratingPdf}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 transition-all"
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              <span>{isGeneratingPdf ? 'Gerando Termo...' : 'Emitir Cautela & Baixar PDF'}</span>
+              <Handshake className="w-4 h-4" />
+              <span>{isGeneratingPdf ? 'Registrando...' : 'Confirmar Cautela / Empréstimo'}</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancelar
             </button>
