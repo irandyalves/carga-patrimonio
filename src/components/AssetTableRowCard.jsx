@@ -1498,42 +1498,72 @@ export const AssetTableRowCard = ({
       </div>
 
       {/* VISUALIZAÇÃO MOBILE: Card Compacto Otimizado para Celular / Conferência Rápida Touch */}
-      <div className="flex md:hidden flex-col p-3 mx-2 my-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-md gap-2 text-left">
-        {/* Topo do Card Mobile: Patrimônio + Botão de Conferir em Destaque + Ações */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
+      <div className="flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left">
+        {/* Linha 1: Patrimônio + Localização / Observação + Botão Conferir + Ações */}
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
             {isBaixado ? (
-              <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 font-bold text-[10px] border border-rose-500/30 flex items-center gap-1 shrink-0">
-                <Archive className="w-3 h-3" /> Baixado
+              <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 font-bold text-[9px] border border-rose-500/30 flex items-center gap-0.5 shrink-0">
+                <Archive className="w-2.5 h-2.5" /> Baixado
               </span>
             ) : isConferido ? (
-              <span className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.35)]">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <span className="w-4 h-4 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.35)]">
+                <Check className="w-3 h-3 stroke-[3]" />
               </span>
             ) : null}
 
-            <span className={`font-mono text-lg font-black tracking-tight select-all leading-none truncate ${
+            {/* Nº Patrimônio */}
+            <span className={`font-mono text-[15px] font-black tracking-tight select-all leading-none shrink-0 ${
               FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
 
             {asset.quantidade && asset.quantidade > 1 && (
-              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[10px] border border-slate-700 shrink-0">
+              <span className="px-1 py-0.2 rounded bg-slate-800 text-cyan-300 font-bold text-[8.5px] border border-slate-700 shrink-0">
                 {asset.quantidade} un
               </span>
             )}
+
+            {/* Localização / Observação Compacta */}
+            <div className="flex items-center gap-0.5 min-w-0 truncate ml-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (!canManageAsset) onOpenSolicitacao(asset);
+                  else openLocEdit(e);
+                }}
+                className="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 flex items-center gap-1 cursor-pointer truncate text-[10px] max-w-[120px] sm:max-w-[180px]"
+                title="Localização / Observação"
+              >
+                <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                <span className="truncate font-medium text-emerald-300">
+                  {asset.localizacao || asset.observacao || 'Local?'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  openLocEdit(e);
+                  startLocationVoice(e);
+                }}
+                className="p-1 rounded bg-slate-800/80 text-slate-400 hover:text-rose-400 border border-slate-700/60 cursor-pointer shrink-0"
+                title="Ditar localização por voz"
+              >
+                <Mic className="w-2.5 h-2.5" />
+              </button>
+            </div>
           </div>
 
           {/* Botão de Conferência Mobile e Menus */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {!isBaixado && (
               showUncheckConfirm ? (
-                <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-xl border border-amber-500/40">
-                  <span className="text-[10px] text-amber-300 font-bold">Desmarcar?</span>
+                <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded-lg border border-amber-500/40">
+                  <span className="text-[9px] text-amber-300 font-bold">Desmarcar?</span>
                   <button
                     onClick={handleConfirmUncheck}
-                    className="px-2 py-0.5 bg-amber-500 text-slate-950 rounded text-[10px] font-black cursor-pointer"
+                    className="px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded text-[9px] font-black cursor-pointer"
                   >
                     Sim
                   </button>
@@ -1542,7 +1572,7 @@ export const AssetTableRowCard = ({
                       e.stopPropagation();
                       setShowUncheckConfirm(false);
                     }}
-                    className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px] cursor-pointer"
+                    className="px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded text-[9px] cursor-pointer"
                   >
                     Não
                   </button>
@@ -1550,7 +1580,7 @@ export const AssetTableRowCard = ({
               ) : (
                 <button
                   onClick={handleConferenceClick}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md flex items-center gap-1.5 active:scale-95 ${
+                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
                     isConferido
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
                       : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
@@ -1558,7 +1588,7 @@ export const AssetTableRowCard = ({
                 >
                   {isConferido ? (
                     <>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <Check className="w-3 h-3 stroke-[3]" />
                       <span>Conferido</span>
                     </>
                   ) : (
@@ -1576,92 +1606,53 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setIsActionsOpen(!isActionsOpen);
                 }}
-                className="p-1.5 rounded-xl text-slate-400 bg-slate-800/80 hover:text-white cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 bg-slate-800/80 hover:text-white cursor-pointer"
                 title="Mais opções"
               >
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Descrição do Item Mobile */}
+        {/* Linha 2: Descrição com Reticências + Ícone de Informação (i) para Abrir Modal Completo */}
         <div 
           onClick={(e) => {
             e.stopPropagation();
             setIsDescModalOpen(true);
           }}
-          className="cursor-pointer active:opacity-80 py-0.5"
+          className="flex items-center justify-between gap-1.5 cursor-pointer active:opacity-80 group/mdesc py-0.5"
         >
-          <p className={`text-xs sm:text-[13px] font-semibold leading-relaxed ${
-            FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100'
-          }`}>
+          <p className={`text-[11.5px] font-medium leading-tight truncate whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0 ${
+            FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'
+          }`} title={asset.descricao}>
             <HighlightText text={asset.descricao} query={searchTerm} />
           </p>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDescModalOpen(true);
+            }}
+            className="p-1 rounded-md text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shrink-0 shadow-sm flex items-center gap-0.5"
+            title="Ver detalhes completos (descrição, marca e modelo)"
+          >
+            <Info className="w-3 h-3" />
+          </button>
         </div>
 
-        {/* Chips de Informações (Marca / Modelo / Local / Observação) */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] pt-0.5">
-          {(asset.marca || asset.modelo) && (
-            <div className="px-2 py-0.5 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/60 flex items-center gap-1 max-w-[200px] truncate">
-              <span className="text-slate-400 font-medium text-[10px]">Marca:</span>
-              <span className="font-semibold text-white truncate">{[asset.marca, asset.modelo].filter(Boolean).join(' - ')}</span>
-            </div>
-          )}
-
-          {/* Localização Mobile */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                if (!canManageAsset) onOpenSolicitacao(asset);
-                else openLocEdit(e);
-              }}
-              className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 cursor-pointer"
-            >
-              <span className="text-slate-400 text-[10px]">Local:</span>
-              <span className="font-semibold text-emerald-300 truncate max-w-[120px]">{asset.localizacao || 'Onde está?'}</span>
-              <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 ml-0.5" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                openLocEdit(e);
-                startLocationVoice(e);
-              }}
-              className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-700 cursor-pointer"
-              title="Ditar localização por voz"
-            >
-              <Mic className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Observação Mobile */}
-          {asset.observacao && (
-            <div className="px-2 py-0.5 rounded-lg bg-slate-800/50 text-slate-300 border border-slate-700/60 truncate max-w-[180px]">
-              💬 {asset.observacao}
-            </div>
-          )}
-
-          {/* Valor */}
-          {asset.valorAtual && (
-            <div className="px-2 py-0.5 rounded-lg bg-emerald-950/40 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/20 ml-auto">
-              R$ {Number(asset.valorAtual).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-          )}
-        </div>
-
-        {/* Em Cautela / DTIN avisos no mobile */}
+        {/* Avisos Compactos de Cautela / DTIN quando houver */}
         {isEmCautela && (
-          <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-[10.5px] flex items-center gap-1.5">
-            <Handshake className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-            <span>Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+          <div className="text-[9.5px] text-purple-300 flex items-center gap-1 font-medium truncate pt-0.5">
+            <Handshake className="w-3 h-3 text-purple-400 shrink-0" />
+            <span className="truncate">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
           </div>
         )}
 
         {isEnviadoDtin && (
-          <div className="p-2 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-[10.5px] flex items-center gap-1.5">
-            <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <div className="text-[9.5px] text-cyan-300 flex items-center gap-1 font-medium truncate pt-0.5">
+            <Server className="w-3 h-3 text-cyan-400 shrink-0" />
             <span>Equipamento no DTIN</span>
           </div>
         )}

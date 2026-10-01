@@ -145,8 +145,8 @@ export const Navbar = ({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onToggleSidebar}
-              title="Abrir/Recolher Slide Bar Lateral de Setores"
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Abrir/Recolher Barra Lateral de Setores"
+              className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 border border-blue-400/40"
             >
               <PanelLeft className="w-5 h-5" />
             </button>

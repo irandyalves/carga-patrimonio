@@ -96,18 +96,6 @@ export const SectorSidebar = ({
         />
       )}
 
-      {/* Botão Flutuante de Abrir Sidebar quando recolhida */}
-      {!isOpen && (
-        <button
-          onClick={onToggle}
-          title="Expandir barra lateral de setores"
-          className="fixed left-2 top-20 z-30 p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-xl shadow-blue-900/40 border border-blue-400/50 transition-all duration-200 cursor-pointer flex items-center gap-1.5 animate-in fade-in"
-        >
-          <PanelLeftOpen className="w-4 h-4" />
-          <span className="text-xs font-bold hidden sm:inline">Setores</span>
-        </button>
-      )}
-
       {/* Slide Bar Lateral Esquerdo */}
       <aside className={`fixed inset-y-0 left-0 z-40 lg:static lg:z-20 shrink-0 bg-slate-900/98 backdrop-blur-xl border-r border-slate-800 transition-all duration-300 ease-in-out flex flex-col h-full select-none ${
         isOpen ? 'w-72 shadow-2xl lg:shadow-none' : 'w-0 -translate-x-full overflow-hidden border-none'
