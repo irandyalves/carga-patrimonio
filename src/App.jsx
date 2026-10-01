@@ -215,12 +215,13 @@ export function App() {
     setIsFirebaseActive(isConfigured);
 
     const { assets: initialAssets, cautelas: initialCautelas, sectors: initialSectors } = loadLocalData();
-    setSectors(initialSectors);
+    const sortedSectors = [...initialSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    setSectors(sortedSectors);
     setAssets(initialAssets);
     setCautelas(initialCautelas);
 
-    if (initialSectors.length > 0) {
-      setActiveSectorId(initialSectors[0].id);
+    if (sortedSectors.length > 0) {
+      setActiveSectorId(sortedSectors[0].id);
     }
 
     // Load authorized users and subscribe to Firebase Auth
@@ -503,10 +504,11 @@ export function App() {
   const handleResetOfficialData = () => {
     if (confirm('Deseja recarregar a lista oficial de setores e patrimônios das áreas (Studio, Foyer, SACADI, TI, etc.)?')) {
       const { assets: newAssets, cautelas: newCautelas, sectors: newSectors } = resetToDefaultData();
-      setSectors(newSectors);
+      const sorted = [...newSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+      setSectors(sorted);
       setAssets(newAssets);
       setCautelas(newCautelas);
-      if (newSectors.length > 0) setActiveSectorId(newSectors[0].id);
+      if (sorted.length > 0) setActiveSectorId(sorted[0].id);
       showToast('Setores e patrimônios das áreas atualizados com sucesso!');
     }
   };
@@ -791,23 +793,23 @@ export function App() {
   // Save Sector
   const handleSaveSector = (sectorData) => {
     const isExisting = sectors.some(s => s.id === sectorData.id);
+    let updated;
     if (isExisting) {
-      const updated = sectors.map(s => s.id === sectorData.id ? sectorData : s);
-      setSectors(updated);
-      saveLocalSectors(updated);
+      updated = sectors.map(s => s.id === sectorData.id ? sectorData : s);
       showToast(`Setor "${sectorData.name}" atualizado com sucesso!`);
     } else {
       const newSector = {
         ...sectorData,
         id: sectorData.id || `sec-${Date.now()}`
       };
-      const updated = [...sectors, newSector];
-      setSectors(updated);
-      saveLocalSectors(updated);
+      updated = [...sectors, newSector];
       setActiveSectorId(newSector.id);
       setFilterMode('MY_SECTOR');
       showToast(`Novo setor "${newSector.name}" cadastrado com sucesso!`);
     }
+    updated.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    setSectors(updated);
+    saveLocalSectors(updated);
   };
 
   // Delete Sector
@@ -836,6 +838,7 @@ export function App() {
     }
 
     const updatedSectors = sectors.filter(s => s.id !== sectorId);
+    updatedSectors.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
     setSectors(updatedSectors);
     saveLocalSectors(updatedSectors);
     if (activeSectorId === sectorId) {

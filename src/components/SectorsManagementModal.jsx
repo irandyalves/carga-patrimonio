@@ -78,8 +78,13 @@ export const SectorsManagementModal = ({
       }
     });
 
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
   }, [users, sectors]);
+
+  // Lista de setores ordenada em ordem alfabética (A-Z)
+  const sortedSectors = useMemo(() => {
+    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [sectors]);
 
   const [deleteConfirmSector, setDeleteConfirmSector] = useState(null);
   const [reassignSectorId, setReassignSectorId] = useState('');
@@ -395,7 +400,7 @@ export const SectorsManagementModal = ({
                   onChange={(e) => setReassignSectorId(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
-                  {sectors
+                  {sortedSectors
                     .filter(s => s.id !== deleteConfirmSector.sector.id)
                     .map(s => (
                       <option key={s.id} value={s.id}>{s.name} ({s.responsavel})</option>
@@ -426,7 +431,7 @@ export const SectorsManagementModal = ({
 
         {/* Sectors List */}
         <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-          {sectors.map((sector) => {
+          {sortedSectors.map((sector) => {
             const linkedCount = assets.filter(a => a.setorId === sector.id).length;
 
             return (

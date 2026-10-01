@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   Building2, 
   UserCheck, 
@@ -76,6 +76,11 @@ export const SectorSidebar = ({
   const sectorPct = activeSectorStats && activeSectorStats.total > 0
     ? Math.round((activeSectorStats.conferidos / (activeSectorStats.total - activeSectorStats.baixados || 1)) * 100)
     : 0;
+
+  // Setores ordenados em ordem alfabética (A-Z)
+  const sortedSectors = useMemo(() => {
+    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [sectors]);
 
   return (
     <>
@@ -219,7 +224,7 @@ export const SectorSidebar = ({
           </div>
 
           {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
-          {sectors.map((sec) => {
+          {sortedSectors.map((sec) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
             const isMySector = userRole === 'operador' && userSectorId === sec.id;
