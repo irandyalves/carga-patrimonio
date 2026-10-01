@@ -628,15 +628,6 @@ export function App() {
     });
   }, [assets, activeSectorId, filterMode, statusFilter, searchTerm]);
 
-  // IDs de itens que foram desmarcados da conferência enquanto estavam na seção de conferidos
-  // Permite que o item continue visível no mesmo local (sem pular para o topo) até que o usuário mude de setor/filtro
-  const [stayInConferidosIds, setStayInConferidosIds] = useState(() => new Set());
-
-  // Limpa os itens mantidos temporariamente quando mudar de setor ou status
-  useEffect(() => {
-    setStayInConferidosIds(new Set());
-  }, [activeSectorId, filterMode, statusFilter]);
-
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
@@ -712,7 +703,7 @@ export function App() {
     filteredAssets.forEach(item => {
       if (item.baixado || item.status === 'BAIXADO') {
         baixados.push(item);
-      } else if (item.status === 'CONFERIDO' || stayInConferidosIds.has(item.id)) {
+      } else if (item.status === 'CONFERIDO') {
         conferidos.push(item);
       } else {
         pendentes.push(item);
@@ -724,7 +715,7 @@ export function App() {
     baixados.sort(sortFn);
 
     return [...pendentes, ...conferidos, ...baixados];
-  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection, stayInConferidosIds]);
+  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {
@@ -751,30 +742,8 @@ export function App() {
       return;
     }
 
-    // Salva a posição de rolagem para manter exatamente onde o usuário está
-    const currentScrollTop = mainScrollRef.current ? mainScrollRef.current.scrollTop : null;
-
     const isCurrentlyConferido = itemToCheck?.status === 'CONFERIDO';
     const isNowConferido = !isCurrentlyConferido;
-
-    if (isCurrentlyConferido) {
-      // Se estava conferido e foi desmarcado: mantém o item exatamente onde está no final da lista
-      setStayInConferidosIds(prev => {
-        const next = new Set(prev);
-        next.add(assetId);
-        return next;
-      });
-    } else {
-      // Se foi marcado como conferido: remove dos mantidos temporariamente
-      setStayInConferidosIds(prev => {
-        if (prev.has(assetId)) {
-          const next = new Set(prev);
-          next.delete(assetId);
-          return next;
-        }
-        return prev;
-      });
-    }
 
     const updated = assets.map(item => {
       if (item.id === assetId) {
@@ -2100,7 +2069,7 @@ export function App() {
               <div className="w-full flex-1 pb-8 border-t border-slate-800/80">
                 {(() => {
                   const firstConferidoIndex = sortedAssets.findIndex(a => 
-                    (a.status === 'CONFERIDO' || stayInConferidosIds.has(a.id)) && !a.baixado && a.status !== 'BAIXADO'
+                    a.status === 'CONFERIDO' && !a.baixado && a.status !== 'BAIXADO'
                   );
                   const firstBaixadoIndex = sortedAssets.findIndex(a => 
                     (a.baixado || a.status === 'BAIXADO')
