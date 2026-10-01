@@ -1136,7 +1136,7 @@ export function App() {
                       sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
-                    <span>Original</span>
+                    <span>$ Original</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'valorOriginal' ? (
                         sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
@@ -1154,7 +1154,7 @@ export function App() {
                       sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
-                    <span>Atual</span>
+                    <span>$ Atual</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'valorAtual' ? (
                         sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
