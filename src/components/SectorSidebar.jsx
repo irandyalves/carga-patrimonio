@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Lock,
   FileText,
-  Eraser
+  Eraser,
+  UploadCloud
 } from 'lucide-react';
 
 export const SectorSidebar = ({
@@ -39,7 +40,8 @@ export const SectorSidebar = ({
   statusFilter = 'ALL',
   onSelectStatusFilter = () => {},
   onExportReportPDF = () => {},
-  onClearSectorAssets
+  onClearSectorAssets,
+  onOpenImport
 }) => {
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
@@ -217,6 +219,22 @@ export const SectorSidebar = ({
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                     </button>
                   )}
+
+                  {/* Botão Importar Geral */}
+                  {onOpenImport && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenImport()}
+                      title="Importar carga de bens (Excel, Word, CSV, TXT)"
+                      className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <UploadCloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                        <span className="truncate">Importar</span>
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0">Carga</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -338,6 +356,25 @@ export const SectorSidebar = ({
                             <span className="truncate">Emitir Relatório</span>
                           </div>
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
+                        </button>
+                      )}
+
+                      {/* Botão Importar diretamente para este Setor */}
+                      {onOpenImport && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenImport(sec.id);
+                          }}
+                          title={`Importar carga de bens (Excel, Word, CSV, TXT) diretamente para o setor ${sec.name}`}
+                          className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <UploadCloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                            <span className="truncate">Importar</span>
+                          </div>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0">Carga</span>
                         </button>
                       )}
 

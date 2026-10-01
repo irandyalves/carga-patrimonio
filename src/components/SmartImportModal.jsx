@@ -51,6 +51,13 @@ export const SmartImportModal = ({
   const [targetSectorMode, setTargetSectorMode] = useState('SPECIFIC'); // 'SPECIFIC' | 'AUTO_DETECT'
   const [selectedSectorId, setSelectedSectorId] = useState(() => activeSectorId || (sectors[0]?.id || ''));
 
+  useEffect(() => {
+    if (isOpen && activeSectorId) {
+      setSelectedSectorId(activeSectorId);
+      setTargetSectorMode('SPECIFIC');
+    }
+  }, [isOpen, activeSectorId]);
+
   // Formato selecionado no listbox
   const [selectedFormat, setSelectedFormat] = useState('excel');
   const [isFormatListOpen, setIsFormatListOpen] = useState(false);

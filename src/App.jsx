@@ -1438,6 +1438,13 @@ export function App() {
           onSelectStatusFilter={setStatusFilter}
           onExportReportPDF={handleExportReportPDF}
           onClearSectorAssets={handleClearSectorAssets}
+          onOpenImport={(secId) => {
+            if (secId) {
+              setActiveSectorId(secId);
+              setFilterMode('MY_SECTOR');
+            }
+            setIsExcelModalOpen(true);
+          }}
         />
 
         {/* Área Principal de Conteúdo */}
