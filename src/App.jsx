@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Navbar 
@@ -173,27 +173,6 @@ export function App() {
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState(null);
-
-  // Ref da área de rolagem para ajuste de scroll invertido
-  const mainScrollRef = useRef(null);
-
-  useEffect(() => {
-    const mainEl = mainScrollRef.current;
-    if (!mainEl) return;
-
-    const handleWheel = (e) => {
-      // Inverte o movimento vertical do scroll conforme solicitado
-      if (e.deltaY !== 0) {
-        e.preventDefault();
-        mainEl.scrollTop -= e.deltaY;
-      }
-    };
-
-    mainEl.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      mainEl.removeEventListener('wheel', handleWheel);
-    };
-  }, []);
 
   const showToast = (msg, type = 'success') => {
     setToastMessage({ msg, type });
@@ -1088,10 +1067,7 @@ export function App() {
         />
 
         {/* Área Principal de Conteúdo */}
-        <main 
-          ref={mainScrollRef}
-          className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col"
-        >
+        <main className="flex-1 min-w-0 h-full w-full overflow-y-auto overflow-x-auto scrollbar-thin bg-slate-950 flex flex-col">
           <div className="min-w-[1100px] flex flex-col min-h-full">
 
             {/* Cabeçalho Fixo da Tabela - Prolongamento de Áreas & Setores com Sombra sobre os itens */}
