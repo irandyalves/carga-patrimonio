@@ -160,56 +160,58 @@ export const SectorSidebar = ({
               </span>
             </button>
 
-            {/* Sub-opções indentadas quando Todas as Áreas está selecionado */}
-            {filterMode === 'ALL_SECTORS' && (
-              <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
-                {[
-                  { id: 'PENDENTES', label: 'Pendentes', count: assets.filter(a => a.status === 'PENDENTE').length, color: 'text-amber-400', dot: 'bg-amber-400' },
-                  { id: 'CONFERIDOS', label: 'Conferidos', count: assets.filter(a => a.status === 'CONFERIDO').length, color: 'text-emerald-400', dot: 'bg-emerald-400' },
-                  { id: 'CAUTELAS', label: 'Em Cautela', count: assets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length, color: 'text-blue-400', dot: 'bg-blue-400' },
-                  { id: 'BAIXADOS', label: 'Baixados', count: assets.filter(a => a.status === 'BAIXADO' || a.baixado).length, color: 'text-rose-400', dot: 'bg-rose-400' },
-                ].map(tab => {
-                  const isSubActive = statusFilter === tab.id;
-                  return (
+            {/* Sub-opções indentadas quando Todas as Áreas está selecionado (Animação Cortina 400ms) */}
+            <div className={`curtain-menu ${filterMode === 'ALL_SECTORS' ? 'is-open' : ''}`}>
+              <div className="curtain-content">
+                <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
+                  {[
+                    { id: 'PENDENTES', label: 'Pendentes', count: assets.filter(a => a.status === 'PENDENTE').length, color: 'text-amber-400', dot: 'bg-amber-400' },
+                    { id: 'CONFERIDOS', label: 'Conferidos', count: assets.filter(a => a.status === 'CONFERIDO').length, color: 'text-emerald-400', dot: 'bg-emerald-400' },
+                    { id: 'CAUTELAS', label: 'Em Cautela', count: assets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length, color: 'text-blue-400', dot: 'bg-blue-400' },
+                    { id: 'BAIXADOS', label: 'Baixados', count: assets.filter(a => a.status === 'BAIXADO' || a.baixado).length, color: 'text-rose-400', dot: 'bg-rose-400' },
+                  ].map(tab => {
+                    const isSubActive = statusFilter === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => onSelectStatusFilter(tab.id)}
+                        className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
+                          isSubActive
+                            ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
+                          <span className="truncate">{tab.label}</span>
+                        </div>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                          isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Botão Emitir Relatório logo abaixo de Baixados */}
+                  {onExportReportPDF && (
                     <button
-                      key={tab.id}
-                      onClick={() => onSelectStatusFilter(tab.id)}
-                      className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
-                        isSubActive
-                          ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
-                      }`}
+                      type="button"
+                      onClick={onExportReportPDF}
+                      title="Emitir Relatório Geral de Inventário em PDF"
+                      className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                     >
                       <div className="flex items-center gap-1.5 truncate">
-                        {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
-                        <span className="truncate">{tab.label}</span>
+                        <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
+                        <span className="truncate">Emitir Relatório</span>
                       </div>
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                        isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
-                      }`}>
-                        {tab.count}
-                      </span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                     </button>
-                  );
-                })}
-
-                {/* Botão Emitir Relatório logo abaixo de Baixados */}
-                {onExportReportPDF && (
-                  <button
-                    type="button"
-                    onClick={onExportReportPDF}
-                    title="Emitir Relatório Geral de Inventário em PDF"
-                    className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
-                      <span className="truncate">Emitir Relatório</span>
-                    </div>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
@@ -280,56 +282,58 @@ export const SectorSidebar = ({
                   </div>
                 </button>
 
-                {/* Sub-opções de status indentadas abaixo do setor clicado */}
-                {isSelected && (
-                  <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
-                    {[
-                      { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
-                      { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
-                      { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
-                      { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400', dot: 'bg-rose-400' },
-                    ].map(tab => {
-                      const isSubActive = statusFilter === tab.id;
-                      return (
+                {/* Sub-opções de status indentadas abaixo do setor clicado (Animação Cortina 400ms) */}
+                <div className={`curtain-menu ${isSelected ? 'is-open' : ''}`}>
+                  <div className="curtain-content">
+                    <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
+                      {[
+                        { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
+                        { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
+                        { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
+                        { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400', dot: 'bg-rose-400' },
+                      ].map(tab => {
+                        const isSubActive = statusFilter === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => onSelectStatusFilter(tab.id)}
+                            className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
+                              isSubActive
+                                ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
+                              <span className="truncate">{tab.label}</span>
+                            </div>
+                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                              isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
+                            }`}>
+                              {tab.count}
+                            </span>
+                          </button>
+                        );
+                      })}
+
+                      {/* Botão Emitir Relatório logo abaixo de Baixados */}
+                      {onExportReportPDF && (
                         <button
-                          key={tab.id}
-                          onClick={() => onSelectStatusFilter(tab.id)}
-                          className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
-                            isSubActive
-                              ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
-                          }`}
+                          type="button"
+                          onClick={onExportReportPDF}
+                          title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
+                          className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                         >
                           <div className="flex items-center gap-1.5 truncate">
-                            {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
-                            <span className="truncate">{tab.label}</span>
+                            <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
+                            <span className="truncate">Emitir Relatório</span>
                           </div>
-                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                            isSubActive ? 'bg-indigo-500/40 text-white font-bold' : 'bg-slate-800/80 text-slate-400'
-                          }`}>
-                            {tab.count}
-                          </span>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                         </button>
-                      );
-                    })}
-
-                    {/* Botão Emitir Relatório logo abaixo de Baixados */}
-                    {onExportReportPDF && (
-                      <button
-                        type="button"
-                        onClick={onExportReportPDF}
-                        title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
-                        className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
-                      >
-                        <div className="flex items-center gap-1.5 truncate">
-                          <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
-                          <span className="truncate">Emitir Relatório</span>
-                        </div>
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
