@@ -151,32 +151,19 @@ export const getInitialAuthorizedUsers = () => {
 };
 
 export const loadAuthorizedUsers = async () => {
-  const { isConfigured, db } = initFirebase();
   let users = [];
 
-  if (isConfigured && db) {
-    try {
-      const snap = await getDocs(collection(db, 'authorized_users'));
-      if (!snap.empty) {
-        users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar usuários do Firestore, usando local/fallback:', e);
+  // 1. Carrega imediatamente do cache local para resposta instantânea
+  try {
+    const local = localStorage.getItem(STORAGE_KEY_USERS);
+    if (local) {
+      users = JSON.parse(local);
     }
+  } catch (e) {
+    console.error(e);
   }
 
-  if (users.length === 0) {
-    try {
-      const local = localStorage.getItem(STORAGE_KEY_USERS);
-      if (local) {
-        users = JSON.parse(local);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  // Ensure default super admins always exist
+  // Garante que o Super Admin oficial (irandyalves@gmail.com) sempre exista
   DEFAULT_ADMIN_EMAILS.forEach(adminEmail => {
     const exists = users.some(u => u.email.toLowerCase() === adminEmail.toLowerCase());
     if (!exists) {
@@ -190,6 +177,34 @@ export const loadAuthorizedUsers = async () => {
       });
     }
   });
+
+  // 2. Consulta Firestore em segundo plano com timeout curto (1.2s) para nunca congelar
+  const { isConfigured, db } = initFirebase();
+  if (isConfigured && db) {
+    try {
+      const fetchPromise = getDocs(collection(db, 'authorized_users'));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1200));
+      const snap = await Promise.race([fetchPromise, timeoutPromise]);
+      if (snap && !snap.empty) {
+        users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        DEFAULT_ADMIN_EMAILS.forEach(adminEmail => {
+          if (!users.some(u => u.email.toLowerCase() === adminEmail.toLowerCase())) {
+            users.unshift({
+              id: adminEmail.replace(/[^a-zA-Z0-9]/g, '_'),
+              email: adminEmail,
+              name: adminEmail.split('@')[0],
+              role: 'admin',
+              addedAt: new Date().toISOString(),
+              addedBy: 'Super Admin'
+            });
+          }
+        });
+        localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+      }
+    } catch (e) {
+      // Modo local/offline resiliente - não trava a aplicação
+    }
+  }
 
   return users;
 };

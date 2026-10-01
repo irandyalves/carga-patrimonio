@@ -91,17 +91,26 @@ import {
 } from 'lucide-react';
 
 export function App() {
-  // Authentication and Authorization States (Sessão local padrão para abertura imediata sem bloqueio)
+  // Authentication and Authorization States (Sessão inicial Super Admin: irandyalves@gmail.com)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const stored = localStorage.getItem('carga_patrimonio_current_user');
-      return stored ? JSON.parse(stored) : { 
-        displayName: 'Administrador (Jean / Alex / Tadeu)', 
-        email: 'admin@patrimonio.gov.br' 
-      };
-    } catch (e) {
-      return { displayName: 'Administrador', email: 'admin@patrimonio.gov.br' };
-    }
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.email && !parsed.email.includes('patrimonio.gov.br')) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    const defaultAdmin = { 
+      displayName: 'Irandy Alves', 
+      email: 'irandyalves@gmail.com',
+      role: 'admin'
+    };
+    try {
+      localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(defaultAdmin));
+    } catch (e) {}
+    return defaultAdmin;
   });
   const [userRole, setUserRole] = useState('admin'); // 'admin' | 'operador'
   const [isAuthorized, setIsAuthorized] = useState(true);
