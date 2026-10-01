@@ -632,8 +632,8 @@ export const AssetTableRowCard = ({
                 )}
               </div>
 
-              {/* Botões de Ação Separados do Listbox */}
-              <div className="inline-flex items-center gap-1 ml-1.5">
+              {/* Botão de Voz */}
+              <div className="inline-flex items-center ml-1.5">
                 <button
                   type="button"
                   onClick={startLocationVoice}
@@ -645,24 +645,6 @@ export const AssetTableRowCard = ({
                   }`}
                 >
                   <Mic className="w-3 h-3" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSaveLocation}
-                  title="Salvar Localização"
-                  className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm"
-                >
-                  <Check className="w-3 h-3" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={closeLocEdit}
-                  title="Cancelar"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 cursor-pointer transition-colors shadow-sm"
-                >
-                  <X className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -798,8 +780,8 @@ export const AssetTableRowCard = ({
                 )}
               </div>
 
-              {/* Botões de Ação Separados do Listbox */}
-              <div className="inline-flex items-center gap-1 ml-1.5">
+              {/* Botão de Voz */}
+              <div className="inline-flex items-center ml-1.5">
                 <button
                   type="button"
                   onClick={startObservationVoice}
@@ -811,24 +793,6 @@ export const AssetTableRowCard = ({
                   }`}
                 >
                   <Mic className="w-3 h-3" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSaveObservation}
-                  title="Salvar Observação"
-                  className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-colors shadow-sm"
-                >
-                  <Check className="w-3 h-3" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={closeObsEdit}
-                  title="Cancelar"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 cursor-pointer transition-colors shadow-sm"
-                >
-                  <X className="w-3 h-3" />
                 </button>
               </div>
             </div>
