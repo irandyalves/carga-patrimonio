@@ -4,8 +4,8 @@ import {
   Navbar 
 } from './components/Navbar';
 import { 
-  SectorTabs 
-} from './components/SectorTabs';
+  SectorSidebar 
+} from './components/SectorSidebar';
 import { 
   ConferenceStats 
 } from './components/ConferenceStats';
@@ -122,6 +122,7 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
   const [displayMode, setDisplayMode] = useState('TABLE_ROWS'); // 'TABLE_ROWS' (padrão) | 'GRID'
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Slide bar lateral esquerdo
 
   // Modal States
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -849,13 +850,16 @@ export function App() {
         onLogout={handleLogout}
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      {/* Main Content Area (Largura total preenchendo toda a tela de ponta a ponta) */}
-      <main className="flex-1 w-full px-2 sm:px-4 py-3 space-y-3">
+      {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}
+      <div className="flex flex-1 w-full relative overflow-hidden">
         
-        {/* Sector Tabs Dashboard (Abas por Setor: Nome do Setor - Responsável) */}
-        <SectorTabs
+        {/* Slide Bar Lateral Esquerdo com as Abas dos Setores */}
+        <SectorSidebar
+          isOpen={isSidebarOpen}
+          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           sectors={sectors}
           activeSectorId={activeSectorId}
           onSelectSector={setActiveSectorId}
@@ -865,8 +869,11 @@ export function App() {
           onOpenManageSectors={() => setIsManageSectorsOpen(true)}
         />
 
-        {/* Real-time Conference Stats Bar */}
-        <ConferenceStats
+        {/* Área Principal de Conteúdo */}
+        <main className="flex-1 min-w-0 w-full px-2 sm:px-4 py-3 space-y-3 overflow-y-auto">
+          
+          {/* Real-time Conference Stats Bar */}
+          <ConferenceStats
           stats={stats}
           activeSector={activeSector}
           onExportReportPDF={handleExportReportPDF}
@@ -1199,6 +1206,8 @@ export function App() {
         )}
 
       </main>
+
+      </div>
 
       {/* Modals */}
       <QrScannerModal

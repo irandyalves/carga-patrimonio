@@ -15,7 +15,8 @@ import {
   LogOut,
   Crown,
   Shield,
-  X
+  X,
+  PanelLeft
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -38,7 +39,8 @@ export const Navbar = ({
   userRole,
   onLogout,
   isFirebaseActive,
-  cautelasCount = 0
+  cautelasCount = 0,
+  onToggleSidebar
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -105,8 +107,16 @@ export const Navbar = ({
       <div className="w-full px-2 sm:px-4">
         <div className="flex items-center justify-between h-16 gap-3">
           
-          {/* Logo & Title */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Logo & Title with Slide Bar Toggle Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={onToggleSidebar}
+              title="Abrir/Recolher Slide Bar Lateral de Setores"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <PanelLeft className="w-5 h-5" />
+            </button>
+
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
               <Boxes className="w-6 h-6" />
             </div>
