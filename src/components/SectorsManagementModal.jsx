@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Sparkles,
   AlertCircle,
-  Check
+  Check,
+  Eraser
 } from 'lucide-react';
 
 export const SectorsManagementModal = ({
@@ -25,7 +26,8 @@ export const SectorsManagementModal = ({
   assets = [],
   users = [],
   onSaveSector,
-  onDeleteSector
+  onDeleteSector,
+  onClearSectorAssets
 }) => {
   const [editingSector, setEditingSector] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -467,10 +469,23 @@ export const SectorsManagementModal = ({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                  {onClearSectorAssets && (
+                    <button
+                      type="button"
+                      onClick={() => onClearSectorAssets(sector.id)}
+                      disabled={linkedCount === 0}
+                      title={linkedCount === 0 ? "Este setor não possui bens" : `Limpar/Apagar todos os ${linkedCount} bens deste setor`}
+                      className="p-2 rounded-xl bg-slate-800 hover:bg-amber-950/60 text-slate-400 hover:text-amber-400 border border-slate-700 hover:border-amber-800/60 transition-colors disabled:opacity-30 disabled:pointer-events-none cursor-pointer flex items-center gap-1 text-xs"
+                    >
+                      <Eraser className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Limpar Bens</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleStartEdit(sector)}
                     title="Editar informações do setor"
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-medium flex items-center gap-1 transition-colors"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>Editar</span>
@@ -480,7 +495,7 @@ export const SectorsManagementModal = ({
                     onClick={() => handleDeleteClick(sector)}
                     disabled={sectors.length <= 1}
                     title={sectors.length <= 1 ? "É necessário ter ao menos 1 setor" : "Excluir setor"}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800/60 transition-colors disabled:opacity-40"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800/60 transition-colors disabled:opacity-40 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

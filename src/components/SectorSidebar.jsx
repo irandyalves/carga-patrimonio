@@ -20,7 +20,8 @@ import {
   PanelLeftOpen,
   ShieldCheck,
   Lock,
-  FileText
+  FileText,
+  Eraser
 } from 'lucide-react';
 
 export const SectorSidebar = ({
@@ -37,7 +38,8 @@ export const SectorSidebar = ({
   userSectorId = null,
   statusFilter = 'ALL',
   onSelectStatusFilter = () => {},
-  onExportReportPDF = () => {}
+  onExportReportPDF = () => {},
+  onClearSectorAssets
 }) => {
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
@@ -361,6 +363,27 @@ export const SectorSidebar = ({
                               : 'bg-slate-800/80 text-cyan-400'
                           }`}>
                             {assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length}
+                          </span>
+                        </button>
+                      )}
+                      {/* Botão Limpar Dados do Setor */}
+                      {onClearSectorAssets && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClearSectorAssets(sec.id);
+                          }}
+                          disabled={assets.filter(a => a.setorId === sec.id).length === 0}
+                          title={`Limpar todos os bens vinculados ao setor ${sec.name}`}
+                          className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-amber-300 hover:bg-amber-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20 disabled:opacity-30 disabled:pointer-events-none"
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Eraser className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 shrink-0" />
+                            <span className="truncate">Limpar Dados do Setor</span>
+                          </div>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-amber-300 font-bold shrink-0">
+                            {assets.filter(a => a.setorId === sec.id).length}
                           </span>
                         </button>
                       )}

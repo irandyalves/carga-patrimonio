@@ -1026,6 +1026,50 @@ export function App() {
     showToast('Setor removido com sucesso.', 'info');
   };
 
+  // Limpar / Zerar todos os bens de um setor específico
+  const handleClearSectorAssets = async (sectorId) => {
+    const sec = sectors.find(s => s.id === sectorId);
+    const secName = sec ? sec.name : 'Setor';
+    const count = assets.filter(a => a.setorId === sectorId).length;
+
+    if (count === 0) {
+      showToast(`O setor "${secName}" não possui nenhum bem cadastrado.`, 'info');
+      return;
+    }
+
+    if (!confirm(`⚠️ ATENÇÃO: Deseja apagar TODOS os ${count} bens do setor "${secName}"?\n\nEsta ação excluirá os bens deste setor local e na nuvem. O setor continuará existindo.`)) {
+      return;
+    }
+
+    // Filtra e remove os bens do setor
+    const remainingAssets = assets.filter(a => a.setorId !== sectorId);
+    setAssets(remainingAssets);
+    saveLocalAssets(remainingAssets);
+
+    // Limpa cautelas e pedidos vinculados aos bens apagados
+    const deletedAssetIds = new Set(assets.filter(a => a.setorId === sectorId).map(a => a.id));
+    const remainingCautelas = cautelas.filter(c => !deletedAssetIds.has(c.assetId));
+    setCautelas(remainingCautelas);
+    saveLocalCautelas(remainingCautelas);
+
+    // Se Firebase estiver ativo, remove os documentos no Firestore
+    if (isFirebaseActive) {
+      try {
+        const { collection, getDocs, deleteDoc, doc, query, where } = await import('firebase/firestore');
+        const { db } = initFirebase();
+        if (db) {
+          const snap = await getDocs(query(collection(db, 'assets'), where('setorId', '==', sectorId)));
+          const delPromises = snap.docs.map(d => deleteDoc(doc(db, 'assets', d.id)));
+          await Promise.all(delPromises);
+        }
+      } catch (fbErr) {
+        console.warn('Erro ao limpar bens do setor no Firebase:', fbErr);
+      }
+    }
+
+    showToast(`🧹 Todos os ${count} bens do setor "${secName}" foram excluídos com sucesso!`);
+  };
+
   // Open Cautela creation for an asset
   const handleOpenCautela = (asset) => {
     setAssetForCautela(asset);
@@ -1365,6 +1409,7 @@ export function App() {
           statusFilter={statusFilter}
           onSelectStatusFilter={setStatusFilter}
           onExportReportPDF={handleExportReportPDF}
+          onClearSectorAssets={handleClearSectorAssets}
         />
 
         {/* Área Principal de Conteúdo */}
@@ -1991,6 +2036,7 @@ export function App() {
         users={authorizedUsers}
         onSaveSector={handleSaveSector}
         onDeleteSector={handleDeleteSector}
+        onClearSectorAssets={handleClearSectorAssets}
       />
 
       <CautelaModal
