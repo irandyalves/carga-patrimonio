@@ -29,10 +29,10 @@ import {
 import { exportAssetsToExcel } from '../services/excelService';
 
 const FORMAT_OPTIONS = [
-  { id: 'excel', label: 'Excel (.xlsx, .xls)', ext: '.xlsx,.xls', icon: FileSpreadsheet, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
-  { id: 'word', label: 'Word (.docx)', ext: '.docx', icon: FileText, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
-  { id: 'csv', label: 'CSV (.csv)', ext: '.csv', icon: FileCode, color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
-  { id: 'txt', label: 'TXT (.txt / Tabular)', ext: '.txt', icon: File, color: 'text-purple-400 bg-purple-500/10 border-purple-500/30' }
+  { id: 'excel', title: 'Excel', label: 'Excel (.xlsx, .xls)', desc: '.xlsx, .xls', ext: '.xlsx,.xls', icon: FileSpreadsheet, activeColor: 'border-emerald-500/70 bg-emerald-500/15 text-emerald-300 ring-2 ring-emerald-500/30' },
+  { id: 'word', title: 'Word', label: 'Word (.docx)', desc: '.docx', ext: '.docx', icon: FileText, activeColor: 'border-blue-500/70 bg-blue-500/15 text-blue-300 ring-2 ring-blue-500/30' },
+  { id: 'csv', title: 'CSV', label: 'CSV (.csv)', desc: '.csv', ext: '.csv', icon: FileCode, activeColor: 'border-amber-500/70 bg-amber-500/15 text-amber-300 ring-2 ring-amber-500/30' },
+  { id: 'txt', title: 'TXT', label: 'TXT (.txt / Tabular)', desc: '.txt / tabular', ext: '.txt', icon: File, activeColor: 'border-purple-500/70 bg-purple-500/15 text-purple-300 ring-2 ring-purple-500/30' }
 ];
 
 export const SmartImportModal = ({
@@ -231,7 +231,7 @@ export const SmartImportModal = ({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="flex-1 min-h-0 overflow-y-auto px-1 py-1 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
           
           {/* PASSO 1: CONFIGURAÇÃO DE SETOR E UPLOAD */}
           {step === 'SETUP_AND_UPLOAD' && (
@@ -332,7 +332,7 @@ export const SmartImportModal = ({
                   2. Tipo de Arquivo a Importar
                 </label>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {FORMAT_OPTIONS.map(fmt => {
                     const Icon = fmt.icon;
                     const isSelected = selectedFormat === fmt.id;
@@ -341,14 +341,15 @@ export const SmartImportModal = ({
                         key={fmt.id}
                         type="button"
                         onClick={() => setSelectedFormat(fmt.id)}
-                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[72px] ${
                           isSelected
-                            ? `${fmt.color} ring-2 ring-indigo-400 font-bold scale-102 shadow-md`
-                            : 'bg-slate-800/50 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            ? `${fmt.activeColor} font-bold shadow-lg`
+                            : 'bg-slate-850/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
                         }`}
                       >
                         <Icon className="w-5 h-5" />
-                        <span className="text-xs">{fmt.label}</span>
+                        <span className="text-xs font-semibold leading-tight">{fmt.title}</span>
+                        <span className="text-[10px] text-slate-400 font-normal leading-none">{fmt.desc}</span>
                       </button>
                     );
                   })}
