@@ -198,10 +198,10 @@ export const autoMatchColumns = (detectedHeaders = []) => {
 // 1. Parser Excel (.xlsx, .xls)
 export const parseExcelFile = async (file) => {
   const data = await file.arrayBuffer();
-  const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+  const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: true });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
-  const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+  const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
 
   if (!rawRows || rawRows.length === 0) {
     throw new Error('Planilha vazia ou sem dados legíveis.');
@@ -226,7 +226,12 @@ export const parseExcelFile = async (file) => {
     if (!row || row.every(cell => String(cell).trim() === '')) continue;
     const rowObj = {};
     headers.forEach((h, colIdx) => {
-      rowObj[h] = row[colIdx] !== undefined ? String(row[colIdx]).trim() : '';
+      const rawCell = row[colIdx];
+      if (rawCell instanceof Date && !isNaN(rawCell.getTime())) {
+        rowObj[h] = rawCell.toISOString().slice(0, 10);
+      } else {
+        rowObj[h] = rawCell !== undefined ? String(rawCell).trim() : '';
+      }
     });
     dataRows.push(rowObj);
   }

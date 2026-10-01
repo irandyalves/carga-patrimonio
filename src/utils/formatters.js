@@ -62,6 +62,18 @@ export const formatDisplayDate = (val) => {
     return '---';
   }
 
+  // Se for formato ISO tipo 2024-11-22 ou 2024-11-22T...
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const parts = str.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  // Se for formato DD-MM-AAAA
+  if (/^\d{2}-\d{2}-\d{4}/.test(str)) {
+    const parts = str.slice(0, 10).split('-');
+    return `${parts[0]}/${parts[1]}/${parts[2]}`;
+  }
+
   // Se já estiver no formato DD/MM/AAAA ou DD/MM/AA
   if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(str)) {
     return str;
@@ -79,14 +91,6 @@ export const formatDisplayDate = (val) => {
     const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
     if (!isNaN(jsDate.getTime())) {
       return jsDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-    }
-  }
-
-  // Se for ISO string tipo 2024-05-18 ou 2024-05-18T...
-  if (str.includes('-') && str.length >= 8) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString('pt-BR');
     }
   }
 
