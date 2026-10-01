@@ -4,8 +4,8 @@ import {
   Navbar 
 } from './components/Navbar';
 import { 
-  SectorSelector 
-} from './components/SectorSelector';
+  SectorTabs 
+} from './components/SectorTabs';
 import { 
   ConferenceStats 
 } from './components/ConferenceStats';
@@ -712,13 +712,14 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
         
-        {/* Sector Selection Header */}
-        <SectorSelector
+        {/* Sector Tabs Dashboard (Abas por Setor: Nome do Setor - Responsável) */}
+        <SectorTabs
           sectors={sectors}
           activeSectorId={activeSectorId}
           onSelectSector={setActiveSectorId}
           filterMode={filterMode}
-          onToggleFilterMode={setFilterMode}
+          onSelectFilterMode={setFilterMode}
+          assets={assets}
           onOpenManageSectors={() => setIsManageSectorsOpen(true)}
         />
 
