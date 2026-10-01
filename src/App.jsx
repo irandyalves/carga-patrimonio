@@ -97,7 +97,12 @@ import {
   EyeOff,
   Columns3,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle,
+  Trash2,
+  Building2,
+  X,
+  Eraser
 } from 'lucide-react';
 
 export function App() {
@@ -273,6 +278,10 @@ export function App() {
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+  
+  // Estado do Modal de Confirmação Central para Limpar Bens de um Setor
+  const [sectorToClear, setSectorToClear] = useState(null);
+  const [isClearingSector, setIsClearingSector] = useState(false);
 
   // Pedidos e Solicitações de Carga
   const [pedidosCarga, setPedidosCarga] = useState(() => {
@@ -1026,8 +1035,8 @@ export function App() {
     showToast('Setor removido com sucesso.', 'info');
   };
 
-  // Limpar / Zerar todos os bens de um setor específico
-  const handleClearSectorAssets = async (sectorId) => {
+  // Limpar / Zerar todos os bens de um setor específico (Abre modal central moderno)
+  const handleClearSectorAssets = (sectorId) => {
     const sec = sectors.find(s => s.id === sectorId);
     const secName = sec ? sec.name : 'Setor';
     const count = assets.filter(a => a.setorId === sectorId).length;
@@ -1037,37 +1046,56 @@ export function App() {
       return;
     }
 
-    if (!confirm(`⚠️ ATENÇÃO: Deseja apagar TODOS os ${count} bens do setor "${secName}"?\n\nEsta ação excluirá os bens deste setor local e na nuvem. O setor continuará existindo.`)) {
-      return;
-    }
+    setSectorToClear({
+      id: sectorId,
+      name: secName,
+      count,
+      responsavel: sec?.responsavel || 'Não informado',
+      sala: sec?.sala || ''
+    });
+  };
 
-    // Filtra e remove os bens do setor
-    const remainingAssets = assets.filter(a => a.setorId !== sectorId);
-    setAssets(remainingAssets);
-    saveLocalAssets(remainingAssets);
+  // Execução da exclusão dos bens após confirmação no modal
+  const handleExecuteClearSector = async () => {
+    if (!sectorToClear) return;
+    const { id: sectorId, name: secName, count } = sectorToClear;
+    setIsClearingSector(true);
 
-    // Limpa cautelas e pedidos vinculados aos bens apagados
-    const deletedAssetIds = new Set(assets.filter(a => a.setorId === sectorId).map(a => a.id));
-    const remainingCautelas = cautelas.filter(c => !deletedAssetIds.has(c.assetId));
-    setCautelas(remainingCautelas);
-    saveLocalCautelas(remainingCautelas);
+    try {
+      // Filtra e remove os bens do setor
+      const remainingAssets = assets.filter(a => a.setorId !== sectorId);
+      setAssets(remainingAssets);
+      saveLocalAssets(remainingAssets);
 
-    // Se Firebase estiver ativo, remove os documentos no Firestore
-    if (isFirebaseActive) {
-      try {
-        const { collection, getDocs, deleteDoc, doc, query, where } = await import('firebase/firestore');
-        const { db } = initFirebase();
-        if (db) {
-          const snap = await getDocs(query(collection(db, 'assets'), where('setorId', '==', sectorId)));
-          const delPromises = snap.docs.map(d => deleteDoc(doc(db, 'assets', d.id)));
-          await Promise.all(delPromises);
+      // Limpa cautelas e pedidos vinculados aos bens apagados
+      const deletedAssetIds = new Set(assets.filter(a => a.setorId === sectorId).map(a => a.id));
+      const remainingCautelas = cautelas.filter(c => !deletedAssetIds.has(c.assetId));
+      setCautelas(remainingCautelas);
+      saveLocalCautelas(remainingCautelas);
+
+      // Se Firebase estiver ativo, remove os documentos no Firestore
+      if (isFirebaseActive) {
+        try {
+          const { collection, getDocs, deleteDoc, doc, query, where } = await import('firebase/firestore');
+          const { db } = initFirebase();
+          if (db) {
+            const snap = await getDocs(query(collection(db, 'assets'), where('setorId', '==', sectorId)));
+            const delPromises = snap.docs.map(d => deleteDoc(doc(db, 'assets', d.id)));
+            await Promise.all(delPromises);
+          }
+        } catch (fbErr) {
+          console.warn('Erro ao limpar bens do setor no Firebase:', fbErr);
         }
-      } catch (fbErr) {
-        console.warn('Erro ao limpar bens do setor no Firebase:', fbErr);
       }
-    }
 
-    showToast(`🧹 Todos os ${count} bens do setor "${secName}" foram excluídos com sucesso!`);
+      showToast(`🧹 Todos os ${count} bens do setor "${secName}" foram excluídos com sucesso!`);
+      setSectorToClear(null);
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao excluir bens do setor.', 'warning');
+    } finally {
+      setIsClearingSector(false);
+    }
   };
 
   // Open Cautela creation for an asset
@@ -2145,6 +2173,79 @@ export function App() {
         onAprovarPedido={handleAprovarPedido}
         onRecusarPedido={handleRecusarPedido}
       />
+
+      {/* Modal Central Moderno e Elegante de Confirmação para Limpeza de Bens do Setor */}
+      {sectorToClear && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-750 w-full max-w-md rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col space-y-4">
+            
+            {/* Ícone e Cabeçalho */}
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600/30 to-amber-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shrink-0 shadow-lg shadow-rose-950/50">
+                <AlertTriangle className="w-6 h-6 animate-pulse text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-white text-base sm:text-lg">Limpar Bens do Setor</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Confirmação de exclusão dos itens</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSectorToClear(null)}
+                disabled={isClearingSector}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Card de Destaque do Setor */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-950/90 to-slate-900 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-indigo-400" />
+                  <span className="font-bold text-white text-sm">{sectorToClear.name}</span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  {sectorToClear.count} {sectorToClear.count === 1 ? 'bem' : 'bens'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>Responsável: <strong className="text-slate-200">{sectorToClear.responsavel}</strong></span>
+              </div>
+            </div>
+
+            {/* Mensagem Explicativa */}
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Deseja realmente apagar todos os <strong>{sectorToClear.count} bens</strong> deste setor? 
+              Esta ação excluirá os itens localmente e na nuvem. O setor continuará cadastrado normalmente.
+            </p>
+
+            {/* Botões de Ação */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSectorToClear(null)}
+                disabled={isClearingSector}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteClearSector}
+                disabled={isClearingSector}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs shadow-lg shadow-rose-950/50 flex items-center gap-2 transition-all cursor-pointer hover:scale-102 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isClearingSector ? 'Excluindo...' : `Sim, Excluir ${sectorToClear.count} Bens`}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
