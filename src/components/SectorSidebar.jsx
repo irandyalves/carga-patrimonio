@@ -19,7 +19,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
-  Lock
+  Lock,
+  FileText
 } from 'lucide-react';
 
 export const SectorSidebar = ({
@@ -35,7 +36,8 @@ export const SectorSidebar = ({
   userRole = 'admin',
   userSectorId = null,
   statusFilter = 'ALL',
-  onSelectStatusFilter = () => {}
+  onSelectStatusFilter = () => {},
+  onExportReportPDF = () => {}
 }) => {
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
@@ -185,6 +187,22 @@ export const SectorSidebar = ({
                     </button>
                   );
                 })}
+
+                {/* Botão Emitir Relatório logo abaixo de Baixados */}
+                {onExportReportPDF && (
+                  <button
+                    type="button"
+                    onClick={onExportReportPDF}
+                    title="Emitir Relatório Geral de Inventário em PDF"
+                    className="w-full mt-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-between text-indigo-300 hover:text-white bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 hover:border-indigo-400 transition-all cursor-pointer shadow-sm group"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <FileText className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" />
+                      <span className="truncate">Emitir Relatório</span>
+                    </div>
+                    <span className="text-[10px] font-mono opacity-70 font-bold">PDF</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -293,6 +311,22 @@ export const SectorSidebar = ({
                         </button>
                       );
                     })}
+
+                    {/* Botão Emitir Relatório logo abaixo de Baixados */}
+                    {onExportReportPDF && (
+                      <button
+                        type="button"
+                        onClick={onExportReportPDF}
+                        title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
+                        className="w-full mt-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-between text-indigo-300 hover:text-white bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 hover:border-indigo-400 transition-all cursor-pointer shadow-sm group"
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <FileText className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" />
+                          <span className="truncate">Emitir Relatório</span>
+                        </div>
+                        <span className="text-[10px] font-mono opacity-70 font-bold">PDF</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

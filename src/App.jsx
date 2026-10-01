@@ -978,17 +978,11 @@ export function App() {
           userSectorId={effectiveUserSectorId}
           statusFilter={statusFilter}
           onSelectStatusFilter={setStatusFilter}
+          onExportReportPDF={handleExportReportPDF}
         />
 
         {/* Área Principal de Conteúdo */}
         <main className="flex-1 min-w-0 w-full px-2 sm:px-4 py-3 space-y-3 overflow-y-auto">
-          
-          {/* Real-time Conference Stats Bar */}
-          <ConferenceStats
-            stats={stats}
-            activeSector={activeSector}
-            onExportReportPDF={handleExportReportPDF}
-          />
 
           {/* Barra Informativa Compacta (quando há busca ou filtro ativo) */}
           {(searchTerm || statusFilter !== 'ALL') && (
