@@ -3,39 +3,94 @@
  */
 
 /**
- * Formata o número de patrimônio no formato amigável XX.XXX (facilita leitura)
+ * Formata o número de patrimônio retirando o prefixo de 5 dígitos quando existir,
+ * mantendo e formatando apenas os últimos 4 ou 5 dígitos:
  * Exemplos:
- * 42542 -> 42.542
- * 42661 -> 42.661
- * 52425 -> 52.425
+ * 0000044892 -> 44.892
+ * 2024044892 -> 44.892
+ * 202404892  -> 4.892
+ * 42542      -> 42.542
+ * 4892       -> 4.892
  */
 export const formatPatrimonio = (val) => {
   if (!val) return '';
   const str = String(val).trim();
   const digits = str.replace(/\D/g, '');
 
-  if (digits.length === 5) {
-    return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-  }
+  if (!digits) return str;
 
+  // Se tiver mais de 5 dígitos (ex: 9 ou 10 dígitos com prefixo de 5 dígitos), remove os 5 primeiros
+  let useful = digits;
   if (digits.length > 5) {
-    const last5 = digits.slice(-5);
-    const prefix = digits.slice(0, -5);
-    return `${prefix ? prefix + '-' : ''}${last5.slice(0, 2)}.${last5.slice(2)}`;
+    useful = digits.length >= 9 ? digits.slice(5) : digits.slice(-5);
   }
 
-  return str;
+  if (useful.length === 5) {
+    return `${useful.slice(0, 2)}.${useful.slice(2)}`;
+  }
+
+  if (useful.length === 4) {
+    return `${useful.slice(0, 1)}.${useful.slice(1)}`;
+  }
+
+  return useful;
 };
 
 /**
- * Retorna os últimos 5 dígitos já formatados como XX.XXX
+ * Retorna os últimos 4 ou 5 dígitos já formatados como XX.XXX ou X.XXX
  */
 export const formatLast5Patrimonio = (val) => {
-  if (!val) return '00.000';
+  return formatPatrimonio(val);
+};
+
+/**
+ * Converte e formata data de aquisição para data amigável (DD/MM/AAAA ou AAAA).
+ * Se for número com decimais/moeda (ex: 2819.99), descarta pois não é data.
+ * Se for número serial do Excel (ex: 44562), converte para data legível.
+ */
+export const formatDisplayDate = (val) => {
+  if (val === null || val === undefined || val === '' || val === '---') return '---';
+  
   const str = String(val).trim();
-  const digits = str.replace(/\D/g, '');
-  const last5 = digits.length >= 5 ? digits.slice(-5) : digits.padStart(5, '0');
-  return `${last5.slice(0, 2)}.${last5.slice(2)}`;
+  if (!str) return '---';
+
+  // Se tiver casas decimais (ex: 2819.99 ou 656.58), é um valor financeiro, não é data!
+  if (str.includes('.') && str.split('.')[1] && str.split('.')[1].length === 2 && !str.includes('/')) {
+    return '---';
+  }
+  if (str.includes(',') && str.split(',')[1] && str.split(',')[1].length === 2) {
+    return '---';
+  }
+
+  // Se já estiver no formato DD/MM/AAAA ou DD/MM/AA
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(str)) {
+    return str;
+  }
+
+  // Se for apenas o ano (ex: 2021, 2024)
+  if (/^\d{4}$/.test(str)) {
+    const year = parseInt(str, 10);
+    if (year >= 1950 && year <= 2050) return str;
+  }
+
+  // Se for número serial do Excel (ex: 42000 a 55000)
+  const num = Number(str);
+  if (!isNaN(num) && num >= 25000 && num <= 65000 && Number.isInteger(num)) {
+    const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
+    if (!isNaN(jsDate.getTime())) {
+      return jsDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+  }
+
+  // Se for ISO string tipo 2024-05-18 ou 2024-05-18T...
+  if (str.includes('-') && str.length >= 8) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('pt-BR');
+    }
+  }
+
+  return str;
 };
 
 /**

@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
-import { formatCurrency, formatDepreciacao } from '../utils/formatters';
+import { formatCurrency, formatDepreciacao, formatPatrimonio, formatDisplayDate } from '../utils/formatters';
 
 const COLOR_OPTIONS = [
   { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
@@ -302,12 +302,8 @@ export const AssetTableRowCard = ({
   const cautelaRetirada = asset.cautelaAtual?.dataRetirada || '01/10/2026';
   const cautelaDevolucao = asset.cautelaAtual?.dataPrevistaDevolucao || asset.cautelaAtual?.dataPrevisaoDevolucao || '08/10/2026';
 
-  // Extrair os últimos 5 dígitos para formato amigável XX.XXX (facilita a leitura)
-  const rawNum = String(asset.numeroPatrimonio || '');
-  const digitsOnly = rawNum.replace(/\D/g, '');
-  const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : digitsOnly.padStart(5, '0');
-  const formattedXX = `${last5.slice(0, 2)}.${last5.slice(2)}`;
-  const prefix = digitsOnly.length > 5 ? digitsOnly.slice(0, -5) : '';
+  // Extrair e formatar o número de patrimônio (remove prefixo de 5 dígitos e preserva os 4 ou 5 dígitos finais)
+  const formattedXX = formatPatrimonio(asset.numeroPatrimonio);
 
   // Truncamento inteligente para descrições longas com hint bonito
   const isDescLong = (asset.descricao || '').length > 35;
@@ -547,21 +543,12 @@ export const AssetTableRowCard = ({
             </div>
           ) : null}
 
-          <div className="flex flex-col">
+          <div className="flex items-center">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
               FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
-            
-            {/* Prefixo especial de dígitos longos */}
-            {prefix && (
-              <div className="mt-0.5 flex items-center gap-1">
-                <span className="text-[9px] font-mono text-slate-500">
-                  <HighlightText text={prefix} query={searchTerm} />
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1054,7 +1041,7 @@ export const AssetTableRowCard = ({
         {visibleColumns?.dataAquisicao !== false && (
           <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
             <span className="font-medium text-[11px] text-slate-300">
-              {asset.dataAquisicao || asset.anoAquisicao || '---'}
+              {formatDisplayDate(asset.dataAquisicao || asset.anoAquisicao)}
             </span>
           </div>
         )}

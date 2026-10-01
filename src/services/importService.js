@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
-import { parseCleanNumber } from '../utils/formatters';
+import { parseCleanNumber, formatPatrimonio, formatDisplayDate } from '../utils/formatters';
 
 // Dicionário Semântico de Campos do Sistema com Sinônimos e Variações
 export const DB_FIELDS = [
@@ -89,8 +89,8 @@ export const DB_FIELDS = [
     label: 'Data de Aquisição',
     required: false,
     synonyms: [
-      'aquisicao', 'aquisição', 'data aquisicao', 'data aquisição', 'data de aquisicao',
-      'data de aquisição', 'dt_aquisicao', 'data', 'ano', 'ano aquisicao', 'dt aquisicao'
+      'data aquisicao', 'data aquisição', 'data de aquisicao', 'data de aquisição', 'dt aquisicao',
+      'dt_aquisicao', 'data compra', 'data de compra', 'data', 'dt_compra', 'ano aquisicao', 'ano compra'
     ]
   },
   {
@@ -98,8 +98,9 @@ export const DB_FIELDS = [
     label: 'Valor Original (R$)',
     required: false,
     synonyms: [
-      'valor original', 'valor de aquisicao', 'valor de aquisição', 'valor', 'preco', 'preço',
-      'custo', 'vlr original', 'vl_original', 'vlr_aquisicao', 'vlr_original_bruto', 'valor histórico'
+      'valor original', 'valor de aquisicao', 'valor de aquisição', 'valor aquisicao', 'valor aquisição',
+      'aquisicao', 'aquisição', 'valor', 'preco', 'preço', 'custo', 'custo de aquisicao',
+      'vlr original', 'vl_original', 'vlr_aquisicao', 'vlr_original_bruto', 'valor histórico'
     ]
   },
   {
@@ -427,9 +428,24 @@ export const buildFinalAssetsFromImport = ({
 
     // Trata valores numéricos e patrimônio
     const rawPatrimonio = itemData.numeroPatrimonio || `IMP-${timestamp.toString().slice(-4)}-${index + 1}`;
-    const cleanNum = rawPatrimonio.replace(/\s+/g, ' ');
+    const cleanNum = formatPatrimonio(rawPatrimonio);
     const qtdeNum = parseInt(itemData.quantidade || '1', 10);
-    const vOrigNum = parseCleanNumber(itemData.valorOriginal);
+    let vOrigNum = parseCleanNumber(itemData.valorOriginal);
+
+    // Trata dataAquisicao: se for valor decimal/moeda (ex: 2819.99 ou 656.58), e vOrigNum for 0, transfere para valorOriginal
+    let cleanDataAquisicao = itemData.dataAquisicao ? String(itemData.dataAquisicao).trim() : '';
+    if (cleanDataAquisicao) {
+      if (cleanDataAquisicao.includes('.') && cleanDataAquisicao.split('.')[1] && cleanDataAquisicao.split('.')[1].length === 2 && !cleanDataAquisicao.includes('/')) {
+        if (vOrigNum === 0) {
+          vOrigNum = parseCleanNumber(cleanDataAquisicao);
+        }
+        cleanDataAquisicao = '';
+      } else {
+        cleanDataAquisicao = formatDisplayDate(cleanDataAquisicao);
+        if (cleanDataAquisicao === '---') cleanDataAquisicao = '';
+      }
+    }
+
     const vAtualNum = itemData.valorAtual !== undefined && itemData.valorAtual !== ''
       ? parseCleanNumber(itemData.valorAtual)
       : (vOrigNum > 0 ? vOrigNum : 0);
@@ -475,8 +491,8 @@ export const buildFinalAssetsFromImport = ({
       localizacao: itemData.localizacao || '',
       observacao: itemData.observacao || '',
       responsavel: resolvedResponsavel,
-      dataAquisicao: itemData.dataAquisicao || '',
-      anoAquisicao: itemData.dataAquisicao ? parseInt(itemData.dataAquisicao.slice(-4), 10) || null : null,
+      dataAquisicao: cleanDataAquisicao,
+      anoAquisicao: cleanDataAquisicao ? parseInt(cleanDataAquisicao.slice(-4), 10) || null : null,
       valorOriginal: vOrigNum,
       valorAtual: vAtualNum,
       numeroSerie: itemData.numeroSerie || '',
