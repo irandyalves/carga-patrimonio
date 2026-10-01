@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Boxes, 
   Search, 
   Mic, 
+  MicOff,
   QrCode, 
   Plus, 
   FileSpreadsheet, 
@@ -16,11 +17,14 @@ import {
   Shield,
   X
 } from 'lucide-react';
+import { 
+  startVoiceRecognition, 
+  isSpeechRecognitionSupported 
+} from '../services/speechRecognition';
 
 export const Navbar = ({
   searchTerm,
   setSearchTerm,
-  onOpenVoiceSearch,
   onOpenQrScanner,
   onOpenNewAsset,
   onOpenCautelas,
@@ -29,6 +33,7 @@ export const Navbar = ({
   onOpenFirebaseConfig,
   onOpenBackup,
   onOpenUsers,
+  onVoiceDirectSearch,
   currentUser,
   userRole,
   onLogout,
@@ -36,6 +41,64 @@ export const Navbar = ({
   cautelasCount = 0
 }) => {
   const isAdmin = userRole === 'admin';
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const recognitionRef = React.useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+    };
+  }, []);
+
+  const handleToggleVoice = () => {
+    if (isVoiceListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+      }
+      setIsVoiceListening(false);
+      return;
+    }
+
+    if (!isSpeechRecognitionSupported()) {
+      alert('Reconhecimento de voz não é suportado pelo seu navegador. Use o Google Chrome ou Edge.');
+      return;
+    }
+
+    setIsVoiceListening(true);
+    try {
+      const rec = startVoiceRecognition({
+        onResult: ({ transcript, isFinal }) => {
+          if (!transcript) return;
+          const cleanText = transcript.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '').trim();
+          setSearchTerm(cleanText);
+
+          if (isFinal) {
+            setIsVoiceListening(false);
+            if (onVoiceDirectSearch) {
+              onVoiceDirectSearch(cleanText);
+            }
+          }
+        },
+        onEnd: () => {
+          setIsVoiceListening(false);
+        },
+        onError: (err) => {
+          console.warn('Erro na busca por voz:', err);
+          setIsVoiceListening(false);
+        }
+      });
+      recognitionRef.current = rec;
+    } catch (err) {
+      console.error('Falha ao iniciar reconhecimento de voz:', err);
+      setIsVoiceListening(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
@@ -58,7 +121,7 @@ export const Navbar = ({
             </div>
           </div>
 
-          {/* Search Bar with Voice and QR inside */}
+          {/* Search Bar with Inline Voice and QR inside */}
           <div className="flex-1 max-w-xl mx-2">
             <div className="relative flex items-center">
               <div className="absolute left-3 text-slate-400 pointer-events-none">
@@ -69,30 +132,56 @@ export const Navbar = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar patrimônio por número ou descrição..."
-                className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl pl-9 pr-24 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                placeholder={isVoiceListening ? "🎙️ Ouvindo... Fale o patrimônio ou descrição" : "Buscar patrimônio por número ou descrição..."}
+                className={`w-full bg-slate-800/90 border rounded-xl pl-9 pr-28 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none transition-all ${
+                  isVoiceListening 
+                    ? 'border-rose-500 ring-2 ring-rose-500/40 bg-slate-900/90 placeholder-rose-300 font-medium' 
+                    : 'border-slate-700/80 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500'
+                }`}
               />
 
               {searchTerm && (
                 <button
+                  type="button"
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-20 text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
+                  className="absolute right-24 text-slate-400 hover:text-slate-200 p-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
 
               {/* Voice & QR Scanner Buttons inside Search Bar */}
-              <div className="absolute right-1.5 flex items-center gap-1">
+              <div className="absolute right-1.5 flex items-center gap-1.5">
+                {/* Voice Equalizer Visual Waves when listening */}
+                {isVoiceListening && (
+                  <div className="flex items-center gap-0.5 px-1 py-1" title="Captando áudio...">
+                    <span className="w-1 h-3 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1 h-4.5 bg-rose-300 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1 h-2 bg-rose-400 rounded-full animate-bounce" />
+                  </div>
+                )}
+
                 <button
-                  onClick={onOpenVoiceSearch}
-                  title="Busca por Voz (Falar número ou descrição)"
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-indigo-600 transition-colors cursor-pointer"
+                  type="button"
+                  onClick={handleToggleVoice}
+                  title={isVoiceListening ? "Ouvindo sua voz... Clique para parar" : "Busca por Voz (Fale o número ou descrição - Busca direta)"}
+                  className={`relative p-1.5 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center ${
+                    isVoiceListening
+                      ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/60 ring-2 ring-rose-400 scale-105'
+                      : 'text-slate-300 hover:text-white bg-slate-700/50 hover:bg-indigo-600'
+                  }`}
                 >
-                  <Mic className="w-4 h-4" />
+                  {isVoiceListening && (
+                    <>
+                      <span className="absolute -inset-1 rounded-lg bg-rose-500/60 animate-ping pointer-events-none" />
+                      <span className="absolute -inset-2 rounded-lg bg-rose-500/30 animate-pulse pointer-events-none" />
+                    </>
+                  )}
+                  <Mic className={`w-4 h-4 relative z-10 ${isVoiceListening ? 'animate-pulse text-white' : ''}`} />
                 </button>
 
                 <button
+                  type="button"
                   onClick={onOpenQrScanner}
                   title="Escanear QR Code / Código de Barras pela Câmera"
                   className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-700/50 hover:bg-blue-600 transition-colors cursor-pointer"

@@ -16,9 +16,6 @@ import {
   AssetTableRowCard 
 } from './components/AssetTableRowCard';
 import { 
-  VoiceSearchModal 
-} from './components/VoiceSearchModal';
-import { 
   QrScannerModal 
 } from './components/QrScannerModal';
 import { 
@@ -123,7 +120,6 @@ export function App() {
   const [displayMode, setDisplayMode] = useState('TABLE_ROWS'); // 'TABLE_ROWS' (padrão) | 'GRID'
 
   // Modal States
-  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
@@ -441,6 +437,50 @@ export function App() {
     }
   };
 
+  // Direct Voice Search Handler (Sem modal, busca instantânea sem precisar de confirmação)
+  const handleVoiceDirectSearch = (spokenText) => {
+    if (!spokenText || !spokenText.trim()) return;
+
+    const rawClean = spokenText.trim();
+    // Extrai números para buscar por patrimônio (ex: 42542 ou últimos 5 dígitos)
+    const digitsOnly = rawClean.replace(/\D/g, '');
+    const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : (digitsOnly.length > 0 ? digitsOnly : null);
+
+    let found = null;
+    if (last5 || digitsOnly) {
+      found = assets.find(a => {
+        const aNum = String(a.numeroPatrimonio || '').trim();
+        const aDigits = aNum.replace(/\D/g, '');
+        const aLast5 = aDigits.length >= 5 ? aDigits.slice(-5) : aDigits;
+        return aNum === rawClean || (last5 && aLast5 === last5) || (digitsOnly && aDigits.endsWith(digitsOnly));
+      });
+    }
+
+    // Se não localizou por número, busca por descrição
+    if (!found && rawClean.length >= 2) {
+      const q = rawClean.toLowerCase();
+      found = assets.find(a => 
+        a.descricao?.toLowerCase().includes(q) || 
+        a.numeroPatrimonio?.toLowerCase().includes(q)
+      );
+    }
+
+    if (found) {
+      // Se estiver em outro setor, comuta automaticamente para a aba do setor correspondente
+      if (found.setorId !== activeSectorId) {
+        setActiveSectorId(found.setorId);
+        showToast(`🎯 Encontrado no setor "${found.setorNome}" (${found.responsavel}): ${found.numeroPatrimonio} - ${found.descricao}`, 'success');
+      } else {
+        showToast(`🎯 Encontrado: ${found.numeroPatrimonio} - ${found.descricao}`, 'success');
+      }
+      // Filtra diretamente pelo patrimônio ou últimos 5 dígitos
+      setSearchTerm(last5 || found.numeroPatrimonio);
+    } else {
+      setSearchTerm(rawClean);
+      showToast(`🎙️ Pesquisando por: "${rawClean}"`, 'info');
+    }
+  };
+
   // Open Transfer Modal for an asset
   const handleOpenTransferModal = (asset) => {
     setAssetForTransfer(asset);
@@ -738,7 +778,7 @@ export function App() {
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        onOpenVoiceSearch={() => setIsVoiceOpen(true)}
+        onVoiceDirectSearch={handleVoiceDirectSearch}
         onOpenQrScanner={() => setIsQrOpen(true)}
         onOpenNewAsset={() => {
           setAssetToEdit(null);
@@ -1102,12 +1142,6 @@ export function App() {
       </main>
 
       {/* Modals */}
-      <VoiceSearchModal
-        isOpen={isVoiceOpen}
-        onClose={() => setIsVoiceOpen(false)}
-        onResult={(spokenText) => setSearchTerm(spokenText)}
-      />
-
       <QrScannerModal
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
