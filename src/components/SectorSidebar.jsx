@@ -199,13 +199,13 @@ export const SectorSidebar = ({
                     type="button"
                     onClick={onExportReportPDF}
                     title="Emitir Relatório Geral de Inventário em PDF"
-                    className="w-full mt-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-between text-indigo-300 hover:text-white bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 hover:border-indigo-400 transition-all cursor-pointer shadow-sm group"
+                    className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                   >
                     <div className="flex items-center gap-1.5 truncate">
-                      <FileText className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" />
+                      <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
                       <span className="truncate">Emitir Relatório</span>
                     </div>
-                    <span className="text-[10px] font-mono opacity-70 font-bold">PDF</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                   </button>
                 )}
               </div>
@@ -323,13 +323,13 @@ export const SectorSidebar = ({
                         type="button"
                         onClick={onExportReportPDF}
                         title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
-                        className="w-full mt-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-between text-indigo-300 hover:text-white bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 hover:border-indigo-400 transition-all cursor-pointer shadow-sm group"
+                        className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                       >
                         <div className="flex items-center gap-1.5 truncate">
-                          <FileText className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" />
+                          <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
                           <span className="truncate">Emitir Relatório</span>
                         </div>
-                        <span className="text-[10px] font-mono opacity-70 font-bold">PDF</span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                       </button>
                     )}
                   </div>
