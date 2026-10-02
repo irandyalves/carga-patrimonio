@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Boxes, 
   Search, 
@@ -24,7 +24,8 @@ import {
   Minimize2,
   ArrowLeft,
   Bell,
-  Server
+  Server,
+  Building2
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -75,6 +76,23 @@ export const Navbar = ({
   const userMenuRef = useRef(null);
   const recognitionRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Agrupa setores por detentor da carga (ordem alfabética pelo detentor)
+  const groupedResponsibles = useMemo(() => {
+    const map = new Map();
+    sectors.forEach(sec => {
+      const respKey = (sec.responsavel || sec.name || 'Sem Responsável').trim();
+      if (!map.has(respKey)) {
+        map.set(respKey, {
+          responsavel: respKey,
+          primarySectorId: sec.id,
+          sectors: []
+        });
+      }
+      map.get(respKey).sectors.push(sec);
+    });
+    return Array.from(map.values()).sort((a, b) => a.responsavel.localeCompare(b.responsavel, 'pt-BR'));
+  }, [sectors]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -505,13 +523,13 @@ export const Navbar = ({
                               Trocar Visão de Setor
                             </span>
                             <span className="text-[9.5px] text-slate-500 font-mono">
-                              {sectors.length + 1} opções
+                              {groupedResponsibles.length + 1} opções
                             </span>
                           </div>
 
-                          {/* Listbox com altura para 10 opções simultâneas */}
+                          {/* Listbox com altura para opções simultâneas */}
                           <div className="max-h-[380px] overflow-y-auto scrollbar-thin pr-0.5 space-y-1">
-                            {/* Opção Admin */}
+                            {/* Opção Admin: Irandy (Detentor) à esquerda • Admin Geral (Papel) à direita */}
                             <button
                               type="button"
                               onClick={() => {
@@ -527,10 +545,12 @@ export const Navbar = ({
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="text-sm shrink-0">👑</span>
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <span className="text-amber-300 font-bold text-xs">Admin Geral</span>
-                                  <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
-                                  <span className={`text-[11px] font-semibold ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
+                                  <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
                                     Irandy
+                                  </span>
+                                  <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                                  <span className="text-amber-300 font-semibold text-[11px] truncate">
+                                    Admin Geral
                                   </span>
                                 </div>
                               </div>
@@ -539,43 +559,78 @@ export const Navbar = ({
                               )}
                             </button>
 
-                            {/* Opções dos Setores */}
-                            {sectors.map((sec) => {
-                              const isSelected = currentPersona?.id === sec.id;
+                            {/* Opções dos Detentores da Carga (Lado Esquerdo: Detentor | Lado Direito: Setor ou Hint Bolinha) */}
+                            {groupedResponsibles.map((item) => {
+                              const isSelected = currentPersona && currentPersona.id !== 'admin' && (
+                                currentPersona.sectorIds?.some(id => item.sectors.some(s => s.id === id)) ||
+                                currentPersona.sectorId === item.primarySectorId ||
+                                currentPersona.id === item.primarySectorId
+                              );
+
                               return (
-                                <button
-                                  key={sec.id}
-                                  type="button"
-                                  onClick={() => {
-                                    onSelectPersona(sec.id);
-                                    setIsUserMenuOpen(false);
-                                  }}
-                                  className={`w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
+                                <div
+                                  key={item.responsavel}
+                                  className={`w-full px-2.5 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
                                     isSelected
                                       ? 'bg-emerald-500/20 font-bold'
                                       : 'hover:bg-slate-800 text-slate-300'
                                   }`}
+                                  onClick={() => {
+                                    onSelectPersona(item.primarySectorId);
+                                    setIsUserMenuOpen(false);
+                                  }}
                                 >
-                                  <div className="flex items-center gap-2 min-w-0">
+                                  {/* Lado Esquerdo: Detentor da Carga */}
+                                  <div className="flex items-center gap-2 min-w-0 pr-2">
                                     <span className="text-sm shrink-0">👤</span>
-                                    <div className="flex items-center gap-1.5 truncate">
-                                      <span className="text-emerald-400 font-bold text-xs tracking-wide truncate">
-                                        {sec.name}
-                                      </span>
-                                      {sec.responsavel && (
-                                        <>
-                                          <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
-                                          <span className={`text-[11px] font-semibold ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
-                                            {sec.responsavel}
-                                          </span>
-                                        </>
-                                      )}
-                                    </div>
+                                    <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
+                                      {item.responsavel}
+                                    </span>
                                   </div>
-                                  {isSelected && (
-                                    <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
-                                  )}
-                                </button>
+
+                                  {/* Lado Direito: Se 1 setor exibe o nome, se > 1 exibe hint bolinha com hover */}
+                                  <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    {item.sectors.length === 1 ? (
+                                      <span className="text-emerald-400 font-semibold text-[11px] truncate max-w-[120px] text-right">
+                                        {item.sectors[0].name}
+                                      </span>
+                                    ) : (
+                                      <div className="relative group/hint">
+                                        <div 
+                                          onClick={() => {
+                                            onSelectPersona(item.primarySectorId);
+                                            setIsUserMenuOpen(false);
+                                          }}
+                                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold cursor-pointer transition-colors"
+                                          title={`Clique para selecionar ou passe o mouse para ver os ${item.sectors.length} setores`}
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                                          <span>{item.sectors.length} setores</span>
+                                        </div>
+
+                                        {/* Hint / Tooltip flutuante ao passar o mouse */}
+                                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+                                          <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                            <Building2 className="w-3 h-3 text-emerald-400" />
+                                            <span>Setores sob responsabilidade:</span>
+                                          </div>
+                                          <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto">
+                                            {item.sectors.map(s => (
+                                              <div key={s.id} className="text-xs text-emerald-300 font-medium flex items-center gap-2 py-0.5 px-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                                <span className="truncate">{s.name}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {isSelected && (
+                                      <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
+                                    )}
+                                  </div>
+                                </div>
                               );
                             })}
                           </div>
