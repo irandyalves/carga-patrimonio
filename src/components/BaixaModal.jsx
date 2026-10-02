@@ -65,35 +65,28 @@ export const BaixaModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-              <Archive className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-lg">Processo de Baixa Patrimonial</h3>
-              <p className="text-xs text-slate-400">Desincorporação oficial e anexo de documentos comprobatórios</p>
-            </div>
-          </div>
+        {/* Botão Fechar no Topo */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors z-10 cursor-pointer"
+          title="Fechar"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Selected Asset Header Box */}
-        <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-3.5 mb-4 text-xs">
-          <div className="flex items-center justify-between font-mono font-bold text-rose-300 mb-1">
-            <span>{asset.numeroPatrimonio}</span>
-            <span className="text-slate-400 font-sans font-normal">{asset.setorNome}</span>
+        {/* Selected Asset Box no Topo */}
+        <div className="bg-rose-950/30 border border-rose-500/30 rounded-2xl p-4 mb-4 text-xs pr-12">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <span className="text-xl sm:text-2xl font-black font-mono text-rose-300 tracking-wider">
+              {asset.numeroPatrimonio}
+            </span>
+            <span className="text-xs sm:text-sm font-black uppercase text-slate-300 tracking-wide text-right">
+              {asset.setorNome}
+            </span>
           </div>
-          <p className="font-semibold text-slate-200 text-sm">{asset.descricao}</p>
+          <p className="font-semibold text-slate-200 text-sm leading-snug">{asset.descricao}</p>
         </div>
 
         {/* Form */}
