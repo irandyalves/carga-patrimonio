@@ -154,15 +154,18 @@ export const SectorSidebar = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Botão Configurações Visuais */}
+            {/* Botão Configurações Visuais: Engrenagem com bolinha do centro vermelha */}
             {onOpenDisplaySettings && (
               <button
                 type="button"
                 onClick={onOpenDisplaySettings}
                 title="Configurações Visuais: Habilitar R$, cores de patrimônio e nomes"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center active:scale-95"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-center group active:scale-95"
               >
-                <Sliders className="w-4 h-4 text-indigo-400" />
+                <div className="relative flex items-center justify-center">
+                  <Settings className="w-4 h-4 text-slate-300 group-hover:text-white transition-transform duration-300 group-hover:rotate-45" />
+                  <span className="absolute w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,1)] pointer-events-none" />
+                </div>
               </button>
             )}
 
