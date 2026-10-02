@@ -674,47 +674,73 @@ export function App() {
     isSolicitacaoModalOpen, isPedidosModalOpen, isQrOpen
   ]);
 
-  // Persona e Permissões Efetivas para Teste de Operadores e Departamentos
+  // Persona e Permissões Efetivas para Teste de Operadores e Departamentos (Suporte a múltiplos setores, ex: Tadeu -> Studio e Auditório)
   const simulatedPersona = useMemo(() => {
     if (simulatedPersonaId === 'admin') {
-      return { id: 'admin', role: 'admin', sectorId: null, sectorName: 'Administrador' };
+      return { id: 'admin', role: 'admin', sectorId: null, sectorIds: [], sectorName: 'Administrador' };
     }
     const sec = sectors.find(s => s.id === simulatedPersonaId);
+    if (!sec) {
+      return { id: 'operador', role: 'operador', sectorId: null, sectorIds: [], sectorName: 'Operador' };
+    }
+
+    const resp = (sec.responsavel || '').toLowerCase().trim();
+    const email = (sec.email || '').toLowerCase().trim();
+
+    // Encontra TODOS os setores atribuídos a esse mesmo responsável (ex: Tadeu -> Studio e Auditório)
+    const matchedSectors = sectors.filter(s => {
+      if (s.id === sec.id) return true;
+      if (email && s.email && s.email.toLowerCase().trim() === email) return true;
+      if (resp && s.responsavel && s.responsavel.toLowerCase().trim() === resp) return true;
+      return false;
+    });
+
+    const sectorIds = matchedSectors.map(s => s.id);
+
     return {
-      id: sec ? sec.id : 'operador',
+      id: sec.id,
       role: 'operador',
-      sectorId: sec ? sec.id : null,
-      sectorName: sec ? `${sec.name} (${sec.responsavel})` : 'Operador'
+      sectorId: sec.id,
+      sectorIds: sectorIds,
+      sectorName: sec.responsavel 
+        ? `${sec.responsavel} (${matchedSectors.map(s => s.name).join(' & ')})` 
+        : sec.name
     };
   }, [simulatedPersonaId, sectors]);
 
-  // Setor vinculado ao responsável logado (reconhece por e-mail ou nome cadastrado)
-  const userLinkedSector = useMemo(() => {
-    if (!currentUser) return null;
+  // Setores vinculados ao responsável logado (reconhece por e-mail ou nome cadastrado - suporta múltiplos setores)
+  const userLinkedSectorIds = useMemo(() => {
+    if (!currentUser) return [];
     const userEmail = (currentUser.email || '').toLowerCase().trim();
     const userName = (currentUser.displayName || currentUser.name || '').toLowerCase().trim();
 
-    if (userEmail) {
-      const matchByEmail = sectors.find(s => s.email && s.email.toLowerCase().trim() === userEmail);
-      if (matchByEmail) return matchByEmail;
-    }
+    const matched = sectors.filter(s => {
+      const sEmail = (s.email || '').toLowerCase().trim();
+      const sResp = (s.responsavel || '').toLowerCase().trim();
+      if (userEmail && sEmail && sEmail === userEmail) return true;
+      if (userName && sResp && (sResp === userName || userName.includes(sResp) || sResp.includes(userName))) return true;
+      return false;
+    });
 
-    if (userName) {
-      const matchByName = sectors.find(s => s.responsavel && (
-        s.responsavel.toLowerCase().trim() === userName ||
-        userName.includes(s.responsavel.toLowerCase().trim()) ||
-        s.responsavel.toLowerCase().trim().includes(userName)
-      ));
-      if (matchByName) return matchByName;
-    }
-
-    return null;
+    return matched.map(s => s.id);
   }, [currentUser, sectors]);
 
+  const userLinkedSector = useMemo(() => {
+    if (userLinkedSectorIds.length === 0) return null;
+    return sectors.find(s => s.id === userLinkedSectorIds[0]) || null;
+  }, [userLinkedSectorIds, sectors]);
+
   const effectiveUserRole = simulatedPersonaId !== 'admin' ? simulatedPersona?.role : (userRole || 'admin');
-  const effectiveUserSectorId = simulatedPersonaId !== 'admin' 
-    ? simulatedPersona?.sectorId 
-    : (userRole === 'operador' ? (userLinkedSector?.id || null) : null);
+  
+  const effectiveUserSectorIds = useMemo(() => {
+    if (effectiveUserRole === 'admin') return [];
+    if (simulatedPersonaId !== 'admin') {
+      return simulatedPersona?.sectorIds || (simulatedPersona?.sectorId ? [simulatedPersona.sectorId] : []);
+    }
+    return userLinkedSectorIds;
+  }, [effectiveUserRole, simulatedPersonaId, simulatedPersona, userLinkedSectorIds]);
+
+  const effectiveUserSectorId = effectiveUserSectorIds.length > 0 ? effectiveUserSectorIds[0] : null;
 
   const handleSelectPersona = (personaId) => {
     setSimulatedPersonaId(personaId);
@@ -722,7 +748,10 @@ export function App() {
       setActiveSectorId(personaId);
       setFilterMode('MY_SECTOR');
       const sec = sectors.find(s => s.id === personaId);
-      showToast(`Visão de Operador ativada: ${sec?.responsavel} (${sec?.name}) - Limitado ao seu departamento`, 'info');
+      const resp = (sec?.responsavel || '').toLowerCase().trim();
+      const matched = sectors.filter(s => resp && s.responsavel && s.responsavel.toLowerCase().trim() === resp);
+      const sectorNames = matched.length > 1 ? matched.map(s => s.name).join(' & ') : sec?.name;
+      showToast(`Visão de Operador ativada: ${sec?.responsavel || 'Operador'} (${sectorNames})`, 'info');
     } else {
       showToast('Visão de Administrador ativada (Acesso e alteração liberados em todos os departamentos)', 'success');
     }
@@ -951,7 +980,12 @@ export function App() {
       return;
     }
     const itemToCheck = assets.find(a => a.id === assetId);
-    if (effectiveUserRole !== 'admin' && effectiveUserSectorId && itemToCheck && itemToCheck.setorId !== effectiveUserSectorId) {
+    const canCheckItem = effectiveUserRole === 'admin' || (
+      effectiveUserSectorIds && effectiveUserSectorIds.length > 0 
+        ? effectiveUserSectorIds.includes(itemToCheck?.setorId) 
+        : (effectiveUserSectorId ? itemToCheck?.setorId === effectiveUserSectorId : true)
+    );
+    if (!canCheckItem) {
       showToast('Você só pode conferir bens do seu departamento. Use "Fazer Pedido" para este item.', 'warning');
       return;
     }
@@ -1947,6 +1981,7 @@ export function App() {
           onOpenManageSectors={() => setIsManageSectorsOpen(true)}
           userRole={effectiveUserRole}
           userSectorId={effectiveUserSectorId}
+          userSectorIds={effectiveUserSectorIds}
           statusFilter={statusFilter}
           onSelectStatusFilter={setStatusFilter}
           onExportReportPDF={handleExportReportPDF}
@@ -2632,6 +2667,7 @@ export function App() {
                         onUpdateCardColor={handleUpdateAssetColor}
                         userRole={effectiveUserRole}
                         userSectorId={effectiveUserSectorId}
+                        userSectorIds={effectiveUserSectorIds}
                         onOpenSolicitacao={(a) => {
                           setAssetForSolicitacao(a);
                           setIsSolicitacaoModalOpen(true);

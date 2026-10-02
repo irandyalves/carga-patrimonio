@@ -41,6 +41,7 @@ export const SectorSidebar = ({
   onOpenManageSectors,
   userRole = 'admin',
   userSectorId = null,
+  userSectorIds = [],
   statusFilter = 'ALL',
   onSelectStatusFilter = () => {},
   onExportReportPDF = () => {},
@@ -325,8 +326,12 @@ export const SectorSidebar = ({
           {sortedSectors.map((sec) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
-            const isMySector = userRole === 'operador' && userSectorId === sec.id;
-            const isOtherSector = userRole === 'operador' && userSectorId && userSectorId !== sec.id;
+            const isMySector = userRole === 'operador' && (
+              (userSectorIds && userSectorIds.length > 0)
+                ? userSectorIds.includes(sec.id)
+                : (userSectorId === sec.id)
+            );
+            const isOtherSector = userRole === 'operador' && !isMySector;
             const canManageSector = userRole === 'admin' || isMySector;
 
             return (

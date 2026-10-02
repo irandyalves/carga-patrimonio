@@ -102,6 +102,7 @@ export const AssetTableRowCard = ({
   currentUserName,
   userRole = 'admin',
   userSectorId = null,
+  userSectorIds = [],
   isGeneralView = false,
   onToggleConference,
   onOpenEdit,
@@ -286,7 +287,11 @@ export const AssetTableRowCard = ({
 
   // Permissões: Administrador pode tudo. Operador só altera bens do seu próprio departamento.
   const isAdmin = userRole === 'admin';
-  const canManageAsset = isAdmin || (userSectorId && asset.setorId === userSectorId);
+  const canManageAsset = isAdmin || (
+    (userSectorIds && userSectorIds.length > 0)
+      ? userSectorIds.includes(asset.setorId)
+      : (userSectorId && asset.setorId === userSectorId)
+  );
 
   // Check if asset belongs to another sector/carga (não se aplica em visualização Geral)
   const isOutOfPlace = !isGeneralView && activeSector && asset.setorId !== activeSector.id;
