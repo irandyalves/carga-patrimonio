@@ -602,7 +602,6 @@ export const Navbar = ({
                                             setIsUserMenuOpen(false);
                                           }}
                                           className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold cursor-pointer transition-colors"
-                                          title={`Clique para selecionar ou passe o mouse para ver os ${item.sectors.length} setores`}
                                         >
                                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                                           <span>{item.sectors.length} setores</span>
