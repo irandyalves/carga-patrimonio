@@ -141,8 +141,8 @@ export const PendenciasDtinModal = ({
                     </div>
                   </div>
 
-                  {/* Informações: Finalidade / Motivo & Quem enviou */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* Informações: Finalidade / Motivo & Quem enviou & Observações na mesma linha */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
                       <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">
                         Finalidade / Motivo
@@ -160,19 +160,16 @@ export const PendenciasDtinModal = ({
                         {dados.responsavel || dados.solicitante || 'Santana'}
                       </p>
                     </div>
-                  </div>
 
-                  {/* Observações / Defeito / Diagnóstico (em verde) */}
-                  {dados.observacoes && (
-                    <div className="bg-emerald-950/30 p-3.5 rounded-xl border border-emerald-500/30 text-xs space-y-1">
-                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
-                        Observações:
+                    <div className="bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/30 text-xs">
+                      <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider block mb-1">
+                        Observações
                       </span>
-                      <p className="text-emerald-300 leading-relaxed whitespace-pre-wrap font-semibold text-sm">
-                        {dados.observacoes}
+                      <p className="text-emerald-300 font-semibold text-sm leading-snug whitespace-pre-wrap">
+                        {dados.observacoes || 'Nenhuma observação registrada'}
                       </p>
                     </div>
-                  )}
+                  </div>
 
                   {/* Anexos se houver */}
                   {dados.anexos && dados.anexos.length > 0 && (
