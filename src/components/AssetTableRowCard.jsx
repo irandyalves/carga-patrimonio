@@ -354,38 +354,36 @@ export const AssetTableRowCard = ({
       console.error('Confetti trigger error:', err);
     }
 
-    // Fase 1: Ativa o brilho pulsante no botão (0.4s)
+    // Fase 1: Ativa o brilho pulsante no botão (0.35s)
     setIsCheckingBurst(true);
 
-    // Fase 2: APÓS 400ms (0.4s), inicia o deslizamento suave do card para a esquerda (1 segundo)
+    // Fase 2: APÓS 350ms, inicia o deslizamento suave do card para cima, enfiando debaixo dos outros e puxando os de baixo (0.7s)
     setTimeout(() => {
       setIsRowSliding(true);
-    }, 400);
+    }, 350);
 
-    // Fase 3: Ao concluir 1.4s totais (400ms + 1000ms), efetiva no estado global e limpa os estados
+    // Fase 3: Ao concluir 1.05s totais (350ms + 700ms), efetiva no estado global e limpa os estados
     setTimeout(() => {
       onToggleConference(asset.id, true);
       setIsCheckingBurst(false);
       setIsRowSliding(false);
-    }, 1400);
+    }, 1050);
   };
 
   // Desmarcar conferência (ao clicar em "Sim"):
-  // O card desliza suavemente para a esquerda e sai de cena (1.0s / 1000ms), os itens de baixo sobem,
-  // e o scroll é preservado no mesmo lugar.
+  // O card desliza suavemente para cima, enfiando debaixo dos outros e puxando os de baixo (0.7s)
   const handleConfirmUncheck = (e) => {
     e.stopPropagation();
     setShowUncheckConfirm(false);
 
     if (isRowSliding) return;
 
-    // Ativa animação deslize suave para a esquerda (1000ms / 1 segundo)
     setIsRowSliding(true);
 
     setTimeout(() => {
       onToggleConference(asset.id, false);
       setIsRowSliding(false);
-    }, 1000);
+    }, 700);
   };
 
   const formatCurrency = (val) => {
