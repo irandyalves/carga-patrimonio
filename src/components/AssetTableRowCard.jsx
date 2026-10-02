@@ -391,48 +391,84 @@ export const AssetTableRowCard = ({
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  // Reconhecimento de Voz para Localização (Mobile / Desktop)
+  const locRecognitionRef = useRef(null);
+  const obsRecognitionRef = useRef(null);
+
+  // Reconhecimento de Voz para Localização (Mobile / Desktop):
+  // - Não abre modal de opções
+  // - Abre o campo inline diretamente e digita em tempo real conforme a pessoa fala
+  // - Ao clicar no Mic novamente, limpa o campo anterior e grava do zero
+  // - Salva automaticamente ao terminar de falar
   const startLocationVoice = (e) => {
     e?.stopPropagation();
+    
+    // Aborta gravação anterior se houver
+    if (locRecognitionRef.current) {
+      try {
+        locRecognitionRef.current.abort();
+      } catch (err) {}
+      locRecognitionRef.current = null;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert('Reconhecimento de voz não suportado neste navegador. Utilize o Google Chrome, Edge ou Safari.');
       return;
     }
 
+    // Abre a edição inline e limpa o texto anterior imediatamente
+    setIsEditingLocation(true);
+    setShowLocListbox(false);
+    setLocationValue('');
+    resetLocTimer();
+
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
       setIsListeningLoc(true);
+      locRecognitionRef.current = recognition;
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript;
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
         if (transcript) {
-          const formatted = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+          const clean = transcript.trim();
+          const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
           setLocationValue(formatted);
-          if (onUpdateLocation) {
-            onUpdateLocation(asset.id, formatted);
-            setIsEditingLocation(false);
+
+          const isFinal = event.results[event.results.length - 1].isFinal;
+          if (isFinal) {
+            if (onUpdateLocation) {
+              onUpdateLocation(asset.id, formatted);
+            }
+            setTimeout(() => {
+              setIsEditingLocation(false);
+              setIsListeningLoc(false);
+            }, 600);
           }
         }
-        setIsListeningLoc(false);
       };
 
       recognition.onerror = () => {
         setIsListeningLoc(false);
+        locRecognitionRef.current = null;
       };
 
       recognition.onend = () => {
         setIsListeningLoc(false);
+        locRecognitionRef.current = null;
       };
 
       recognition.start();
     } catch (err) {
       console.error(err);
       setIsListeningLoc(false);
+      locRecognitionRef.current = null;
     }
   };
 
@@ -481,46 +517,71 @@ export const AssetTableRowCard = ({
 
   const startObservationVoice = (e) => {
     e?.stopPropagation();
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (obsRecognitionRef.current) {
+      try {
+        obsRecognitionRef.current.abort();
+      } catch (err) {}
+      obsRecognitionRef.current = null;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       alert('Reconhecimento de voz não suportado pelo seu navegador.');
       return;
     }
+
     setIsEditingObs(true);
+    setShowObsListbox(false);
+    setObsValue('');
     resetObsTimer();
+
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
       setIsListeningObs(true);
+      obsRecognitionRef.current = recognition;
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript;
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
         if (transcript) {
-          const formatted = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+          const clean = transcript.trim();
+          const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
           setObsValue(formatted);
-          if (onUpdateObservation) {
-            onUpdateObservation(asset.id, formatted);
-            closeObsEdit();
+
+          const isFinal = event.results[event.results.length - 1].isFinal;
+          if (isFinal) {
+            if (onUpdateObservation) {
+              onUpdateObservation(asset.id, formatted);
+            }
+            setTimeout(() => {
+              closeObsEdit();
+              setIsListeningObs(false);
+            }, 600);
           }
         }
-        setIsListeningObs(false);
       };
 
       recognition.onerror = () => {
         setIsListeningObs(false);
+        obsRecognitionRef.current = null;
       };
 
       recognition.onend = () => {
         setIsListeningObs(false);
+        obsRecognitionRef.current = null;
       };
 
       recognition.start();
     } catch (err) {
       console.error(err);
       setIsListeningObs(false);
+      obsRecognitionRef.current = null;
     }
   };
 
@@ -1602,33 +1663,77 @@ export const AssetTableRowCard = ({
               </span>
             )}
 
-            {/* Localização / Observação Compacta */}
-            <div className="flex items-center gap-0.5 min-w-0 truncate ml-0.5">
-              <button
-                type="button"
-                onClick={(e) => {
-                  if (!canManageAsset) onOpenSolicitacao(asset);
-                  else openLocEdit(e);
-                }}
-                className="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 flex items-center gap-1 cursor-pointer truncate text-[10px] max-w-[120px] sm:max-w-[180px]"
-                title="Localização / Observação"
-              >
-                <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                <span className="truncate font-medium text-emerald-300">
-                  {asset.localizacao || asset.observacao || 'Local?'}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  openLocEdit(e);
-                  startLocationVoice(e);
-                }}
-                className="p-1 rounded bg-slate-800/80 text-slate-400 hover:text-rose-400 border border-slate-700/60 cursor-pointer shrink-0"
-                title="Ditar localização por voz"
-              >
-                <Mic className="w-2.5 h-2.5" />
-              </button>
+            {/* Localização / Observação Compacta no Mobile */}
+            <div className="flex items-center gap-0.5 min-w-0 flex-1 max-w-[200px]">
+              {isEditingLocation ? (
+                <div 
+                  ref={locContainerRef}
+                  onClick={(e) => e.stopPropagation()} 
+                  className="flex items-center gap-1 w-full"
+                >
+                  <input
+                    type="text"
+                    value={locationValue}
+                    onChange={(e) => {
+                      setLocationValue(e.target.value);
+                      resetLocTimer();
+                    }}
+                    onKeyDown={(e) => {
+                      resetLocTimer();
+                      if (e.key === 'Enter') handleSaveLocation(e);
+                      if (e.key === 'Escape') closeLocEdit();
+                    }}
+                    onBlur={(e) => handleSaveLocation(e)}
+                    placeholder="Onde está?"
+                    className={`bg-slate-950 text-white text-[10px] px-1.5 py-0.5 rounded-lg border focus:outline-none w-full shadow-inner ${
+                      isListeningLoc ? 'border-rose-500 ring-1 ring-rose-500/50 placeholder-rose-300' : 'border-blue-500/80'
+                    }`}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => startLocationVoice(e)}
+                    title="Ditar por voz (clique para limpar e refalar)"
+                    className={`p-1 rounded-lg border transition-all cursor-pointer shrink-0 ${
+                      isListeningLoc 
+                        ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                        : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'
+                    }`}
+                  >
+                    <Mic className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (!canManageAsset) onOpenSolicitacao(asset);
+                      else openLocEdit(e);
+                    }}
+                    className="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 flex items-center gap-1 cursor-pointer truncate text-[10px] max-w-[120px] sm:max-w-[180px]"
+                    title="Localização / Observação"
+                  >
+                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    <span className="truncate font-medium text-emerald-300">
+                      {asset.localizacao || asset.observacao || 'Local?'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      openLocEdit(e);
+                      startLocationVoice(e);
+                    }}
+                    className={`p-1 rounded border border-slate-700/60 cursor-pointer shrink-0 transition-all ${
+                      isListeningLoc ? 'bg-rose-500 text-white border-rose-400 animate-pulse' : 'bg-slate-800/80 text-slate-400 hover:text-rose-400'
+                    }`}
+                    title="Ditar localização por voz (clique para gravar direto)"
+                  >
+                    <Mic className="w-2.5 h-2.5" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -1744,100 +1849,6 @@ export const AssetTableRowCard = ({
           </div>
         )}
       </div>
-
-      {/* Modal Interativo de Definição de Localização Mobile */}
-      {isEditingLocation && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100"
-          onClick={(e) => {
-            e.stopPropagation();
-            closeLocEdit();
-          }}
-        >
-          <div 
-            className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-4 sm:p-5 shadow-2xl relative animate-in zoom-in-95 duration-150 text-left"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Topo do Modal */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Definir Localização</h4>
-                  <span className="font-mono text-xs text-emerald-400 font-bold">Nº {formattedXX}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={closeLocEdit}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Input para Digitar ou Falar */}
-            <div className="flex items-center gap-1.5 mb-3">
-              <input
-                type="text"
-                value={locationValue}
-                onChange={(e) => setLocationValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveLocation(e);
-                  if (e.key === 'Escape') closeLocEdit();
-                }}
-                placeholder="Digite ou escolha abaixo..."
-                className="flex-1 bg-slate-950 text-white text-xs px-3 py-2.5 rounded-xl border border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={startLocationVoice}
-                title="Ditar localização por voz"
-                className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                  isListeningLoc 
-                    ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                    : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
-                }`}
-              >
-                <Mic className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => handleSaveLocation(e)}
-                className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-md"
-              >
-                Salvar
-              </button>
-            </div>
-
-            {/* Lista de Setores para Escolha Rápida com 1 Toque */}
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
-                Ou selecione um setor:
-              </span>
-              <div className="max-h-60 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
-                {sectors.map((s) => (
-                  <button
-                    key={`loc-mob-${s.id}`}
-                    type="button"
-                    onClick={(e) => {
-                      setLocationValue(s.name);
-                      handleSaveLocation(e, s.name);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs bg-slate-800/60 hover:bg-slate-800 active:bg-blue-600/30 text-slate-200 hover:text-white transition-colors flex items-center justify-between cursor-pointer group"
-                  >
-                    <span className="font-semibold text-emerald-400 group-hover:text-emerald-300">{s.name}</span>
-                    {s.responsavel && <span className="text-[10px] text-slate-400 truncate max-w-[120px]">({s.responsavel})</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modalzinho Minimalista de Descrição / Sobre o Item */}
       {isDescModalOpen && (
