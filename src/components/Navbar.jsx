@@ -527,9 +527,9 @@ export const Navbar = ({
                             </span>
                           </div>
 
-                          {/* Listbox com altura ampliada em +10% */}
-                          <div className="max-h-[420px] overflow-y-auto scrollbar-thin pr-0.5 space-y-1">
-                            {/* Opção Admin: Irandy (Detentor) à esquerda • Admin Geral (Papel) à direita */}
+                          {/* Listbox das Opções */}
+                          <div className="space-y-1">
+                            {/* Opção Admin: Irandy (Detentor) • Admin Geral (Papel) */}
                             <button
                               type="button"
                               onClick={() => {
@@ -545,21 +545,21 @@ export const Navbar = ({
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="text-sm shrink-0">👑</span>
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
+                                  <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} shrink-0`}>
                                     Irandy
                                   </span>
-                                  <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                                  <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0" />
                                   <span className="text-amber-300 font-semibold text-[11px] truncate">
                                     Admin Geral
                                   </span>
                                 </div>
                               </div>
                               {(!currentPersona || currentPersona.id === 'admin') && (
-                                <Check className="w-4 h-4 text-amber-400 shrink-0 ml-1" />
+                                <Check className="w-4 h-4 text-amber-400 shrink-0 ml-1.5" />
                               )}
                             </button>
 
-                            {/* Opções dos Detentores da Carga (Lado Esquerdo: Detentor | Lado Direito: Setor ou Hint Bolinha) */}
+                            {/* Opções dos Detentores da Carga (Nome • Setor/Badge juntos) */}
                             {groupedResponsibles.map((item) => {
                               const isSelected = currentPersona && currentPersona.id !== 'admin' && (
                                 currentPersona.sectorIds?.some(id => item.sectors.some(s => s.id === id)) ||
@@ -580,55 +580,55 @@ export const Navbar = ({
                                     setIsUserMenuOpen(false);
                                   }}
                                 >
-                                  {/* Lado Esquerdo: Detentor da Carga */}
-                                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                                  {/* Nome e Setor juntos com bolinha branca */}
+                                  <div className="flex items-center gap-2 min-w-0">
                                     <span className="text-sm shrink-0">👤</span>
-                                    <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
-                                      {item.responsavel}
-                                    </span>
-                                  </div>
-
-                                  {/* Lado Direito: Se 1 setor exibe o nome, se > 1 exibe hint bolinha com hover à esquerda */}
-                                  <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                    {item.sectors.length === 1 ? (
-                                      <span className="text-emerald-400 font-semibold text-[11px] truncate max-w-[120px] text-right">
-                                        {item.sectors[0].name}
+                                    <div className="flex items-center gap-1.5 truncate">
+                                      <span className={`font-bold text-xs ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} shrink-0`}>
+                                        {item.responsavel}
                                       </span>
-                                    ) : (
-                                      <div className="relative group/hint">
-                                        <div 
-                                          onClick={() => {
-                                            onSelectPersona(item.primarySectorId);
-                                            setIsUserMenuOpen(false);
-                                          }}
-                                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold cursor-pointer transition-colors"
-                                        >
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                                          <span>{item.sectors.length} setores</span>
-                                        </div>
-
-                                        {/* Hint / Tooltip flutuante abrindo para a ESQUERDA */}
-                                        <div className="absolute right-full mr-2.5 top-1/2 -translate-y-1/2 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
-                                          <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                            <Building2 className="w-3 h-3 text-emerald-400" />
-                                            <span>Setores de {item.responsavel}:</span>
+                                      <span className="w-1 h-1 rounded-full bg-slate-400 shrink-0" />
+                                      {item.sectors.length === 1 ? (
+                                        <span className="text-emerald-400 font-semibold text-[11px] truncate">
+                                          {item.sectors[0].name}
+                                        </span>
+                                      ) : (
+                                        <div className="relative group/hint">
+                                          <div 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onSelectPersona(item.primarySectorId);
+                                              setIsUserMenuOpen(false);
+                                            }}
+                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold cursor-pointer transition-colors"
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                                            <span>{item.sectors.length} setores</span>
                                           </div>
-                                          <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto">
-                                            {item.sectors.map(s => (
-                                              <div key={s.id} className="text-xs text-emerald-300 font-medium flex items-center gap-2 py-0.5 px-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                                <span className="truncate">{s.name}</span>
-                                              </div>
-                                            ))}
+
+                                          {/* Hint / Tooltip flutuante abrindo para a ESQUERDA */}
+                                          <div className="absolute right-full mr-2.5 top-1/2 -translate-y-1/2 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+                                            <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                              <Building2 className="w-3 h-3 text-emerald-400" />
+                                              <span>Setores de {item.responsavel}:</span>
+                                            </div>
+                                            <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto">
+                                              {item.sectors.map(s => (
+                                                <div key={s.id} className="text-xs text-emerald-300 font-medium flex items-center gap-2 py-0.5 px-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                                  <span className="truncate">{s.name}</span>
+                                                </div>
+                                              ))}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    )}
-
-                                    {isSelected && (
-                                      <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
+
+                                  {isSelected && (
+                                    <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-1.5" />
+                                  )}
                                 </div>
                               );
                             })}
