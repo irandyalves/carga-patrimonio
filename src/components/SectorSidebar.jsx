@@ -321,11 +321,6 @@ export const SectorSidebar = ({
                             <span>{sec.responsavel}</span>
                           </span>
                         )}
-                        {isMySector && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40 shrink-0">
-                            Meu Setor
-                          </span>
-                        )}
                         {isOtherSector && (
                           <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
                             <Lock className="w-3 h-3 inline" />
