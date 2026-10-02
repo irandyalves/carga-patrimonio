@@ -1644,13 +1644,34 @@ export function App() {
 
 
 
-  // Scroll suave direto para a seção de conferidos
+  // Scroll alternado inteligente: Se estiver no topo, vai para Conferidos. Se já estiver em Conferidos, volta para o topo!
   const handleScrollToConferidos = () => {
     const el = document.getElementById('conferidos-divider-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const scrollContainer = mainScrollRef.current;
+    
+    if (!el) {
+      if (scrollContainer && scrollContainer.scrollTop > 50) {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        showToast('Nenhum item conferido neste setor ainda.', 'info');
+      }
+      return;
+    }
+
+    // Calcula se o scroll atual já chegou ou passou da seção de conferidos
+    const currentScroll = scrollContainer ? scrollContainer.scrollTop : (window.scrollY || 0);
+    const elementOffsetTop = el.offsetTop - 120;
+
+    // Se já estiver na seção de conferidos, o clique manda de volta para o topo!
+    if (currentScroll >= elementOffsetTop) {
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      showToast('Nenhum item conferido neste setor ainda.', 'info');
+      // Caso esteja mais acima, desce suavemente até a seção de Conferidos
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 

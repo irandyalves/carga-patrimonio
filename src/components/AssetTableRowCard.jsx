@@ -319,9 +319,9 @@ export const AssetTableRowCard = ({
   };
 
   // Disparo de Conferência (PC & Mobile):
-  // 1. O botão muda para Check verde com brilho pulsante esmeralda (0.4s / 400ms)
-  // 2. APÓS 0.4s, o card/linha inicia o deslizamento suave para a esquerda (0.5s / 500ms) e recolhe a altura
-  // 3. Ao término de 0.9s, efetiva o registro no banco/estado global
+  // 1. O botão brilha, pulsa e muda para Check verde (0.4s / 400ms)
+  // 2. APÓS 0.4s (ao concluir o efeito do botão), o card desliza suavemente para a esquerda e sai de cena (1.0s / 1000ms)
+  // 3. Ao término de 1.4s totais, efetiva o registro no banco/estado global
   const handleConferenceClick = (e) => {
     e.stopPropagation();
     if (isBaixado) return;
@@ -357,35 +357,35 @@ export const AssetTableRowCard = ({
     // Fase 1: Ativa o brilho pulsante no botão (0.4s)
     setIsCheckingBurst(true);
 
-    // Fase 2: APÓS 400ms (0.4s), inicia o deslizamento suave do card para a esquerda (0.5s)
+    // Fase 2: APÓS 400ms (0.4s), inicia o deslizamento suave do card para a esquerda (1 segundo)
     setTimeout(() => {
       setIsRowSliding(true);
     }, 400);
 
-    // Fase 3: Ao concluir os 900ms totais, efetiva no estado global e limpa os estados
+    // Fase 3: Ao concluir 1.4s totais (400ms + 1000ms), efetiva no estado global e limpa os estados
     setTimeout(() => {
       onToggleConference(asset.id, true);
       setIsCheckingBurst(false);
       setIsRowSliding(false);
-    }, 900);
+    }, 1400);
   };
 
   // Desmarcar conferência (ao clicar em "Sim"):
-  // O card/linha faz o mesmo efeito de cortina deslizando suavemente para a esquerda (0.5s),
-  // os itens de baixo sobem suavemente, e o foco / scroll permanece exatamente onde o operador está!
+  // O card desliza suavemente para a esquerda e sai de cena (1.0s / 1000ms), os itens de baixo sobem,
+  // e o scroll é preservado no mesmo lugar.
   const handleConfirmUncheck = (e) => {
     e.stopPropagation();
     setShowUncheckConfirm(false);
 
     if (isRowSliding) return;
 
-    // Ativa animação cortina/deslize suave para a esquerda (500ms)
+    // Ativa animação deslize suave para a esquerda (1000ms / 1 segundo)
     setIsRowSliding(true);
 
     setTimeout(() => {
       onToggleConference(asset.id, false);
       setIsRowSliding(false);
-    }, 500);
+    }, 1000);
   };
 
   const formatCurrency = (val) => {
@@ -1578,23 +1578,6 @@ export const AssetTableRowCard = ({
           isRowSliding ? 'animate-card-slide-curtain' : ''
         }`}
       >
-        {/* Banner de Feedback visual elegante quando estiver deslizando para a seção de Conferidos */}
-        {isRowSliding && (
-          <div className="absolute inset-0 bg-emerald-950/85 border border-emerald-500/60 backdrop-blur-[2px] rounded-xl flex items-center justify-between px-3 z-30 pointer-events-none animate-in fade-in duration-150">
-            <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-xs shadow-[0_0_12px_rgba(52,211,153,0.9)] animate-bounce">
-                ✓
-              </span>
-              <span className="text-xs font-bold text-emerald-300">
-                {isConferido ? 'Desmarcando... Atualizando' : 'Conferido! Indo para Conferidos...'}
-              </span>
-            </div>
-            <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-wider uppercase">
-              {isConferido ? '➔ Pendentes' : '➔ Conferidos'}
-            </span>
-          </div>
-        )}
-
         {/* Linha 1: Patrimônio + Localização / Observação + Botão Conferir + Ações */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
