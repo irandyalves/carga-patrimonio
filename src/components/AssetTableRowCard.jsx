@@ -1583,43 +1583,17 @@ export const AssetTableRowCard = ({
 
                   <div className="h-px bg-slate-800 my-1" />
 
-                  {showDeleteConfirm ? (
-                    <div className="p-2 bg-rose-950/40 rounded-xl border border-rose-500/30 text-center">
-                      <p className="text-[11px] text-rose-300 font-medium mb-1.5">Confirmar exclusão?</p>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsActionsOpen(false);
-                            onDeleteAsset(asset.id);
-                          }}
-                          className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold cursor-pointer"
-                        >
-                          Excluir
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDeleteConfirm(false);
-                          }}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer text-left"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Excluir Bem</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onDeleteAsset && onDeleteAsset(asset);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors cursor-pointer text-left font-semibold"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir Bem</span>
+                  </button>
                     </>
                   )}
                 </div>
@@ -2169,43 +2143,17 @@ export const AssetTableRowCard = ({
                   )}
 
                   {/* Excluir (ocupa as 2 colunas na parte inferior) */}
-                  {showDeleteConfirm ? (
-                    <div className="col-span-2 p-2 bg-rose-950/40 rounded-xl border border-rose-500/30 text-center">
-                      <p className="text-[11px] text-rose-300 font-medium mb-1.5">Confirmar exclusão definitiva?</p>
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsActionsOpen(false);
-                            onDeleteAsset(asset.id);
-                          }}
-                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer"
-                        >
-                          Excluir
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDeleteConfirm(false);
-                          }}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="col-span-2 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 bg-rose-500/10 font-bold transition-all cursor-pointer active:scale-95"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Excluir Bem</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onDeleteAsset && onDeleteAsset(asset);
+                    }}
+                    className="col-span-2 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 bg-rose-500/10 font-bold transition-all cursor-pointer active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir Bem</span>
+                  </button>
                 </>
               )}
             </div>

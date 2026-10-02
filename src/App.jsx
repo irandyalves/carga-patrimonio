@@ -57,6 +57,9 @@ import {
 import { 
   PedidosCargaModal 
 } from './components/PedidosCargaModal';
+import { 
+  DeleteAssetModal 
+} from './components/DeleteAssetModal';
 
 import { 
   loadLocalData, 
@@ -386,6 +389,10 @@ export function App() {
   const [isSolicitacaoModalOpen, setIsSolicitacaoModalOpen] = useState(false);
   const [assetForSolicitacao, setAssetForSolicitacao] = useState(null);
   const [isPedidosModalOpen, setIsPedidosModalOpen] = useState(false);
+
+  // Modal de Exclusão Segura com Motivo Obrigatório
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState(null);
 
   // Persona Simulada para Teste de Operadores e Departamentos
   const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
@@ -1218,13 +1225,35 @@ export function App() {
     setAssetToEdit(null);
   };
 
-  // Delete Asset
-  const handleDeleteAsset = (assetId) => {
-    if (confirm('Tem certeza que deseja excluir este patrimônio do sistema?')) {
-      setAssets(assets.filter(a => a.id !== assetId));
-      deleteAssetFromCloud(assetId);
-      showToast('Patrimônio excluído com sucesso.', 'info');
-    }
+  // Delete Asset Modal (com proteção de motivo obrigatório e confirmação de ciência)
+  const handleDeleteAsset = (assetOrId) => {
+    const asset = typeof assetOrId === 'object' ? assetOrId : assets.find(a => a.id === assetOrId);
+    if (!asset) return;
+    setAssetToDelete(asset);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDeleteAsset = (assetId, dadosExclusao) => {
+    const asset = assets.find(a => a.id === assetId);
+    const numPat = asset ? formatPatrimonio(asset.numeroPatrimonio) : assetId;
+
+    // Remove da lista de bens
+    const remainingAssets = assets.filter(a => a.id !== assetId);
+    setAssets(remainingAssets);
+    saveLocalAssets(remainingAssets);
+
+    // Remove cautelas associadas se houver
+    const remainingCautelas = cautelas.filter(c => c.assetId !== assetId);
+    setCautelas(remainingCautelas);
+    saveLocalCautelas(remainingCautelas);
+
+    // Remove da nuvem (Firestore)
+    deleteAssetFromCloud(assetId);
+
+    setIsDeleteModalOpen(false);
+    setAssetToDelete(null);
+
+    showToast(`🗑️ Bem Nº ${numPat} excluído com sucesso. Motivo: ${dadosExclusao.motivo}`, 'info');
   };
 
   // Save Sector
@@ -2716,6 +2745,17 @@ export function App() {
           </div>
         </div>
       )}
+
+      {/* Modal Seguro de Exclusão de Bem com Motivo Obrigatório */}
+      <DeleteAssetModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setAssetToDelete(null);
+        }}
+        asset={assetToDelete}
+        onConfirmDelete={handleConfirmDeleteAsset}
+      />
 
     </div>
   );
