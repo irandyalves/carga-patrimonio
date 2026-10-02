@@ -71,8 +71,16 @@ import {
   saveAuthorizedUserToCloud,
   deleteAuthorizedUserFromCloud,
   checkUserAuthorization,
+  subscribeToCloudSectors,
+  saveSectorToCloud,
+  deleteSectorFromCloud,
   subscribeToCloudAssets,
   subscribeToCloudCautelas,
+  saveCautelaToCloud,
+  deleteCautelaFromCloud,
+  subscribeToCloudPedidos,
+  savePedidoToCloud,
+  deletePedidoFromCloud,
   saveAssetToCloud,
   deleteAssetFromCloud,
   saveAssetsBatchToCloud
@@ -367,12 +375,21 @@ export function App() {
       setActiveSectorId(sortedSectors[0].id);
     }
 
-    // Load authorized users and subscribe to Firebase Auth
+    // Subscriptions to Firebase Realtime listeners
     let unsubscribe = () => {};
+    let unsubSectors = () => {};
     let unsubAssets = () => {};
     let unsubCautelas = () => {};
+    let unsubPedidos = () => {};
 
     if (isConfigured) {
+      unsubSectors = subscribeToCloudSectors((cloudSectors) => {
+        if (cloudSectors && cloudSectors.length > 0) {
+          const sorted = [...cloudSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+          setSectors(sorted);
+        }
+      });
+
       unsubAssets = subscribeToCloudAssets((cloudAssets) => {
         if (cloudAssets && cloudAssets.length > 0) {
           setAssets(cloudAssets);
@@ -382,6 +399,12 @@ export function App() {
       unsubCautelas = subscribeToCloudCautelas((cloudCautelas) => {
         if (cloudCautelas && cloudCautelas.length > 0) {
           setCautelas(cloudCautelas);
+        }
+      });
+
+      unsubPedidos = subscribeToCloudPedidos((cloudPedidos) => {
+        if (cloudPedidos) {
+          setPedidosCarga(cloudPedidos);
         }
       });
     }
@@ -410,8 +433,10 @@ export function App() {
 
     return () => {
       unsubscribe();
+      unsubSectors();
       unsubAssets();
       unsubCautelas();
+      unsubPedidos();
     };
   }, []);
 
@@ -1012,6 +1037,7 @@ export function App() {
 
     setAssets(updatedAssets);
     setPedidosCarga(prev => [newPedido, ...prev]);
+    savePedidoToCloud(newPedido);
     showToast(`Pedido enviado com sucesso! O responsável do setor ${pedidoData.setorDestinoNome} e a administração foram informados.`, 'success');
   };
 
@@ -1025,13 +1051,18 @@ export function App() {
       motivo: `Aprovação de pedido de carga enviado por ${pedido.solicitanteNome}: "${pedido.motivo}"`
     });
 
-    setPedidosCarga(prev => prev.map(p => p.id === pedido.id ? { ...p, status: 'APROVADO' } : p));
+    const updatedPedido = { ...pedido, status: 'APROVADO' };
+    setPedidosCarga(prev => prev.map(p => p.id === pedido.id ? updatedPedido : p));
+    savePedidoToCloud(updatedPedido);
     showToast(`Pedido aprovado com sucesso! Bem ${formatLast5Patrimonio(pedido.numeroPatrimonio)} transferido para ${pedido.setorDestinoNome}.`, 'success');
   };
 
   // Recusar Pedido de Carga
   const handleRecusarPedido = (pedidoId) => {
-    setPedidosCarga(prev => prev.map(p => p.id === pedidoId ? { ...p, status: 'RECUSADO' } : p));
+    const existing = pedidosCarga.find(p => p.id === pedidoId);
+    const updatedPedido = existing ? { ...existing, status: 'RECUSADO' } : { id: pedidoId, status: 'RECUSADO' };
+    setPedidosCarga(prev => prev.map(p => p.id === pedidoId ? updatedPedido : p));
+    savePedidoToCloud(updatedPedido);
     showToast('Pedido arquivado como recusado.', 'info');
   };
 
@@ -1079,22 +1110,25 @@ export function App() {
   const handleSaveSector = (sectorData) => {
     const isExisting = sectors.some(s => s.id === sectorData.id);
     let updated;
+    let savedSec;
     if (isExisting) {
+      savedSec = sectorData;
       updated = sectors.map(s => s.id === sectorData.id ? sectorData : s);
       showToast(`Setor "${sectorData.name}" atualizado com sucesso!`);
     } else {
-      const newSector = {
+      savedSec = {
         ...sectorData,
         id: sectorData.id || `sec-${Date.now()}`
       };
-      updated = [...sectors, newSector];
-      setActiveSectorId(newSector.id);
+      updated = [...sectors, savedSec];
+      setActiveSectorId(savedSec.id);
       setFilterMode('MY_SECTOR');
-      showToast(`Novo setor "${newSector.name}" cadastrado com sucesso!`);
+      showToast(`Novo setor "${savedSec.name}" cadastrado com sucesso!`);
     }
     updated.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
     setSectors(updated);
     saveLocalSectors(updated);
+    saveSectorToCloud(savedSec);
   };
 
   // Delete Sector
@@ -1103,12 +1137,14 @@ export function App() {
       const targetSec = sectors.find(s => s.id === reassignToSectorId);
       const reassignedAssets = assets.map(a => {
         if (a.setorId === sectorId) {
-          return {
+          const updatedA = {
             ...a,
             setorId: reassignToSectorId,
             setorNome: targetSec?.name || a.setorNome,
             responsavel: targetSec?.responsavel || a.responsavel
           };
+          saveAssetToCloud(updatedA);
+          return updatedA;
         }
         return a;
       });
@@ -1126,6 +1162,7 @@ export function App() {
     updatedSectors.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
     setSectors(updatedSectors);
     saveLocalSectors(updatedSectors);
+    deleteSectorFromCloud(sectorId);
     if (activeSectorId === sectorId) {
       if (updatedSectors.length > 0) setActiveSectorId(updatedSectors[0].id);
     }
@@ -1220,11 +1257,12 @@ export function App() {
     };
 
     setCautelas([newCautela, ...cautelas]);
+    saveCautelaToCloud(newCautela);
 
     // Update asset status
     const updated = assets.map(a => {
       if (a.id === cautelaData.assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'EM_CAUTELA',
           cautelaAtual: {
@@ -1251,6 +1289,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });
@@ -1267,24 +1307,21 @@ export function App() {
     if (!cautela) return;
 
     const nowStr = new Date().toLocaleString('pt-BR');
+    const updatedCautela = {
+      ...cautela,
+      status: 'DEVOLVIDO',
+      dataDevolucaoReal: nowStr,
+      observacoesDevolucao
+    };
 
     // Update cautela
-    setCautelas(cautelas.map(c => {
-      if (c.id === cautelaId) {
-        return {
-          ...c,
-          status: 'DEVOLVIDO',
-          dataDevolucaoReal: nowStr,
-          observacoesDevolucao
-        };
-      }
-      return c;
-    }));
+    setCautelas(cautelas.map(c => c.id === cautelaId ? updatedCautela : c));
+    saveCautelaToCloud(updatedCautela);
 
     // Update asset
     setAssets(assets.map(a => {
       if (a.id === cautela.assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'PENDENTE',
           cautelaAtual: null,
@@ -1297,6 +1334,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     }));
@@ -1314,7 +1353,7 @@ export function App() {
   const handleConfirmBaixa = (assetId, dadosBaixa) => {
     const updated = assets.map(a => {
       if (a.id === assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'BAIXADO',
           baixado: true,
@@ -1331,6 +1370,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });
@@ -1343,7 +1384,7 @@ export function App() {
     const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(a => {
       if (a.id === assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'PENDENTE',
           baixado: false,
@@ -1357,6 +1398,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });
@@ -1374,7 +1417,7 @@ export function App() {
   const handleConfirmDtin = (assetId, dadosDtin) => {
     const updated = assets.map(a => {
       if (a.id === assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'ENVIADO_DTIN',
           enviadoDtin: true,
@@ -1391,6 +1434,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });
@@ -1403,7 +1448,7 @@ export function App() {
     const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(a => {
       if (a.id === assetId) {
-        return {
+        const updatedItem = {
           ...a,
           status: 'PENDENTE',
           enviadoDtin: false,
@@ -1417,6 +1462,8 @@ export function App() {
             }
           ]
         };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
       }
       return a;
     });

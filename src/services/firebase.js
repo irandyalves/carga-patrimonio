@@ -409,18 +409,76 @@ export const saveLocalSectors = (sectors) => {
 
 // --- REALTIME CLOUD SYNCHRONIZATION ---
 
+export const subscribeToCloudSectors = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(collection(db, 'sectors'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudSectors = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        callback(cloudSectors);
+        saveLocalSectors(cloudSectors);
+      } else {
+        // Se ainda não houver setores na nuvem, faz seed inicial dos padrões
+        saveSectorsBatchToCloud(DEFAULT_SECTORS).catch(console.warn);
+      }
+    }, (error) => {
+      console.warn('Realtime sectors listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de setores:', e);
+    return () => {};
+  }
+};
+
+export const saveSectorToCloud = async (sector) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !sector || !sector.id) return;
+  try {
+    await setDoc(doc(db, 'sectors', String(sector.id)), sector, { merge: true });
+  } catch (e) {
+    console.warn('Erro ao salvar setor no Firestore:', e);
+  }
+};
+
+export const deleteSectorFromCloud = async (sectorId) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !sectorId) return;
+  try {
+    await deleteDoc(doc(db, 'sectors', String(sectorId)));
+  } catch (e) {
+    console.warn('Erro ao excluir setor no Firestore:', e);
+  }
+};
+
+export const saveSectorsBatchToCloud = async (sectorsList) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !sectorsList || sectorsList.length === 0) return;
+
+  try {
+    const batch = writeBatch(db);
+    sectorsList.forEach(sec => {
+      if (sec && sec.id) {
+        batch.set(doc(db, 'sectors', String(sec.id)), sec, { merge: true });
+      }
+    });
+    await batch.commit();
+  } catch (e) {
+    console.warn('Erro ao salvar lote de setores no Firestore:', e);
+  }
+};
+
 export const subscribeToCloudAssets = (callback) => {
   const { isConfigured, db } = initFirebase();
   if (!isConfigured || !db) return () => {};
 
   try {
     const unsub = onSnapshot(collection(db, 'assets'), (snapshot) => {
-      if (!snapshot.empty) {
-        const cloudAssets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        callback(cloudAssets);
-        // Atualiza cache local
-        saveLocalAssets(cloudAssets);
-      }
+      const cloudAssets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(cloudAssets);
+      saveLocalAssets(cloudAssets);
     }, (error) => {
       console.warn('Realtime assets listener notice:', error);
     });
@@ -437,11 +495,9 @@ export const subscribeToCloudCautelas = (callback) => {
 
   try {
     const unsub = onSnapshot(collection(db, 'cautelas'), (snapshot) => {
-      if (!snapshot.empty) {
-        const cloudCautelas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        callback(cloudCautelas);
-        saveLocalCautelas(cloudCautelas);
-      }
+      const cloudCautelas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(cloudCautelas);
+      saveLocalCautelas(cloudCautelas);
     }, (error) => {
       console.warn('Realtime cautelas listener notice:', error);
     });
@@ -449,6 +505,67 @@ export const subscribeToCloudCautelas = (callback) => {
   } catch (e) {
     console.warn('Erro ao conectar listener de cautelas:', e);
     return () => {};
+  }
+};
+
+export const saveCautelaToCloud = async (cautela) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !cautela || !cautela.id) return;
+  try {
+    await setDoc(doc(db, 'cautelas', String(cautela.id)), cautela, { merge: true });
+  } catch (e) {
+    console.warn('Erro ao salvar cautela no Firestore:', e);
+  }
+};
+
+export const deleteCautelaFromCloud = async (cautelaId) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !cautelaId) return;
+  try {
+    await deleteDoc(doc(db, 'cautelas', String(cautelaId)));
+  } catch (e) {
+    console.warn('Erro ao excluir cautela no Firestore:', e);
+  }
+};
+
+export const subscribeToCloudPedidos = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(collection(db, 'pedidos_carga'), (snapshot) => {
+      const cloudPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(cloudPedidos);
+      try {
+        localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(cloudPedidos));
+      } catch (e) {}
+    }, (error) => {
+      console.warn('Realtime pedidos listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de pedidos:', e);
+    return () => {};
+  }
+};
+
+export const savePedidoToCloud = async (pedido) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !pedido || !pedido.id) return;
+  try {
+    await setDoc(doc(db, 'pedidos_carga', String(pedido.id)), pedido, { merge: true });
+  } catch (e) {
+    console.warn('Erro ao salvar pedido no Firestore:', e);
+  }
+};
+
+export const deletePedidoFromCloud = async (pedidoId) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !pedidoId) return;
+  try {
+    await deleteDoc(doc(db, 'pedidos_carga', String(pedidoId)));
+  } catch (e) {
+    console.warn('Erro ao excluir pedido no Firestore:', e);
   }
 };
 
@@ -476,7 +593,7 @@ export const saveAssetsBatchToCloud = async (assetsList, onProgress = null) => {
   const { isConfigured, db } = initFirebase();
   if (!isConfigured || !db || !assetsList || assetsList.length === 0) return;
 
-  const chunkSize = 300;
+  const chunkSize = 250;
   for (let i = 0; i < assetsList.length; i += chunkSize) {
     const chunk = assetsList.slice(i, i + chunkSize);
     const batch = writeBatch(db);
