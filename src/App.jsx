@@ -2063,7 +2063,9 @@ export function App() {
                     <span>Patrimônio</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'numeroPatrimonio' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                          {sortDirection === 'asc' ? '▲' : '▼'}
+                        </span>
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                       )}
@@ -2083,7 +2085,9 @@ export function App() {
                         <span>Qtde</span>
                         <span className="shrink-0">
                           {sortField === 'quantidade' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-cyan-400" /> : <ArrowDown className="w-3.5 h-3.5 text-cyan-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2115,7 +2119,9 @@ export function App() {
                     <span>Item</span>
                     <span className="shrink-0 ml-0.5">
                       {sortField === 'descricao' ? (
-                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                          {sortDirection === 'asc' ? '▲' : '▼'}
+                        </span>
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                       )}
@@ -2135,7 +2141,9 @@ export function App() {
                         <span>Marca</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'marca' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2168,7 +2176,9 @@ export function App() {
                         <span>Modelo</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'modelo' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2201,7 +2211,9 @@ export function App() {
                         <span>Localização</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'localizacao' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2239,7 +2251,9 @@ export function App() {
                         <span>Responsável</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'responsavel' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2272,7 +2286,9 @@ export function App() {
                         <span>Aquisição</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'dataAquisicao' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
                           ) : (
                             <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
                           )}
@@ -2294,10 +2310,27 @@ export function App() {
 
                   {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
                   {visibleColumns.valorOriginal && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <span className="text-slate-400 font-medium whitespace-nowrap">
-                        {displaySettings.showCurrencyPrefix ? '$ Original' : 'Original'}
-                      </span>
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                      <button
+                        onClick={() => handleSort('valorOriginal')}
+                        title="Clique para ordenar por valor original"
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span className="text-slate-400 font-medium whitespace-nowrap">
+                          {displaySettings.showCurrencyPrefix ? '$ Original' : 'Original'}
+                        </span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'valorOriginal' ? (
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2314,10 +2347,27 @@ export function App() {
 
                   {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
                   {visibleColumns.valorAtual && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <span className="text-slate-400 font-medium whitespace-nowrap">
-                        {displaySettings.showCurrencyPrefix ? '$ Atual' : 'Atual'}
-                      </span>
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                      <button
+                        onClick={() => handleSort('valorAtual')}
+                        title="Clique para ordenar por valor atual"
+                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group ${
+                          sortField === 'valorAtual' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
+                        }`}
+                      >
+                        <span className="text-slate-400 font-medium whitespace-nowrap">
+                          {displaySettings.showCurrencyPrefix ? '$ Atual' : 'Atual'}
+                        </span>
+                        <span className="shrink-0 ml-0.5">
+                          {sortField === 'valorAtual' ? (
+                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                              {sortDirection === 'asc' ? '▲' : '▼'}
+                            </span>
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                          )}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
