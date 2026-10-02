@@ -19,13 +19,27 @@ import { formatPatrimonio, formatLast5Patrimonio } from '../utils/formatters';
 import { matchesAsset } from '../utils/searchUtils';
 
 const MOTIVOS_DTIN = [
-  'Manutenção Corretiva / Reparo Técnico',
-  'Troca de Peça / Upgrade (Memória RAM, SSD)',
-  'Instalação e Configuração de Software / Sistema',
-  'Laudo Técnico de Defeito / Inviabilidade',
+  'Defeito / Reparo Técnico (Laboratório / Oficina)',
+  'Empréstimo de Equipamento',
+  'Recolhimento / Devolução ao Parque Tecnológico',
+  'Manutenção Preventiva / Limpeza Técnica em Oficina',
+  'Diagnóstico e Testes em Bancada (Laboratório)',
+  'Troca de Peça / Upgrade (Memória RAM, SSD, Fonte)',
+  'Instalação e Configuração de Software / Sistema Operacional',
+  'Laudo Técnico de Defeito / Inviabilidade de Reparo',
   'Substituição por Novo Equipamento',
-  'Remanejamento / Devolução ao Parque Tecnológico',
-  'Outros Serviços de TI'
+  'Outros Serviços de TI / DTIN'
+];
+
+const SUGESTOES_OBS = [
+  'Defeito / Não liga',
+  'Empréstimo',
+  'Recolhimento',
+  'Laboratório / Diagnóstico',
+  'Oficina / Manutenção',
+  'Upgrade SSD / RAM',
+  'Formatação / Sistema',
+  'Laudo Técnico'
 ];
 
 export const DtinModal = ({
@@ -47,7 +61,7 @@ export const DtinModal = ({
   const [newPatrimonio, setNewPatrimonio] = useState('');
   const [newDescricao, setNewDescricao] = useState('');
   const [newSetorId, setNewSetorId] = useState(defaultSectorId || (sectors[0]?.id || 'sec-ti'));
-  const [newResponsavel, setNewResponsavel] = useState('');
+  const [newResponsavel, setNewResponsavel] = useState('Santana');
   const [newNumeroSerie, setNewNumeroSerie] = useState('');
   const [newLocalizacao, setNewLocalizacao] = useState('');
 
@@ -55,7 +69,7 @@ export const DtinModal = ({
   const [motivo, setMotivo] = useState(MOTIVOS_DTIN[0]);
   const [chamado, setChamado] = useState('');
   const [dataEnvio, setDataEnvio] = useState(() => new Date().toLocaleDateString('pt-BR'));
-  const [responsavel, setResponsavel] = useState(currentUserName || '');
+  const [responsavel, setResponsavel] = useState('Santana');
   const [observacoes, setObservacoes] = useState('');
   const [anexos, setAnexos] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,6 +77,7 @@ export const DtinModal = ({
   // Sincroniza quando asset prop mudar
   React.useEffect(() => {
     setSelectedAsset(asset);
+    setResponsavel('Santana');
     if (!asset) {
       setSelectionMode('EXISTING');
       setSearchQuery('');
@@ -446,31 +461,55 @@ export const DtinModal = ({
             </div>
           </div>
 
-          {/* Responsável / Solicitante */}
+          {/* Responsável pelo Envio */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 mb-1">
-              Responsável pelo Envio / Solicitante
+              Responsável pelo Envio
             </label>
             <input
               type="text"
               value={responsavel}
               onChange={(e) => setResponsavel(e.target.value)}
-              placeholder="Nome do operador ou responsável do setor"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 placeholder-slate-600"
+              placeholder="Santana (TI)"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-cyan-300 font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500/50 placeholder-slate-600"
             />
           </div>
 
           {/* Observações / Defeito Constatado */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1">
-              Observações / Defeito Constatado <span className="text-cyan-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-slate-300">
+                Observações / Defeito Constatado <span className="text-cyan-400">*</span>
+              </label>
+              <span className="text-[10px] text-slate-500">Clique nas tags abaixo para preenchimento rápido</span>
+            </div>
+
+            {/* Quick Chips para Observações */}
+            <div className="flex flex-wrap gap-1 mb-1.5">
+              {SUGESTOES_OBS.map((sug, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setObservacoes(prev => {
+                      if (!prev.trim()) return sug;
+                      if (prev.includes(sug)) return prev;
+                      return `${prev}, ${sug}`;
+                    });
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 text-[10px] transition-all cursor-pointer active:scale-95"
+                >
+                  + {sug}
+                </button>
+              ))}
+            </div>
+
             <textarea
               required
               rows={2}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Descreva o defeito, peças a serem instaladas ou serviços solicitados..."
+              placeholder="Descreva o defeito, serviço na oficina/laboratório, termo de empréstimo ou recolhimento..."
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-none placeholder-slate-500"
             />
           </div>
