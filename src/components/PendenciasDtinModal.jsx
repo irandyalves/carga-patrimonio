@@ -70,15 +70,15 @@ export const PendenciasDtinModal = ({
             </div>
             
             <div className="space-y-2.5 min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="font-extrabold text-white text-base sm:text-lg leading-snug">
-                  <span className="text-cyan-400 font-black">{detentorName}</span>, o <span className="text-emerald-400 font-black">SANTANA</span> está solicitando autorização para enviar para DTIN os equipamentos abaixo.
-                </h3>
-                {pendencias.length > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
-                    {pendencias.length} pendente{pendencias.length > 1 ? 's' : ''}
+              <div>
+                <h3 className="leading-snug">
+                  <span className="text-cyan-400 font-black text-lg sm:text-xl block">
+                    {detentorName},
                   </span>
-                )}
+                  <span className="text-slate-200 text-sm sm:text-base font-bold block mt-0.5">
+                    - o <span className="text-emerald-400 font-black">SANTANA</span> está solicitando autorização para enviar para DTIN os equipamentos abaixo.
+                  </span>
+                </h3>
               </div>
 
               {/* Data no centro com borda */}
