@@ -113,6 +113,43 @@ const detectCategory = (text = '') => {
   return 'padrao';
 };
 
+// Formatador inteligente de telefone ou ramal interno
+const formatPhoneOrRamal = (value = '') => {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+
+  // Ramal interno curto (até 5 dígitos)
+  if (digits.length <= 5 && !value.includes('(')) {
+    return digits;
+  }
+  // Telefone fixo (8 dígitos sem DDD)
+  if (digits.length === 8) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  // Celular (9 dígitos sem DDD)
+  if (digits.length === 9) {
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  }
+  // Fixo com DDD (10 dígitos)
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  // Celular com DDD (11 dígitos ou mais)
+  if (digits.length >= 11) {
+    const d = digits.slice(0, 11);
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  }
+  // Digitação intermediária
+  if (digits.length > 2 && digits.length < 7) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  }
+  if (digits.length >= 7 && digits.length < 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return value;
+};
+
 export const AssetModal = ({
   isOpen,
   onClose,
@@ -121,9 +158,7 @@ export const AssetModal = ({
   defaultSectorId,
   sectors = []
 }) => {
-  // Estado estruturado com os campos solicitados pelo usuário:
-  // Estado estruturado com os campos solicitados pelo usuário:
-  // PATRIMÔNIO, DESCRIÇÃO (ITEM), MARCA, MODELO, LOCAL, NA CARGA OU NÃO, DEPRECIAÇÃO, OBS, FOTO
+  // Estado estruturado com os campos solicitados pelo usuário
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
     descricao: '',
@@ -131,12 +166,13 @@ export const AssetModal = ({
     modelo: '',
     depreciacao: '',
     localizacao: '',
-    naCarga: true, // "Na Carga ou Não"
-    observacoes: '', // "OBS"
-    foto: '', // "FOTO"
+    naCarga: true,
+    observacoes: '',
+    foto: '',
     setorId: defaultSectorId || sectors[0]?.id || 'sec-foyer',
     setorNome: '',
     responsavel: '',
+    telefone: '',
     categoria: 'Mobiliário e Equipamentos'
   });
 
@@ -165,6 +201,7 @@ export const AssetModal = ({
         setorId: assetToEdit.setorId || sectors[0]?.id || 'sec-foyer',
         setorNome: assetToEdit.setorNome || '',
         responsavel: assetToEdit.responsavel || '',
+        telefone: assetToEdit.telefone || assetToEdit.ramal || '',
         categoria: assetToEdit.categoria || 'Geral'
       });
       if (assetToEdit.descricao) {
@@ -174,7 +211,6 @@ export const AssetModal = ({
       }
     } else {
       const selectedSec = sectors.find(s => s.id === (defaultSectorId || sectors[0]?.id)) || sectors[0] || { id: 'sec-foyer', name: 'Foyer', sala: 'Hall de Entrada', responsavel: 'Jean' };
-      // Sugere próximo número sequencial formatado no padrão XX.XXX
       const randNum = String(Math.floor(42542 + Math.random() * 400));
       const formattedNum = `${randNum.slice(0, 2)}.${randNum.slice(2)}`;
 
@@ -191,6 +227,7 @@ export const AssetModal = ({
         setorId: selectedSec.id,
         setorNome: selectedSec.name,
         responsavel: selectedSec.responsavel || '',
+        telefone: selectedSec.telefone || selectedSec.ramal || '',
         categoria: 'Mobiliário e Equipamentos'
       });
       setAiSuggestions([]);
@@ -209,6 +246,13 @@ export const AssetModal = ({
     setFormData(prev => ({ ...prev, numeroPatrimonio: formatted }));
   };
 
+  // Formata telefone ou ramal com máscara inteligente
+  const handlePhoneChange = (e) => {
+    const raw = e.target.value;
+    const formatted = formatPhoneOrRamal(raw);
+    setFormData(prev => ({ ...prev, telefone: formatted }));
+  };
+
   // Atualiza setor selecionado
   const handleSectorChange = (secId) => {
     const sec = sectors.find(s => s.id === secId);
@@ -218,6 +262,7 @@ export const AssetModal = ({
         setorId: sec.id,
         setorNome: sec.name,
         responsavel: sec.responsavel || prev.responsavel,
+        telefone: sec.telefone || sec.ramal || prev.telefone || '',
         localizacao: prev.localizacao || sec.sala || ''
       }));
     }
@@ -314,7 +359,7 @@ export const AssetModal = ({
 
   // Submissão do Formulário
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!formData.numeroPatrimonio || !formData.descricao) return;
 
     // Remove qualquer máscara para garantir integridade ou preserva XX.XXX
@@ -326,8 +371,10 @@ export const AssetModal = ({
       numeroPatrimonio: cleanNum,
       quantidade: 1,
       naCarga: !!formData.naCarga,
-      observacoes: formData.observacoes.trim(),
-      foto: formData.foto.trim(),
+      responsavel: (formData.responsavel || '').trim(),
+      telefone: (formData.telefone || '').trim(),
+      observacoes: (formData.observacoes || '').trim(),
+      foto: (formData.foto || '').trim(),
       dataAquisicao: assetToEdit?.dataAquisicao || new Date().toLocaleDateString('pt-BR'),
       anoAquisicao: assetToEdit?.anoAquisicao || new Date().getFullYear(),
       valorOriginal: assetToEdit?.valorOriginal || 0,
@@ -339,71 +386,55 @@ export const AssetModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto scrollbar-thin">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl relative max-h-[96vh] flex flex-col justify-between">
         
-        {/* Cabeçalho do Modal */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-              <Tag className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-base sm:text-lg">
-                {assetToEdit ? 'Editar Item Patrimonial' : 'Novo Item Patrimonial'}
-              </h3>
-              <p className="text-xs text-slate-400">
-                Cadastre o patrimônio, descrição, localização, status de carga e foto via IA
-              </p>
-            </div>
-          </div>
+        {/* Botão Fechar no Topo */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3.5 right-3.5 p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors z-10 cursor-pointer"
+          title="Fechar"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Formulário Principal */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Formulário Principal Compacto */}
+        <form onSubmit={handleSubmit} className="space-y-2.5 text-left">
           
-          {/* Linha 1: Patrimônio e Setor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            
-            {/* Campo: PATRIMÔNIO (XX.XXX) */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center justify-between">
-                <span>Nº Patrimônio (XX.XXX) *</span>
-                <span className="text-[10px] font-mono text-indigo-400 font-bold">5 dígitos</span>
+          {/* Linha 1: Nº Patrimônio (Sem bordas, Bold 30% maior, Edição direta, Enter salva) e Setor à direita */}
+          <div className="pr-10 flex items-center gap-3 pt-0.5">
+            {/* Nº Patrimônio */}
+            <div className="flex-1 min-w-0">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Nº Patrimônio <span className="text-indigo-400 font-mono text-[9px]">(Enter salva)</span>
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={formData.numeroPatrimonio}
-                  onChange={handlePatrimonioChange}
-                  placeholder="Ex: 42.542"
-                  className="w-full bg-slate-800/90 border-2 border-indigo-500/40 rounded-xl px-4 py-2.5 text-lg text-indigo-300 font-mono font-black tracking-wider focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30"
-                />
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Formato padrão fácil de ler: <strong className="text-slate-300 font-mono">42.542</strong>
-              </p>
+              <input
+                type="text"
+                required
+                maxLength={7}
+                value={formData.numeroPatrimonio}
+                onChange={handlePatrimonioChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSubmit(e);
+                  }
+                }}
+                placeholder="42.542"
+                title="Clique para editar o número do patrimônio. Pressione Enter para salvar."
+                className="w-full bg-transparent border-0 border-b border-slate-700/60 focus:border-indigo-400 text-2xl font-black font-mono text-indigo-300 tracking-wider px-0 py-0.5 focus:outline-none transition-all placeholder-indigo-400/40"
+              />
             </div>
 
-            {/* Campo: Setor de Destino */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Setor Responsável *</span>
+            {/* List Box do Setor */}
+            <div className="flex-1 min-w-0">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Setor Responsável
               </label>
               <select
                 value={formData.setorId}
                 onChange={(e) => handleSectorChange(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-3 text-xs text-slate-200 font-semibold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 cursor-pointer"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 font-bold focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 {sectors.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -411,44 +442,97 @@ export const AssetModal = ({
                   </option>
                 ))}
               </select>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Responsável: <strong className="text-slate-300">{formData.responsavel || 'Administração'}</strong>
-              </p>
             </div>
-
           </div>
 
-          {/* Campo: DESCRIÇÃO */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Descrição do Item *
+          {/* Linha 2: Responsável à esquerda e Telefone/Ramal (com máscara inteligente) à direita */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Responsável
               </label>
-              <div className="flex items-center gap-2">
-                {/* Botão de Microfone para ditar descrição */}
+              <input
+                type="text"
+                value={formData.responsavel}
+                onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
+                placeholder="Nome do responsável"
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5 flex items-center justify-between">
+                <span>Telefone / Ramal</span>
+                <span className="text-[9px] text-slate-500 font-normal">Máscara / Ramal</span>
+              </label>
+              <input
+                type="text"
+                value={formData.telefone}
+                onChange={handlePhoneChange}
+                placeholder="Ramal (2450) ou (XX) 9XXXX-XXXX"
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono placeholder-slate-600"
+              />
+            </div>
+          </div>
+
+          {/* Linha 3: Marca e Modelo */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Marca
+              </label>
+              <input
+                type="text"
+                value={formData.marca}
+                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+                placeholder="Ex: Dell, Cisco, Flexform..."
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Modelo
+              </label>
+              <input
+                type="text"
+                value={formData.modelo}
+                onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
+                placeholder="Ex: Optiplex, RV260W, Plus..."
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
+              />
+            </div>
+          </div>
+
+          {/* Linha 4: Descrição do Item */}
+          <div>
+            <div className="flex items-center justify-between mb-0.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Descrição do Item <span className="text-indigo-400">*</span>
+              </label>
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={handleVoiceDesc}
                   title="Falar descrição por voz"
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                  className={`px-1.5 py-0.5 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                     isListeningDesc 
                       ? 'bg-rose-600 text-white animate-pulse' 
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                   }`}
                 >
-                  <Mic className="w-3 h-3" />
-                  <span>{isListeningDesc ? 'Gravando...' : 'Falar'}</span>
+                  <Mic className="w-2.5 h-2.5" />
+                  <span>{isListeningDesc ? 'Ouvindo...' : 'Falar'}</span>
                 </button>
 
-                {/* Botão IA Buscar Foto */}
                 <button
                   type="button"
                   onClick={handleFetchAiPhotos}
-                  title="Buscar fotos correspondentes na internet com IA"
-                  className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Buscar fotos com IA"
+                  className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-3 h-3 text-indigo-400" />
-                  <span>Buscar Foto com IA</span>
+                  <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
+                  <span>Foto IA</span>
                 </button>
               </div>
             </div>
@@ -459,61 +543,31 @@ export const AssetModal = ({
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
               onBlur={handleDescricaoBlur}
-              placeholder="Ex: Cadeira Executiva Estofada FLEXFORM, Monitor Dell UltraSharp 27'', Mesa em L..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+              placeholder="Ex: Cadeira Executiva Estofada FLEXFORM, Monitor Dell UltraSharp..."
+              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"
             />
           </div>
 
-          {/* Linha: Marca e Modelo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Marca
-              </label>
-              <input
-                type="text"
-                value={formData.marca}
-                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                placeholder="Ex: Dell, Flexform, Samsung, LG, HP..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Modelo
-              </label>
-              <input
-                type="text"
-                value={formData.modelo}
-                onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
-                placeholder="Ex: Optiplex 7090, U2723QE, Led 24 pol, Plus..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-              />
-            </div>
-          </div>
-
-          {/* Linha: Local e Depreciação */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="sm:col-span-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Local Físico Onde o Bem Está *</span>
+          {/* Linha 5: Local Físico e Depreciação */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="col-span-2">
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-indigo-400" />
+                  <span>Local Físico</span>
                 </label>
-                
                 <button
                   type="button"
                   onClick={handleVoiceLoc}
                   title="Falar localização por voz"
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                  className={`px-1.5 py-0.5 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                     isListeningLoc 
                       ? 'bg-rose-600 text-white animate-pulse' 
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                   }`}
                 >
-                  <Mic className="w-3 h-3" />
-                  <span>{isListeningLoc ? 'Gravando...' : 'Falar'}</span>
+                  <Mic className="w-2.5 h-2.5" />
+                  <span>{isListeningLoc ? 'Ouvindo...' : 'Falar'}</span>
                 </button>
               </div>
 
@@ -522,206 +576,105 @@ export const AssetModal = ({
                 required
                 value={formData.localizacao}
                 onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })}
-                placeholder="Ex: Sala de Reuniões, Bancada 02, Estúdio de Gravação, Copa do Térreo..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                placeholder="Ex: Sala de Reuniões, Bancada 02..."
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
                 Depreciação
               </label>
               <input
                 type="text"
                 value={formData.depreciacao}
                 onChange={(e) => setFormData({ ...formData, depreciacao: e.target.value })}
-                placeholder="Ex: 10%, R$ 150,00, 2 anos..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                placeholder="Ex: 90.0%"
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600 font-mono"
               />
             </div>
           </div>
 
-          {/* Campo: NA CARGA OU NÃO (Toggle/Segmented Button) */}
-          <div className="p-3.5 rounded-2xl bg-slate-850 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Status de Incorporação: Na Carga ou Não?</span>
-              </span>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                formData.naCarga 
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-              }`}>
-                {formData.naCarga ? 'Oficialmente na Carga' : 'Não está na Carga (Terceiro / Outro Setor)'}
-              </span>
-            </div>
+          {/* Linha 6: Na Carga ou Não (Segmented Toggle Compacto) */}
+          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Status na Carga:</span>
+            </span>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, naCarga: true })}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                className={`py-1 px-2.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                   formData.naCarga
-                    ? 'bg-emerald-600/30 text-emerald-200 border-emerald-500 shadow-md shadow-emerald-950/40'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                    ? 'bg-emerald-600/30 text-emerald-200 border-emerald-500 shadow-sm'
+                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
                 }`}
               >
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Sim, está na Carga</span>
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span>Na Carga</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, naCarga: false })}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                className={`py-1 px-2.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                   !formData.naCarga
-                    ? 'bg-amber-600/30 text-amber-200 border-amber-500 shadow-md shadow-amber-950/40'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                    ? 'bg-amber-600/30 text-amber-200 border-amber-500 shadow-sm'
+                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
                 }`}
               >
-                <ShieldAlert className="w-4 h-4 text-amber-400" />
-                <span>Não está na Carga</span>
+                <ShieldAlert className="w-3 h-3 text-amber-400" />
+                <span>Fora da Carga</span>
               </button>
             </div>
-            
-            <p className="text-[10px] text-slate-400 leading-tight">
-              {formData.naCarga 
-                ? 'Este item pertence ao inventário e termo de responsabilidade oficial deste setor.'
-                : 'Item em uso físico no local, porém pertence à carga de outro departamento ou empréstimo externo.'}
-            </p>
           </div>
 
-          {/* Campo: OBS (Observações) */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-slate-400" />
-              <span>Observações (OBS)</span>
-            </label>
-            <textarea
-              rows={2}
-              value={formData.observacoes}
-              onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-              placeholder="Ex: Estado de conservação bom, com pequeno arranhão no encosto, cabo original incluso..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-            />
-          </div>
-
-          {/* Campo: FOTO + Sugestões da Internet com IA */}
-          <div className="p-3.5 rounded-2xl bg-slate-850 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-cyan-400" />
-                <span>Foto do Item (IA / Internet)</span>
+          {/* Linha 7: Observações e Foto (Compacto) */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                OBS / Observações
               </label>
-
-              <button
-                type="button"
-                onClick={handleFetchAiPhotos}
-                className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isSearchingPhotos ? 'Buscando...' : 'Sugerir Fotos com IA'}</span>
-              </button>
+              <input
+                type="text"
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Detalhes ou conservação..."
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
+              />
             </div>
 
-            {/* Input manual ou link */}
-            <div className="flex items-center gap-2">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                Link da Foto (ou IA)
+              </label>
               <input
                 type="url"
                 value={formData.foto}
                 onChange={(e) => setFormData({ ...formData, foto: e.target.value })}
-                placeholder="https://images.unsplash.com/..."
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                placeholder="https://..."
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-600"
               />
-              {formData.foto && (
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, foto: '' })}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
-                  title="Remover foto"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
-
-            {/* Galeria de Fotos Sugeridas pela IA da Internet */}
-            {aiSuggestions.length > 0 && (
-              <div className="space-y-1.5 pt-1 border-t border-slate-800">
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-cyan-400" />
-                    Fotos sugeridas pela IA da Internet (Clique para escolher):
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2">
-                  {aiSuggestions.map((item, idx) => {
-                    const isSelected = formData.foto === item.url;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, foto: item.url })}
-                        className={`group relative aspect-video rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                          isSelected 
-                            ? 'border-cyan-400 ring-2 ring-cyan-500/50 shadow-md' 
-                            : 'border-slate-700 hover:border-slate-500 opacity-70 hover:opacity-100'
-                        }`}
-                        title={item.label}
-                      >
-                        <img 
-                          src={item.url} 
-                          alt={item.label}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                        {isSelected && (
-                          <div className="absolute top-1 right-1 p-0.5 rounded-full bg-cyan-500 text-slate-950 font-bold">
-                            <Check className="w-3 h-3" />
-                          </div>
-                        )}
-                        <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 px-1 py-0.5 text-[9px] text-slate-300 truncate">
-                          {item.label}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Preview da Imagem Selecionada */}
-            {formData.foto && (
-              <div className="flex items-center gap-3 p-2 bg-slate-900 rounded-xl border border-slate-800">
-                <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-700">
-                  <img src={formData.foto} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-                <div className="truncate">
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Foto vinculada ao bem
-                  </span>
-                  <p className="text-[11px] text-slate-300 truncate font-mono mt-0.5">{formData.foto}</p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Botões de Ação */}
-          <div className="pt-3 border-t border-slate-800 flex gap-3">
-            <button
-              type="submit"
-              className="flex-1 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>{assetToEdit ? 'Salvar Alterações' : 'Cadastrar Item'}</span>
-            </button>
+          <div className="pt-1.5 flex gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{assetToEdit ? 'Salvar Alterações (Enter)' : 'Cadastrar Item (Enter)'}</span>
             </button>
           </div>
 
