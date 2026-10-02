@@ -413,6 +413,57 @@ export function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Fullscreen / Tela Cheia Total no Mobile e Desktop
+  const [isFullscreen, setIsFullscreen] = useState(() => {
+    return typeof document !== 'undefined' && !!(document.fullscreenElement || document.webkitFullscreenElement);
+  });
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    // Auto-ativação de Tela Cheia no primeiro toque/interação em mobile
+    const handleMobileFirstInteraction = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && window.innerWidth <= 768) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      }
+    };
+
+    window.addEventListener('touchstart', handleMobileFirstInteraction, { once: true });
+    window.addEventListener('click', handleMobileFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      window.removeEventListener('touchstart', handleMobileFirstInteraction);
+      window.removeEventListener('click', handleMobileFirstInteraction);
+    };
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch((err) => console.warn(err));
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => console.warn(err));
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
   // 1. Initial Load & Auth Listener
   useEffect(() => {
     try {
@@ -1654,6 +1705,8 @@ export function App() {
         sortField={sortField}
         sortDirection={sortDirection}
         onSort={handleSort}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}

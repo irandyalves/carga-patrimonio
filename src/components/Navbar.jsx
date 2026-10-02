@@ -24,7 +24,9 @@ import {
   Check,
   UserCheck,
   Hash,
-  CheckCircle2
+  CheckCircle2,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -60,7 +62,9 @@ export const Navbar = ({
   filterMode = 'MY_SECTOR',
   sortField = 'numeroPatrimonio',
   sortDirection = 'asc',
-  onSort
+  onSort,
+  isFullscreen = false,
+  onToggleFullscreen
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -211,6 +215,26 @@ export const Navbar = ({
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="text-[10px] font-mono font-bold text-emerald-400">{conferidosCount || 0}</span>
             </button>
+
+            {/* Alternar Tela Cheia Total (Fullscreen) */}
+            {onToggleFullscreen && (
+              <button
+                type="button"
+                onClick={onToggleFullscreen}
+                title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia Total (Fullscreen)"}
+                className={`p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer border active:scale-95 ${
+                  isFullscreen
+                    ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/50 shadow-sm'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700/80 hover:text-white'
+                }`}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Maximize2 className="w-4 h-4 text-indigo-400" />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Search Bar with Inline Voice and QR inside */}
