@@ -1441,7 +1441,7 @@ export const AssetTableRowCard = ({
 
                         {showReturnDtinConfirm ? (
                           <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma a volta do item?</p>
+                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={(e) => {
@@ -1474,7 +1474,7 @@ export const AssetTableRowCard = ({
                             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Retornar do DTIN</span>
+                            <span>Confirmar o Retorno do Item</span>
                           </button>
                         )}
                       </>
@@ -2574,7 +2574,7 @@ export const AssetTableRowCard = ({
             <div className="flex items-center justify-between gap-2 mt-5 pt-3.5 border-t border-slate-800">
               {showModalReturnConfirm ? (
                 <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl animate-in zoom-in-95 duration-100">
-                  <span className="text-xs text-emerald-300 font-bold">Confirma a volta do item?</span>
+                  <span className="text-xs text-emerald-300 font-bold">Confirma o retorno do item?</span>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -2585,7 +2585,7 @@ export const AssetTableRowCard = ({
                     }}
                     className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
                   >
-                    Sim, Devolver
+                    Sim, Retornar
                   </button>
                   <button
                     type="button"
@@ -2606,10 +2606,10 @@ export const AssetTableRowCard = ({
                     setShowModalReturnConfirm(true);
                   }}
                   className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Confirmar retorno do DTIN e reintegrar equipamento ao setor"
+                  title="Confirmar o retorno do item e reintegrar ao setor"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Confirmar Retorno do DTIN</span>
+                  <span>Confirmar o Retorno do Item</span>
                 </button>
               )}
 
