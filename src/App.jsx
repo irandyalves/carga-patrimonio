@@ -855,6 +855,10 @@ export function App() {
       return;
     }
 
+    // Preservação milimétrica da posição de scroll para não perder o foco na lista
+    const savedScrollTop = mainScrollRef.current ? mainScrollRef.current.scrollTop : null;
+    const savedWindowY = typeof window !== 'undefined' ? window.scrollY : null;
+
     const isCurrentlyConferido = itemToCheck?.status === 'CONFERIDO';
     const isNowConferido = !isCurrentlyConferido;
 
@@ -883,13 +887,20 @@ export function App() {
 
     setAssets(updated);
 
-    // Restaura scroll sem salto
-    if (currentScrollTop !== null) {
-      requestAnimationFrame(() => {
+    // Restaura scroll sem nenhum salto na tela (preserva o foco exatamente onde o operador está)
+    if (savedScrollTop !== null) {
+      const restoreScroll = () => {
         if (mainScrollRef.current) {
-          mainScrollRef.current.scrollTop = currentScrollTop;
+          mainScrollRef.current.scrollTop = savedScrollTop;
         }
-      });
+        if (savedWindowY !== null && typeof window !== 'undefined') {
+          window.scrollTo({ top: savedWindowY, behavior: 'instant' });
+        }
+      };
+      requestAnimationFrame(restoreScroll);
+      setTimeout(restoreScroll, 0);
+      setTimeout(restoreScroll, 40);
+      setTimeout(restoreScroll, 100);
     }
     
     // Check if whole sector reached 100%

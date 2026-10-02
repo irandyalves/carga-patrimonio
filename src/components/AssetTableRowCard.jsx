@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, 
   Clock, 
@@ -137,6 +138,8 @@ export const AssetTableRowCard = ({
   const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isCheckingBurst, setIsCheckingBurst] = useState(false);
+  const [isRowSliding, setIsRowSliding] = useState(false);
 
   // Posicionamento inteligente para nunca ser cortado pelo cabeçalho
   const [cautelaPlacement, setCautelaPlacement] = useState(() => (index < 4 ? 'bottom' : 'top'));
@@ -315,21 +318,74 @@ export const AssetTableRowCard = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Disparo de Conferência (PC & Mobile):
+  // 1. O botão muda para Check verde com brilho pulsante esmeralda (0.4s / 400ms)
+  // 2. APÓS 0.4s, o card/linha inicia o deslizamento suave para a esquerda (0.5s / 500ms) e recolhe a altura
+  // 3. Ao término de 0.9s, efetiva o registro no banco/estado global
   const handleConferenceClick = (e) => {
     e.stopPropagation();
     if (isBaixado) return;
 
     if (isConferido) {
       setShowUncheckConfirm(true);
-    } else {
-      onToggleConference(asset.id, true);
+      return;
     }
+
+    if (isCheckingBurst || isRowSliding) return;
+
+    // Dispara explosão suave de partículas/confetes a partir do botão
+    try {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const originX = (rect.left + rect.width / 2) / (window.innerWidth || 1);
+      const originY = (rect.top + rect.height / 2) / (window.innerHeight || 1);
+
+      confetti({
+        particleCount: 36,
+        spread: 60,
+        startVelocity: 22,
+        origin: { x: originX, y: originY },
+        colors: ['#10b981', '#34d399', '#6ee7b7', '#38bdf8', '#fbbf24', '#ffffff'],
+        disableForReducedMotion: true,
+        ticks: 100,
+        gravity: 1.15,
+        scalar: 0.85
+      });
+    } catch (err) {
+      console.error('Confetti trigger error:', err);
+    }
+
+    // Fase 1: Ativa o brilho pulsante no botão (0.4s)
+    setIsCheckingBurst(true);
+
+    // Fase 2: APÓS 400ms (0.4s), inicia o deslizamento suave do card para a esquerda (0.5s)
+    setTimeout(() => {
+      setIsRowSliding(true);
+    }, 400);
+
+    // Fase 3: Ao concluir os 900ms totais, efetiva no estado global e limpa os estados
+    setTimeout(() => {
+      onToggleConference(asset.id, true);
+      setIsCheckingBurst(false);
+      setIsRowSliding(false);
+    }, 900);
   };
 
+  // Desmarcar conferência (ao clicar em "Sim"):
+  // O card/linha faz o mesmo efeito de cortina deslizando suavemente para a esquerda (0.5s),
+  // os itens de baixo sobem suavemente, e o foco / scroll permanece exatamente onde o operador está!
   const handleConfirmUncheck = (e) => {
     e.stopPropagation();
     setShowUncheckConfirm(false);
-    onToggleConference(asset.id, false);
+
+    if (isRowSliding) return;
+
+    // Ativa animação cortina/deslize suave para a esquerda (500ms)
+    setIsRowSliding(true);
+
+    setTimeout(() => {
+      onToggleConference(asset.id, false);
+      setIsRowSliding(false);
+    }, 500);
   };
 
   const formatCurrency = (val) => {
@@ -476,6 +532,8 @@ export const AssetTableRowCard = ({
     <div 
       id={`asset-row-${asset.id}`}
       className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
+        isRowSliding ? 'animate-card-slide-curtain' : ''
+      } ${
         cardColorClass
           ? cardColorClass
           : isOutOfPlace 
@@ -1131,13 +1189,30 @@ export const AssetTableRowCard = ({
           ) : (
             <button
               onClick={handleConferenceClick}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer shadow-sm ${
-                isConferido
-                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
+              className={`relative px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
+                isCheckingBurst
+                  ? 'animate-btn-pulse bg-emerald-500 text-white z-20 shadow-[0_0_18px_rgba(16,185,129,0.9)]'
+                  : isConferido
+                    ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
               }`}
             >
-              <span>{isConferido ? 'Conferido' : 'Conferir'}</span>
+              {isCheckingBurst && (
+                <span className="absolute inset-0 rounded border-2 border-emerald-400 animate-btn-shockwave pointer-events-none" />
+              )}
+              {isCheckingBurst ? (
+                <>
+                  <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
+                  <span className="tracking-wider uppercase font-black">CONFERIDO</span>
+                </>
+              ) : isConferido ? (
+                <>
+                  <Check className="w-3 h-3 stroke-[3]" />
+                  <span>Conferido</span>
+                </>
+              ) : (
+                <span>Conferir</span>
+              )}
             </button>
           )}
 
@@ -1498,7 +1573,28 @@ export const AssetTableRowCard = ({
       </div>
 
       {/* VISUALIZAÇÃO MOBILE: Card Compacto Otimizado para Celular / Conferência Rápida Touch */}
-      <div className="flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left">
+      <div 
+        className={`flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left relative overflow-hidden transition-all duration-300 ${
+          isRowSliding ? 'animate-card-slide-curtain' : ''
+        }`}
+      >
+        {/* Banner de Feedback visual elegante quando estiver deslizando para a seção de Conferidos */}
+        {isRowSliding && (
+          <div className="absolute inset-0 bg-emerald-950/85 border border-emerald-500/60 backdrop-blur-[2px] rounded-xl flex items-center justify-between px-3 z-30 pointer-events-none animate-in fade-in duration-150">
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-xs shadow-[0_0_12px_rgba(52,211,153,0.9)] animate-bounce">
+                ✓
+              </span>
+              <span className="text-xs font-bold text-emerald-300">
+                {isConferido ? 'Desmarcando... Atualizando' : 'Conferido! Indo para Conferidos...'}
+              </span>
+            </div>
+            <span className="text-[10px] text-emerald-400 font-mono font-bold tracking-wider uppercase">
+              {isConferido ? '➔ Pendentes' : '➔ Conferidos'}
+            </span>
+          </div>
+        )}
+
         {/* Linha 1: Patrimônio + Localização / Observação + Botão Conferir + Ações */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
@@ -1580,13 +1676,23 @@ export const AssetTableRowCard = ({
               ) : (
                 <button
                   onClick={handleConferenceClick}
-                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
-                    isConferido
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+                  className={`relative px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
+                    isCheckingBurst
+                      ? 'animate-btn-pulse bg-emerald-500 text-white z-20 shadow-[0_0_18px_rgba(16,185,129,0.9)]'
+                      : isConferido
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
                   }`}
                 >
-                  {isConferido ? (
+                  {isCheckingBurst && (
+                    <span className="absolute inset-0 rounded-lg border-2 border-emerald-400 animate-btn-shockwave pointer-events-none" />
+                  )}
+                  {isCheckingBurst ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
+                      <span className="tracking-wider uppercase font-black">CONFERIDO</span>
+                    </>
+                  ) : isConferido ? (
                     <>
                       <Check className="w-3 h-3 stroke-[3]" />
                       <span>Conferido</span>
@@ -1808,8 +1914,8 @@ export const AssetTableRowCard = ({
               </div>
             )}
 
-            {/* Ação Rápida */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            {/* Ação Rápida no Rodapé */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
               <button
                 type="button"
                 onClick={() => {
@@ -1817,7 +1923,7 @@ export const AssetTableRowCard = ({
                   setCopiedDesc(true);
                   setTimeout(() => setCopiedDesc(false), 2000);
                 }}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
               >
                 {copiedDesc ? (
                   <>
@@ -1832,13 +1938,278 @@ export const AssetTableRowCard = ({
                 )}
               </button>
 
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDescModalOpen(false);
+                    if (!canManageAsset) {
+                      onOpenSolicitacao(asset);
+                    } else {
+                      onOpenEdit(asset);
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  title="Editar dados deste bem patrimonial"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Editar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDescModalOpen(false)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Menu de Ações Mobile (Bottom-Sheet / Modal Touch Amigável com Opções Visíveis) */}
+      {isActionsOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100 md:hidden"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsActionsOpen(false);
+            setShowDeleteConfirm(false);
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-700/80 w-full max-w-sm rounded-3xl p-4 shadow-2xl relative animate-in slide-in-from-bottom-6 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Topo do Menu Mobile */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-base font-black text-emerald-400">
+                  {formattedXX}
+                </span>
+                <span className="text-xs text-slate-400 truncate max-w-[180px]">
+                  — Opções do Bem
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsDescModalOpen(false)}
-                className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold shadow-sm transition-all cursor-pointer"
+                onClick={() => {
+                  setIsActionsOpen(false);
+                  setShowDeleteConfirm(false);
+                }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                Fechar
+                <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Lista de Opções Mobile Touch */}
+            <div className="flex flex-col gap-1.5">
+              {!canManageAsset ? (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onOpenSolicitacao(asset);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800 bg-amber-500/10 border border-amber-500/20 font-bold transition-all cursor-pointer"
+                  >
+                    <Send className="w-4 h-4 text-amber-400" />
+                    <span>Fazer Pedido de Carga</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onPrintSingleLabel(asset);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 transition-all cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-cyan-400" />
+                    <span>Imprimir Etiqueta</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onOpenEdit(asset);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-blue-300 hover:bg-slate-800 bg-blue-500/10 border border-blue-500/20 font-bold transition-all cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-blue-400" />
+                    <span>Editar Dados do Bem</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      onPrintSingleLabel(asset);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-cyan-400" />
+                    <span>Imprimir Etiqueta</span>
+                  </button>
+
+                  {!isGeneralView && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        onTransferSector(asset);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                    >
+                      <ArrowRightLeft className="w-4 h-4 text-cyan-400" />
+                      <span>Transferir Setor</span>
+                    </button>
+                  )}
+
+                  {!isBaixado && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        onOpenCautela(asset);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                    >
+                      <Handshake className="w-4 h-4 text-amber-400" />
+                      <span>Emitir Cautela / Empréstimo</span>
+                    </button>
+                  )}
+
+                  {/* DTIN */}
+                  {!isBaixado && isInformática && (
+                    isEnviadoDtin ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsActionsOpen(false);
+                          setIsDtinResumoOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 bg-cyan-950/20 border border-cyan-500/30 font-medium transition-all cursor-pointer"
+                      >
+                        <Server className="w-4 h-4 text-cyan-400" />
+                        <span>Ver Detalhes DTIN</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsActionsOpen(false);
+                          onOpenDtin && onOpenDtin(asset);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                      >
+                        <Server className="w-4 h-4 text-cyan-400" />
+                        <span>Enviar DTIN (TI)</span>
+                      </button>
+                    )
+                  )}
+
+                  {/* Baixa */}
+                  {isBaixado ? (
+                    showCancelBaixaConfirm ? (
+                      <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center">
+                        <p className="text-xs text-emerald-300 font-medium mb-2">Cancelar baixa e reativar bem?</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsActionsOpen(false);
+                              setShowCancelBaixaConfirm(false);
+                              onCancelBaixa && onCancelBaixa(asset.id);
+                            }}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer"
+                          >
+                            Reativar
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCancelBaixaConfirm(false);
+                            }}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCancelBaixaConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 bg-emerald-500/10 border border-emerald-500/20 font-bold transition-all cursor-pointer"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        <span>Cancelar Baixa Patrimonial</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        onOpenBaixa(asset);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-purple-300 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                    >
+                      <Archive className="w-4 h-4 text-purple-400" />
+                      <span>Baixa Patrimonial</span>
+                    </button>
+                  )}
+
+                  {/* Excluir */}
+                  {showDeleteConfirm ? (
+                    <div className="p-3 bg-rose-950/40 rounded-xl border border-rose-500/30 text-center">
+                      <p className="text-xs text-rose-300 font-medium mb-2">Confirmar exclusão definitiva do bem?</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsActionsOpen(false);
+                            onDeleteAsset(asset.id);
+                          }}
+                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer"
+                        >
+                          Excluir
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(false);
+                          }}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 bg-rose-500/10 border border-rose-500/20 font-bold transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Excluir Bem</span>
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
