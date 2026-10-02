@@ -66,38 +66,33 @@ export const DeleteAssetModal = ({
         className="bg-slate-900 border border-rose-500/40 w-full max-w-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl shadow-rose-950/60 relative animate-in zoom-in-95 duration-150 text-left"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cabeçalho de Alerta de Segurança */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-sm sm:text-base">Excluir Bem Patrimonial</h3>
-              <span className="text-[11px] text-rose-300 font-medium">Confirmação de Segurança com Registro</span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Botão Fechar no Topo */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer z-10"
+          title="Fechar"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Box de Identificação do Bem a ser Excluído */}
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-sm font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                Nº {formattedXX}
-              </span>
-              <span className="text-[10px] text-slate-400">
-                Setor: <strong className="text-slate-200">{asset.setorNome || 'Não informado'}</strong>
+          {/* Box de Identificação do Bem a ser Excluído (com Lixeira à esq, Nº 80% maior bold e Setor à direita) */}
+          <div className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/30 pr-12 text-xs">
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0 flex items-center justify-center">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <span className="text-xl sm:text-2xl font-black font-mono text-rose-300 tracking-wider">
+                  {formattedXX}
+                </span>
+              </div>
+              <span className="text-xs sm:text-sm font-black uppercase text-slate-300 tracking-wide text-right">
+                {asset.setorNome || 'Sem Setor'}
               </span>
             </div>
-            <p className="text-slate-200 font-semibold text-xs leading-snug line-clamp-2">
+            <p className="text-slate-200 font-semibold text-xs sm:text-sm leading-snug line-clamp-2">
               {asset.descricao}
             </p>
           </div>
