@@ -479,7 +479,7 @@ export const Navbar = ({
 
                   {/* Popover Dropdown Menu Opened on Avatar Click */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/90 p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute right-0 sm:-right-4 top-full mt-2 w-72 sm:w-84 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/90 p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                       
                       {/* Header do Usuário Atual */}
                       <div className="flex items-center gap-3 p-2 bg-slate-800/60 rounded-xl mb-2">
@@ -527,8 +527,8 @@ export const Navbar = ({
                             </span>
                           </div>
 
-                          {/* Listbox com altura para opções simultâneas */}
-                          <div className="max-h-[380px] overflow-y-auto scrollbar-thin pr-0.5 space-y-1">
+                          {/* Listbox com altura ampliada em +10% */}
+                          <div className="max-h-[420px] overflow-y-auto scrollbar-thin pr-0.5 space-y-1">
                             {/* Opção Admin: Irandy (Detentor) à esquerda • Admin Geral (Papel) à direita */}
                             <button
                               type="button"
@@ -588,7 +588,7 @@ export const Navbar = ({
                                     </span>
                                   </div>
 
-                                  {/* Lado Direito: Se 1 setor exibe o nome, se > 1 exibe hint bolinha com hover */}
+                                  {/* Lado Direito: Se 1 setor exibe o nome, se > 1 exibe hint bolinha com hover à esquerda */}
                                   <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                                     {item.sectors.length === 1 ? (
                                       <span className="text-emerald-400 font-semibold text-[11px] truncate max-w-[120px] text-right">
@@ -608,11 +608,11 @@ export const Navbar = ({
                                           <span>{item.sectors.length} setores</span>
                                         </div>
 
-                                        {/* Hint / Tooltip flutuante ao passar o mouse */}
-                                        <div className="absolute right-0 top-full mt-1.5 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+                                        {/* Hint / Tooltip flutuante abrindo para a ESQUERDA */}
+                                        <div className="absolute right-full mr-2.5 top-1/2 -translate-y-1/2 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
                                           <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                             <Building2 className="w-3 h-3 text-emerald-400" />
-                                            <span>Setores sob responsabilidade:</span>
+                                            <span>Setores de {item.responsavel}:</span>
                                           </div>
                                           <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto">
                                             {item.sectors.map(s => (
