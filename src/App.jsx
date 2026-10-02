@@ -1984,6 +1984,7 @@ export function App() {
         onSort={handleSort}
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
+        displaySettings={displaySettings}
       />
 
       {/* Container com Slide Bar Lateral Esquerdo + Área de Conteúdo */}

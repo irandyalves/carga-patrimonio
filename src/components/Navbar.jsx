@@ -65,7 +65,8 @@ export const Navbar = ({
   sortDirection = 'asc',
   onSort,
   isFullscreen = false,
-  onToggleFullscreen
+  onToggleFullscreen,
+  displaySettings
 }) => {
   const isAdmin = userRole === 'admin';
   const [isVoiceListening, setIsVoiceListening] = useState(false);
@@ -600,15 +601,18 @@ export const Navbar = ({
                                   : 'hover:bg-slate-800 text-slate-300'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm">👑</span>
-                                <div>
-                                  <span className="text-amber-300 font-bold">Admin Geral</span>
-                                  <span className="text-[10px] text-slate-400 block font-normal">Acesso total a todos os setores</span>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm shrink-0">👑</span>
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span className="text-amber-300 font-bold text-xs">Admin Geral</span>
+                                  <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                                  <span className={`text-[11px] font-semibold ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
+                                    Irandy
+                                  </span>
                                 </div>
                               </div>
                               {(!currentPersona || currentPersona.id === 'admin') && (
-                                <Check className="w-4 h-4 text-amber-400 shrink-0" />
+                                <Check className="w-4 h-4 text-amber-400 shrink-0 ml-1" />
                               )}
                             </button>
 
@@ -631,15 +635,18 @@ export const Navbar = ({
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="text-sm shrink-0">👤</span>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-emerald-400 font-bold text-xs tracking-wide">
-                                          {sec.name}
-                                        </span>
-                                      </div>
-                                      <span className="text-[10.5px] text-slate-300 block truncate font-medium">
-                                        {sec.responsavel || 'Sem responsável'}
+                                    <div className="flex items-center gap-1.5 truncate">
+                                      <span className="text-emerald-400 font-bold text-xs tracking-wide truncate">
+                                        {sec.name}
                                       </span>
+                                      {sec.responsavel && (
+                                        <>
+                                          <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                                          <span className={`text-[11px] font-semibold ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} truncate`}>
+                                            {sec.responsavel}
+                                          </span>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                   {isSelected && (
