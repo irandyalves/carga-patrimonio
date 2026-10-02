@@ -213,11 +213,12 @@ export function App() {
 
   const [sectorColumns, setSectorColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_sector_visible_columns_v2');
+      const stored = localStorage.getItem('carga_patrimonio_sector_visible_columns_v3');
       if (stored) {
         return {
           ...DEFAULT_SECTOR_COLUMNS,
-          ...JSON.parse(stored)
+          ...JSON.parse(stored),
+          localizacao: false
         };
       }
     } catch (e) {}
@@ -226,7 +227,7 @@ export function App() {
 
   const [generalColumns, setGeneralColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_general_visible_columns_v2');
+      const stored = localStorage.getItem('carga_patrimonio_general_visible_columns_v3');
       if (stored) {
         return {
           ...DEFAULT_GENERAL_COLUMNS,
@@ -239,13 +240,13 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('carga_patrimonio_sector_visible_columns_v2', JSON.stringify(sectorColumns));
+      localStorage.setItem('carga_patrimonio_sector_visible_columns_v3', JSON.stringify(sectorColumns));
     } catch (e) {}
   }, [sectorColumns]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('carga_patrimonio_general_visible_columns_v2', JSON.stringify(generalColumns));
+      localStorage.setItem('carga_patrimonio_general_visible_columns_v3', JSON.stringify(generalColumns));
     } catch (e) {}
   }, [generalColumns]);
 
@@ -274,7 +275,7 @@ export function App() {
         quantidade: true,
         marca: true,
         modelo: true,
-        localizacao: true,
+        localizacao: false,
         responsavel: true,
         dataAquisicao: true,
         valorOriginal: true,
