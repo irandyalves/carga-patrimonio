@@ -606,16 +606,16 @@ export const Navbar = ({
                                             <span>{item.sectors.length} setores</span>
                                           </div>
 
-                                          {/* Hint / Tooltip flutuante abrindo para a ESQUERDA */}
-                                          <div className="absolute right-full mr-2.5 top-1/2 -translate-y-1/2 hidden group-hover/hint:block z-50 bg-slate-950/98 backdrop-blur-xl border border-slate-700 p-2.5 rounded-2xl shadow-2xl min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
-                                            <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                              <Building2 className="w-3 h-3 text-emerald-400" />
-                                              <span>Setores de {item.responsavel}:</span>
+                                          {/* Modal/Hint flutuante SEMPRE NO MEIO para facilitar a leitura */}
+                                          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover/hint:block z-[9999] bg-slate-950/98 backdrop-blur-2xl border border-slate-700/90 p-4 rounded-2xl shadow-2xl shadow-black/90 min-w-[280px] max-w-sm pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">
+                                              <Building2 className="w-4 h-4 text-emerald-400" />
+                                              <span>Setores de <span className="text-orange-400">{item.responsavel}</span> ({item.sectors.length}):</span>
                                             </div>
-                                            <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto">
+                                            <div className="mt-2.5 space-y-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
                                               {item.sectors.map(s => (
-                                                <div key={s.id} className="text-xs text-emerald-300 font-medium flex items-center gap-2 py-0.5 px-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                                <div key={s.id} className="text-xs text-emerald-300 font-medium flex items-center gap-2.5 py-1.5 px-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                                                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-sm shadow-emerald-500/50" />
                                                   <span className="truncate">{s.name}</span>
                                                 </div>
                                               ))}
