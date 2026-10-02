@@ -742,6 +742,27 @@ export function App() {
 
   const effectiveUserSectorId = effectiveUserSectorIds.length > 0 ? effectiveUserSectorIds[0] : null;
 
+  // Usuário efetivo para visualização e cabeçalho (quando operador é selecionado, exibe o nome e perfil do operador)
+  const effectiveUser = useMemo(() => {
+    if (simulatedPersonaId === 'admin') {
+      return currentUser;
+    }
+    const sec = sectors.find(s => s.id === simulatedPersonaId);
+    if (!sec) return currentUser;
+
+    const resp = sec.responsavel || 'Operador';
+    const email = sec.email || `${resp.toLowerCase().replace(/\s+/g, '.')}@empresa.gov.br`;
+
+    return {
+      displayName: resp,
+      email: email,
+      role: 'operador',
+      photoURL: null,
+      sectorId: sec.id,
+      sectorName: sec.name
+    };
+  }, [simulatedPersonaId, sectors, currentUser]);
+
   const handleSelectPersona = (personaId) => {
     setSimulatedPersonaId(personaId);
     if (personaId !== 'admin') {
@@ -1943,8 +1964,8 @@ export function App() {
         onOpenExcel={() => setIsExcelModalOpen(true)}
         onOpenUsers={() => setIsUserManagementOpen(true)}
         onOpenFirebaseConfig={() => setIsFirebaseModalOpen(true)}
-        currentUser={currentUser}
-        userRole={userRole}
+        currentUser={effectiveUser}
+        userRole={effectiveUserRole}
         onLogout={handleLogout}
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}

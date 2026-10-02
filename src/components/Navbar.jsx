@@ -514,10 +514,10 @@ export const Navbar = ({
                       <img 
                         src={currentUser.photoURL} 
                         alt="Avatar" 
-                        className="w-8 h-8 rounded-full ring-2 ring-indigo-500 group-hover:ring-emerald-400 object-cover transition-all shadow-md" 
+                        className={`w-8 h-8 rounded-full ring-2 ${isAdmin ? 'ring-amber-400' : 'ring-emerald-400'} group-hover:ring-emerald-300 object-cover transition-all shadow-md`} 
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500 group-hover:ring-emerald-400 transition-all shadow-md">
+                      <div className={`w-8 h-8 rounded-full ${isAdmin ? 'bg-gradient-to-tr from-amber-600 to-indigo-600 ring-amber-400' : 'bg-gradient-to-tr from-emerald-600 to-teal-500 ring-emerald-400'} text-white flex items-center justify-center font-bold text-xs ring-2 group-hover:ring-emerald-300 transition-all shadow-md`}>
                         {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
                       </div>
                     )}
@@ -525,7 +525,7 @@ export const Navbar = ({
                       <p className="text-xs font-semibold text-white truncate max-w-[110px] group-hover:text-emerald-300 transition-colors">
                         {currentUser.displayName || currentUser.email.split('@')[0]}
                       </p>
-                      <p className="text-[10px] text-indigo-400 uppercase font-bold flex items-center gap-0.5">
+                      <p className="text-[10px] uppercase font-bold flex items-center gap-0.5">
                         {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline text-emerald-400" />}
                         <span className={isAdmin ? 'text-amber-400' : 'text-emerald-400'}>
                           {isAdmin ? 'Admin' : (currentPersona?.sectorName || 'Operador')}
@@ -545,10 +545,10 @@ export const Navbar = ({
                           <img 
                             src={currentUser.photoURL} 
                             alt="Avatar" 
-                            className="w-10 h-10 rounded-full ring-2 ring-emerald-400 object-cover" 
+                            className={`w-10 h-10 rounded-full ring-2 ${isAdmin ? 'ring-amber-400' : 'ring-emerald-400'} object-cover`} 
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm ring-2 ring-emerald-400">
+                          <div className={`w-10 h-10 rounded-full ${isAdmin ? 'bg-gradient-to-tr from-amber-600 to-indigo-600 ring-amber-400' : 'bg-gradient-to-tr from-emerald-600 to-teal-500 ring-emerald-400'} text-white flex items-center justify-center font-bold text-sm ring-2`}>
                             {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
                           </div>
                         )}
@@ -556,14 +556,14 @@ export const Navbar = ({
                           <p className="text-xs font-bold text-white truncate">
                             {currentUser.displayName || currentUser.email.split('@')[0]}
                           </p>
-                          <p className="text-[11px] text-slate-400 truncate">
+                          <p className="text-[11px] text-slate-400 truncate font-mono">
                             {currentUser.email}
                           </p>
                           <div className="mt-1 flex items-center gap-1">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.2 rounded-full ${
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                               isAdmin 
-                                ? 'bg-amber-500/20 text-amber-300' 
-                                : 'bg-emerald-500/20 text-emerald-300'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             }`}>
                               {isAdmin ? <Crown className="w-2.5 h-2.5" /> : <Shield className="w-2.5 h-2.5" />}
                               {isAdmin ? 'Administrador' : `Operador: ${currentPersona?.sectorName || 'Setor'}`}
