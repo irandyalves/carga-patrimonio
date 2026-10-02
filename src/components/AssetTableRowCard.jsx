@@ -1270,75 +1270,77 @@ export const AssetTableRowCard = ({
             </button>
           )}
 
-          {/* Seletor de Cor da Linha / Card */}
-          <div className="relative" ref={colorPickerRef}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsColorPickerOpen(!isColorPickerOpen);
-              }}
-              title="Marcar / destacar linha com uma cor"
-              className={`p-1 rounded-lg transition-all cursor-pointer ${
-                asset.cardColor 
-                  ? 'text-white bg-slate-800 ring-1 ring-white/30' 
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Palette className={`w-3.5 h-3.5 ${
-                asset.cardColor === 'emerald' ? 'text-emerald-400' :
-                asset.cardColor === 'blue' ? 'text-blue-400' :
-                asset.cardColor === 'amber' ? 'text-amber-400' :
-                asset.cardColor === 'rose' ? 'text-rose-400' :
-                asset.cardColor === 'purple' ? 'text-purple-400' :
-                asset.cardColor === 'cyan' ? 'text-cyan-400' :
-                asset.cardColor === 'orange' ? 'text-orange-400' : 'text-slate-400'
-              }`} />
-            </button>
-
-            {isColorPickerOpen && (
-              <div 
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 bottom-full mb-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 flex flex-col gap-1.5 min-w-[170px] animate-in fade-in zoom-in-95 duration-100"
+          {/* Seletor de Cor da Linha / Card (Visível apenas para o detentor do setor / admin) */}
+          {canManageAsset && (
+            <div className="relative" ref={colorPickerRef}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsColorPickerOpen(!isColorPickerOpen);
+                }}
+                title="Marcar / destacar linha com uma cor"
+                className={`p-1 rounded-lg transition-all cursor-pointer ${
+                  asset.cardColor 
+                    ? 'text-white bg-slate-800 ring-1 ring-white/30' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
               >
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
-                  <span>Destacar Card</span>
-                  {asset.cardColor && (
-                    <button 
-                      onClick={() => {
-                        onUpdateCardColor?.(asset.id, 'default');
-                        setIsColorPickerOpen(false);
-                      }}
-                      className="text-[9px] text-rose-400 hover:underline cursor-pointer"
-                    >
-                      Limpar
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 gap-1.5 p-1">
-                  {COLOR_OPTIONS.map((opt) => {
-                    const isSelected = (asset.cardColor || 'default') === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
+                <Palette className={`w-3.5 h-3.5 ${
+                  asset.cardColor === 'emerald' ? 'text-emerald-400' :
+                  asset.cardColor === 'blue' ? 'text-blue-400' :
+                  asset.cardColor === 'amber' ? 'text-amber-400' :
+                  asset.cardColor === 'rose' ? 'text-rose-400' :
+                  asset.cardColor === 'purple' ? 'text-purple-400' :
+                  asset.cardColor === 'cyan' ? 'text-cyan-400' :
+                  asset.cardColor === 'orange' ? 'text-orange-400' : 'text-slate-400'
+                }`} />
+              </button>
+
+              {isColorPickerOpen && (
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 bottom-full mb-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 flex flex-col gap-1.5 min-w-[170px] animate-in fade-in zoom-in-95 duration-100"
+                >
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
+                    <span>Destacar Card</span>
+                    {asset.cardColor && (
+                      <button 
                         onClick={() => {
-                          onUpdateCardColor?.(asset.id, opt.id);
+                          onUpdateCardColor?.(asset.id, 'default');
                           setIsColorPickerOpen(false);
                         }}
-                        title={opt.label}
-                        className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
-                          isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-105'
-                        } flex items-center justify-center transition-all cursor-pointer`}
+                        className="text-[9px] text-rose-400 hover:underline cursor-pointer"
                       >
-                        {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                        Limpar
                       </button>
-                    );
-                  })}
+                    )}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 p-1">
+                    {COLOR_OPTIONS.map((opt) => {
+                      const isSelected = (asset.cardColor || 'default') === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            onUpdateCardColor?.(asset.id, opt.id);
+                            setIsColorPickerOpen(false);
+                          }}
+                          title={opt.label}
+                          className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
+                            isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-105'
+                          } flex items-center justify-center transition-all cursor-pointer`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Menu Dropdown de Ações colado à direita */}
           <div className="relative">
@@ -1905,22 +1907,20 @@ export const AssetTableRowCard = ({
               </button>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDescModalOpen(false);
-                    if (!canManageAsset) {
-                      onOpenSolicitacao(asset);
-                    } else {
+                {canManageAsset && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDescModalOpen(false);
                       onOpenEdit(asset);
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
-                  title="Editar dados deste bem patrimonial"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Editar</span>
-                </button>
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    title="Editar dados deste bem patrimonial"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </button>
+                )}
 
                 <button
                   type="button"

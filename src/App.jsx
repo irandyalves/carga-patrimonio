@@ -187,6 +187,10 @@ export function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Persona Simulada para Teste de Operadores e Departamentos
+  const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
+  const currentProfileKey = simulatedPersonaId || currentUser?.email || 'admin';
+
   // Padrões de Visibilidade de Colunas:
   // 1. DENTRO DE SETORES: Quantidade, Localização e Responsável vêm por padrão ESCONDIDOS (false)
   const DEFAULT_SECTOR_COLUMNS = useMemo(() => ({
@@ -216,7 +220,8 @@ export function App() {
 
   const [sectorColumns, setSectorColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_sector_visible_columns_v3');
+      const stored = localStorage.getItem(`carga_patrimonio_sector_cols_${currentProfileKey}`) || 
+                     localStorage.getItem('carga_patrimonio_sector_visible_columns_v3');
       if (stored) {
         return {
           ...DEFAULT_SECTOR_COLUMNS,
@@ -230,7 +235,8 @@ export function App() {
 
   const [generalColumns, setGeneralColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_general_visible_columns_v3');
+      const stored = localStorage.getItem(`carga_patrimonio_general_cols_${currentProfileKey}`) ||
+                     localStorage.getItem('carga_patrimonio_general_visible_columns_v3');
       if (stored) {
         return {
           ...DEFAULT_GENERAL_COLUMNS,
@@ -241,17 +247,59 @@ export function App() {
     return DEFAULT_GENERAL_COLUMNS;
   });
 
-  useEffect(() => {
+  // Modo de exibição da depreciação por perfil: 'currency' (R$) ou 'percent' (%)
+  const [depreciationMode, setDepreciationMode] = useState(() => {
     try {
-      localStorage.setItem('carga_patrimonio_sector_visible_columns_v3', JSON.stringify(sectorColumns));
-    } catch (e) {}
-  }, [sectorColumns]);
+      return localStorage.getItem(`carga_patrimonio_depr_mode_${currentProfileKey}`) || 
+             localStorage.getItem('carga_patrimonio_depr_mode') || 'currency';
+    } catch (e) {
+      return 'currency';
+    }
+  });
 
+  // Configurações Visuais e de Exibição por perfil
+  const [displaySettings, setDisplaySettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`carga_patrimonio_display_settings_${currentProfileKey}`) ||
+                     localStorage.getItem('carga_patrimonio_display_settings');
+      return stored ? { ...DEFAULT_DISPLAY_SETTINGS, ...JSON.parse(stored) } : DEFAULT_DISPLAY_SETTINGS;
+    } catch (e) {
+      return DEFAULT_DISPLAY_SETTINGS;
+    }
+  });
+
+  // Ao alternar de perfil/setor (Persona), carrega imediatamente as preferências visuais individuais
   useEffect(() => {
     try {
-      localStorage.setItem('carga_patrimonio_general_visible_columns_v3', JSON.stringify(generalColumns));
+      const sCols = localStorage.getItem(`carga_patrimonio_sector_cols_${currentProfileKey}`);
+      if (sCols) {
+        setSectorColumns({ ...DEFAULT_SECTOR_COLUMNS, ...JSON.parse(sCols), localizacao: false });
+      } else {
+        setSectorColumns(DEFAULT_SECTOR_COLUMNS);
+      }
+
+      const gCols = localStorage.getItem(`carga_patrimonio_general_cols_${currentProfileKey}`);
+      if (gCols) {
+        setGeneralColumns({ ...DEFAULT_GENERAL_COLUMNS, ...JSON.parse(gCols) });
+      } else {
+        setGeneralColumns(DEFAULT_GENERAL_COLUMNS);
+      }
+
+      const dMode = localStorage.getItem(`carga_patrimonio_depr_mode_${currentProfileKey}`);
+      if (dMode) {
+        setDepreciationMode(dMode);
+      } else {
+        setDepreciationMode('currency');
+      }
+
+      const dSet = localStorage.getItem(`carga_patrimonio_display_settings_${currentProfileKey}`);
+      if (dSet) {
+        setDisplaySettings({ ...DEFAULT_DISPLAY_SETTINGS, ...JSON.parse(dSet) });
+      } else {
+        setDisplaySettings(DEFAULT_DISPLAY_SETTINGS);
+      }
     } catch (e) {}
-  }, [generalColumns]);
+  }, [currentProfileKey, DEFAULT_SECTOR_COLUMNS, DEFAULT_GENERAL_COLUMNS]);
 
   // Colunas ativas dinâmicas com base no modo atual (Dentro de Setor vs Geral)
   const visibleColumns = useMemo(() => {
@@ -260,21 +308,33 @@ export function App() {
 
   const toggleColumn = (columnKey) => {
     if (filterMode === 'MY_SECTOR') {
-      setSectorColumns(prev => ({
-        ...prev,
-        [columnKey]: !prev[columnKey]
-      }));
+      setSectorColumns(prev => {
+        const next = {
+          ...prev,
+          [columnKey]: !prev[columnKey]
+        };
+        try {
+          localStorage.setItem(`carga_patrimonio_sector_cols_${currentProfileKey}`, JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
     } else {
-      setGeneralColumns(prev => ({
-        ...prev,
-        [columnKey]: !prev[columnKey]
-      }));
+      setGeneralColumns(prev => {
+        const next = {
+          ...prev,
+          [columnKey]: !prev[columnKey]
+        };
+        try {
+          localStorage.setItem(`carga_patrimonio_general_cols_${currentProfileKey}`, JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
     }
   };
 
   const showAllColumns = () => {
     if (filterMode === 'MY_SECTOR') {
-      setSectorColumns({
+      const allSec = {
         quantidade: true,
         marca: true,
         modelo: true,
@@ -284,9 +344,13 @@ export function App() {
         valorOriginal: true,
         valorAtual: true,
         depreciacao: true
-      });
+      };
+      setSectorColumns(allSec);
+      try {
+        localStorage.setItem(`carga_patrimonio_sector_cols_${currentProfileKey}`, JSON.stringify(allSec));
+      } catch (e) {}
     } else {
-      setGeneralColumns({
+      const allGen = {
         quantidade: true,
         marca: true,
         modelo: true,
@@ -296,15 +360,25 @@ export function App() {
         valorOriginal: true,
         valorAtual: true,
         depreciacao: true
-      });
+      };
+      setGeneralColumns(allGen);
+      try {
+        localStorage.setItem(`carga_patrimonio_general_cols_${currentProfileKey}`, JSON.stringify(allGen));
+      } catch (e) {}
     }
   };
 
   const resetToModeDefaultColumns = () => {
     if (filterMode === 'MY_SECTOR') {
       setSectorColumns(DEFAULT_SECTOR_COLUMNS);
+      try {
+        localStorage.setItem(`carga_patrimonio_sector_cols_${currentProfileKey}`, JSON.stringify(DEFAULT_SECTOR_COLUMNS));
+      } catch (e) {}
     } else {
       setGeneralColumns(DEFAULT_GENERAL_COLUMNS);
+      try {
+        localStorage.setItem(`carga_patrimonio_general_cols_${currentProfileKey}`, JSON.stringify(DEFAULT_GENERAL_COLUMNS));
+      } catch (e) {}
     }
   };
 
@@ -340,20 +414,11 @@ export function App() {
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
   const columnDropdownRef = useRef(null);
 
-  // Modo de exibição da depreciação: 'currency' (R$) ou 'percent' (%)
-  const [depreciationMode, setDepreciationMode] = useState(() => {
-    try {
-      return localStorage.getItem('carga_patrimonio_depr_mode') || 'currency';
-    } catch (e) {
-      return 'currency';
-    }
-  });
-
   const toggleDepreciationMode = () => {
     setDepreciationMode(prev => {
       const next = prev === 'currency' ? 'percent' : 'currency';
       try {
-        localStorage.setItem('carga_patrimonio_depr_mode', next);
+        localStorage.setItem(`carga_patrimonio_depr_mode_${currentProfileKey}`, next);
       } catch (e) {}
       return next;
     });
@@ -432,30 +497,20 @@ export function App() {
   const [batchStatusModalData, setBatchStatusModalData] = useState(null);
   const [isProcessingBatchStatus, setIsProcessingBatchStatus] = useState(false);
 
-  // Configurações Visuais e de Exibição (localStorage)
-  const [displaySettings, setDisplaySettings] = useState(() => {
-    try {
-      const stored = localStorage.getItem('carga_patrimonio_display_settings');
-      return stored ? { ...DEFAULT_DISPLAY_SETTINGS, ...JSON.parse(stored) } : DEFAULT_DISPLAY_SETTINGS;
-    } catch (e) {
-      return DEFAULT_DISPLAY_SETTINGS;
-    }
-  });
   const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(false);
 
   const handleSaveDisplaySettings = (newSettings) => {
     setDisplaySettings(newSettings);
     try {
-      localStorage.setItem('carga_patrimonio_display_settings', JSON.stringify(newSettings));
+      localStorage.setItem(`carga_patrimonio_display_settings_${currentProfileKey}`, JSON.stringify(newSettings));
     } catch (e) {}
-    saveDisplaySettingsToCloud(newSettings).catch((err) => {
-      console.warn('Erro ao sincronizar configurações na nuvem:', err);
-    });
-    showToast('Configurações salvas e sincronizadas na nuvem!', 'success');
+    if (effectiveUserRole === 'admin') {
+      saveDisplaySettingsToCloud(newSettings).catch((err) => {
+        console.warn('Erro ao sincronizar configurações na nuvem:', err);
+      });
+    }
+    showToast('Configurações visuais salvas com sucesso!', 'success');
   };
-
-  // Persona Simulada para Teste de Operadores e Departamentos
-  const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
 
   // Referência do scroll principal
   const mainScrollRef = useRef(null);
