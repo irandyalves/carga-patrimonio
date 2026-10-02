@@ -57,6 +57,9 @@ import {
 import { 
   PedidosCargaModal 
 } from './components/PedidosCargaModal';
+import { 
+  PendenciasDtinModal 
+} from './components/PendenciasDtinModal';
 import {
   DisplaySettingsModal,
   DEFAULT_DISPLAY_SETTINGS
@@ -419,6 +422,7 @@ export function App() {
   const [isSolicitacaoModalOpen, setIsSolicitacaoModalOpen] = useState(false);
   const [assetForSolicitacao, setAssetForSolicitacao] = useState(null);
   const [isPedidosModalOpen, setIsPedidosModalOpen] = useState(false);
+  const [isPendenciasDtinOpen, setIsPendenciasDtinOpen] = useState(false);
 
   // Modal de Exclusão Segura com Motivo Obrigatório
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -886,6 +890,28 @@ export function App() {
       pctConferido: Math.min(100, pctConferido)
     };
   }, [assets, activeSectorId]);
+
+  // Lista de Equipamentos com Autorização de Envio ao DTIN Pendente
+  const pendingDtinAssets = useMemo(() => {
+    return assets.filter(a => a.pendenciaDtin && a.pendenciaDtin.status === 'PENDENTE');
+  }, [assets]);
+
+  // Contagem de pendências de DTIN visíveis para o usuário/perfil conectado
+  const userPendingDtinCount = useMemo(() => {
+    if (effectiveUserRole === 'admin') {
+      return pendingDtinAssets.length;
+    }
+    const currentName = (effectiveUser?.displayName || currentUser?.displayName || '').toLowerCase().trim();
+    return pendingDtinAssets.filter(a => {
+      if (effectiveUserSectorIds && effectiveUserSectorIds.length > 0) {
+        return effectiveUserSectorIds.includes(a.setorId);
+      }
+      if (effectiveUserSectorId && a.setorId === effectiveUserSectorId) return true;
+      const aResp = (a.responsavel || '').toLowerCase().trim();
+      if (currentName && aResp && (aResp === currentName || currentName.includes(aResp))) return true;
+      return false;
+    }).length;
+  }, [pendingDtinAssets, effectiveUserRole, effectiveUserSectorIds, effectiveUserSectorId, effectiveUser, currentUser]);
 
   // Filtered Assets for Display
   const filteredAssets = useMemo(() => {
@@ -1795,6 +1821,10 @@ export function App() {
 
     // Se for um cadastro de novo equipamento fora da carga
     if (newAssetData) {
+      const isTiSector = newAssetData.setorId === 'sec-ti' || 
+                         (newAssetData.setorNome || '').toUpperCase().trim() === 'TI' || 
+                         (newAssetData.responsavel || '').toLowerCase().includes('santana');
+
       const newAsset = {
         id: `asset-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         numeroPatrimonio: newAssetData.numeroPatrimonio.trim(),
@@ -1804,20 +1834,29 @@ export function App() {
         responsavel: newAssetData.responsavel || activeSector?.responsavel || 'Responsável',
         localizacao: newAssetData.localizacao || '',
         numeroSerie: newAssetData.numeroSerie || '',
-        status: 'ENVIADO_DTIN',
-        enviadoDtin: true,
-        dadosDtin: {
+        status: isTiSector ? 'ENVIADO_DTIN' : 'ATIVO',
+        enviadoDtin: isTiSector,
+        dadosDtin: isTiSector ? {
           ...dadosDtin,
           dataHoraRegistro: new Date().toISOString()
-        },
+        } : null,
+        pendenciaDtin: !isTiSector ? {
+          id: `dtin-pend-${Date.now()}`,
+          ...dadosDtin,
+          solicitante: dadosDtin.responsavel || 'Santana',
+          status: 'PENDENTE',
+          dataRegistro: new Date().toISOString()
+        } : null,
         dataAquisicao: dadosDtin.data || new Date().toLocaleDateString('pt-BR'),
         valorOriginal: 0,
         valorAtual: 0,
         historico: [
           {
             data: dadosDtin.data || nowStr,
-            acao: `Cadastrado e Enviado ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`,
-            usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
+            acao: isTiSector
+              ? `Cadastrado e Enviado ao DTIN por Santana (TI): ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`
+              : `Cadastrado por Santana (TI) com Solicitação de Envio ao DTIN: ${dadosDtin.motivo} (Aguardando confirmação do detentor)`,
+            usuario: dadosDtin.responsavel || 'Santana'
           }
         ]
       };
@@ -1825,26 +1864,108 @@ export function App() {
       setAssets(updatedList);
       saveLocalAssets(updatedList);
       saveAssetToCloud(newAsset);
-      showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DTIN!`, 'success');
+      if (isTiSector) {
+        showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DTIN!`, 'success');
+      } else {
+        showToast(`Equipamento cadastrado! Solicitação de envio enviada para confirmação do detentor da carga.`, 'info');
+      }
       return;
     }
 
+    // Para equipamento existente:
+    const target = assets.find(a => a.id === assetId);
+    if (!target) return;
+
+    const isTiSector = target.setorId === 'sec-ti' || 
+                       (target.setorNome || '').toUpperCase().trim() === 'TI' || 
+                       (target.responsavel || '').toLowerCase().includes('santana');
+
+    if (isTiSector) {
+      // Pertence à TI (Santana) -> Envia direto para a DTIN
+      const updated = assets.map(a => {
+        if (a.id === assetId) {
+          const updatedItem = {
+            ...a,
+            status: 'ENVIADO_DTIN',
+            enviadoDtin: true,
+            pendenciaDtin: null,
+            dadosDtin: {
+              ...dadosDtin,
+              dataHoraRegistro: new Date().toISOString()
+            },
+            historico: [
+              ...(a.historico || []),
+              { 
+                data: dadosDtin.data || nowStr, 
+                acao: `Envio ao DTIN por Santana (TI): ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
+                usuario: dadosDtin.responsavel || 'Santana'
+              }
+            ]
+          };
+          saveAssetToCloud(updatedItem);
+          return updatedItem;
+        }
+        return a;
+      });
+      setAssets(updated);
+      saveLocalAssets(updated);
+      showToast('Equipamento da TI enviado ao DTIN com sucesso!', 'success');
+    } else {
+      // Pertence a outro setor (ex: Studio - Tadeu, CADMI - Alex, etc.) -> Gera Pendência de Autorização
+      const updated = assets.map(a => {
+        if (a.id === assetId) {
+          const updatedItem = {
+            ...a,
+            pendenciaDtin: {
+              id: `dtin-pend-${Date.now()}`,
+              ...dadosDtin,
+              solicitante: dadosDtin.responsavel || 'Santana',
+              status: 'PENDENTE',
+              dataRegistro: new Date().toISOString()
+            },
+            historico: [
+              ...(a.historico || []),
+              { 
+                data: dadosDtin.data || nowStr, 
+                acao: `Solicitação de Envio ao DTIN por Santana (TI) - Aguardando autorização do detentor (${a.responsavel || a.setorNome})`, 
+                usuario: dadosDtin.responsavel || 'Santana'
+              }
+            ]
+          };
+          saveAssetToCloud(updatedItem);
+          return updatedItem;
+        }
+        return a;
+      });
+      setAssets(updated);
+      saveLocalAssets(updated);
+      showToast(`Solicitação de envio ao DTIN gerada! O detentor (${target.responsavel || target.setorNome}) foi notificado no sino do cabeçalho.`, 'info');
+    }
+  };
+
+  // Autorização do Envio ao DTIN pelo Detentor
+  const handleAuthorizeDtin = (assetId) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(a => {
       if (a.id === assetId) {
+        const pendencia = a.pendenciaDtin;
+        const dadosDtinFinal = {
+          ...(pendencia || {}),
+          dataHoraRegistro: new Date().toISOString(),
+          autorizadoPor: currentUser?.displayName || currentUser?.email || a.responsavel || 'Detentor da Carga'
+        };
         const updatedItem = {
           ...a,
           status: 'ENVIADO_DTIN',
           enviadoDtin: true,
-          dadosDtin: {
-            ...dadosDtin,
-            dataHoraRegistro: new Date().toISOString()
-          },
+          dadosDtin: dadosDtinFinal,
+          pendenciaDtin: null,
           historico: [
             ...(a.historico || []),
-            { 
-              data: dadosDtin.data || nowStr, 
-              acao: `Envio ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
-              usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
+            {
+              data: nowStr,
+              acao: `Envio ao DTIN autorizado e confirmado pelo detentor (${a.responsavel || a.setorNome}): ${pendencia?.motivo || 'Manutenção'}`,
+              usuario: currentUser?.displayName || currentUser?.email || a.responsavel || 'Detentor da Carga'
             }
           ]
         };
@@ -1855,7 +1976,34 @@ export function App() {
     });
     setAssets(updated);
     saveLocalAssets(updated);
-    showToast('Equipamento enviado ao DTIN com sucesso!');
+    showToast('Envio ao DTIN autorizado e confirmado com sucesso!', 'success');
+  };
+
+  // Recusa do Envio ao DTIN pelo Detentor
+  const handleRejectDtin = (assetId) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const updated = assets.map(a => {
+      if (a.id === assetId) {
+        const updatedItem = {
+          ...a,
+          pendenciaDtin: null,
+          historico: [
+            ...(a.historico || []),
+            {
+              data: nowStr,
+              acao: `Envio ao DTIN recusado pelo detentor (${a.responsavel || a.setorNome})`,
+              usuario: currentUser?.displayName || currentUser?.email || a.responsavel || 'Detentor da Carga'
+            }
+          ]
+        };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
+      }
+      return a;
+    });
+    setAssets(updated);
+    saveLocalAssets(updated);
+    showToast('Envio ao DTIN recusado. O equipamento permanece no setor.', 'info');
   };
 
   // Retorno / Reintegração do DTIN
@@ -2010,6 +2158,8 @@ export function App() {
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
+        onOpenDtinPendencias={() => setIsPendenciasDtinOpen(true)}
+        dtinPendenciasCount={userPendingDtinCount}
         currentPersona={simulatedPersona}
         onSelectPersona={handleSelectPersona}
         sectors={sectors}
@@ -3007,6 +3157,25 @@ export function App() {
         isAdmin={effectiveUserRole === 'admin'}
         onAprovarPedido={handleAprovarPedido}
         onRecusarPedido={handleRecusarPedido}
+      />
+
+      {/* Modal de Notificações e Autorizações de Envio ao DTIN pelo Detentor */}
+      <PendenciasDtinModal
+        isOpen={isPendenciasDtinOpen}
+        onClose={() => setIsPendenciasDtinOpen(false)}
+        pendencias={effectiveUserRole === 'admin' ? pendingDtinAssets : pendingDtinAssets.filter(a => {
+          if (effectiveUserSectorIds && effectiveUserSectorIds.length > 0) {
+            return effectiveUserSectorIds.includes(a.setorId);
+          }
+          if (effectiveUserSectorId && a.setorId === effectiveUserSectorId) return true;
+          const currentName = (effectiveUser?.displayName || currentUser?.displayName || '').toLowerCase().trim();
+          const aResp = (a.responsavel || '').toLowerCase().trim();
+          return currentName && aResp && (aResp === currentName || currentName.includes(aResp));
+        })}
+        onAuthorizeDtin={handleAuthorizeDtin}
+        onRejectDtin={handleRejectDtin}
+        currentUser={effectiveUser}
+        isAdmin={effectiveUserRole === 'admin'}
       />
 
       {/* Modal Central Moderno e Elegante de Confirmação para Limpeza de Bens do Setor */}

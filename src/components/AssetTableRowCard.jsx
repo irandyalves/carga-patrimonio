@@ -30,7 +30,8 @@ import {
   ExternalLink,
   RotateCcw,
   Server,
-  Laptop
+  Laptop,
+  Bell
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
@@ -720,6 +721,16 @@ export const AssetTableRowCard = ({
               <Server className="w-3 h-3 text-cyan-400" />
               <span>No DTIN</span>
             </button>
+          )}
+
+          {asset.pendenciaDtin?.status === 'PENDENTE' && (
+            <div
+              title="Santana (TI) solicitou o envio deste equipamento ao DTIN (Aguardando autorização do detentor)"
+              className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/50 text-[10px] flex items-center gap-1 shrink-0 shadow-sm animate-pulse"
+            >
+              <Bell className="w-3 h-3 text-cyan-400" />
+              <span>DTIN Pendente</span>
+            </div>
           )}
 
           {isDescLong && (
