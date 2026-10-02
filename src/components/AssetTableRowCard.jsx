@@ -1227,11 +1227,11 @@ export const AssetTableRowCard = ({
               Baixado
             </div>
           ) : showUncheckConfirm ? (
-            <div className="z-20 flex items-center gap-1.5 bg-slate-950 border border-amber-500 px-2 py-0.5 rounded-lg shadow-xl shadow-black select-none whitespace-nowrap">
-              <span className="text-[10px] text-amber-300 font-bold">Desmarcar?</span>
+            <div className="z-20 flex items-center gap-2 bg-slate-950/95 border-2 border-amber-500 px-3.5 py-1.5 rounded-xl shadow-2xl shadow-black select-none whitespace-nowrap animate-in zoom-in-95 duration-150">
+              <span className="text-xs text-amber-300 font-black">Desmarcar?</span>
               <button
                 onClick={handleConfirmUncheck}
-                className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[10px] font-bold cursor-pointer transition-colors shadow-sm"
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-black cursor-pointer transition-all shadow-md active:scale-95"
               >
                 Sim
               </button>
@@ -1240,7 +1240,7 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setShowUncheckConfirm(false);
                 }}
-                className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-[10px] font-semibold cursor-pointer transition-colors"
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95"
               >
                 Não
               </button>
@@ -1715,11 +1715,11 @@ export const AssetTableRowCard = ({
           <div className="flex items-center gap-1 shrink-0">
             {!isBaixado && (
               showUncheckConfirm ? (
-                <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded-lg border border-amber-500/40">
-                  <span className="text-[9px] text-amber-300 font-bold">Desmarcar?</span>
+                <div className="flex items-center gap-2 bg-slate-950/95 px-3 py-1.5 rounded-xl border-2 border-amber-500/70 shadow-xl shadow-black animate-in zoom-in-95 duration-150">
+                  <span className="text-xs text-amber-300 font-black">Desmarcar?</span>
                   <button
                     onClick={handleConfirmUncheck}
-                    className="px-1.5 py-0.2 bg-amber-500 text-slate-950 rounded text-[9px] font-black cursor-pointer"
+                    className="px-3 py-1 bg-amber-500 active:bg-amber-400 text-slate-950 rounded-lg text-xs font-black cursor-pointer shadow-md active:scale-95"
                   >
                     Sim
                   </button>
@@ -1728,7 +1728,7 @@ export const AssetTableRowCard = ({
                       e.stopPropagation();
                       setShowUncheckConfirm(false);
                     }}
-                    className="px-1.5 py-0.2 bg-slate-800 text-slate-300 rounded text-[9px] cursor-pointer"
+                    className="px-3 py-1 bg-slate-800 active:bg-slate-700 text-slate-100 border border-slate-700 rounded-lg text-xs font-bold cursor-pointer active:scale-95"
                   >
                     Não
                   </button>

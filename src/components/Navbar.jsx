@@ -188,26 +188,6 @@ export const Navbar = ({
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="text-[10px] font-mono font-bold text-emerald-400">{conferidosCount || 0}</span>
             </button>
-
-            {/* Alternar Tela Cheia Total (Fullscreen) */}
-            {onToggleFullscreen && (
-              <button
-                type="button"
-                onClick={onToggleFullscreen}
-                title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia Total (Fullscreen)"}
-                className={`p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
-                  isFullscreen
-                    ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-400/50 shadow-sm'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white'
-                }`}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <Maximize2 className="w-4 h-4 text-indigo-400" />
-                )}
-              </button>
-            )}
           </div>
 
           {/* GRUPO CENTRAL: Campo de Busca com expansão suave para a esquerda no mobile */}
@@ -323,6 +303,26 @@ export const Navbar = ({
               >
                 <QrCode className="w-4 h-4" />
               </button>
+
+              {/* Alternar Tela Cheia Total (Fullscreen) */}
+              {onToggleFullscreen && (
+                <button
+                  type="button"
+                  onClick={onToggleFullscreen}
+                  title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia Total (Fullscreen)"}
+                  className={`p-2 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                    isFullscreen
+                      ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-400/50 shadow-sm'
+                      : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Maximize2 className="w-4 h-4 text-indigo-400" />
+                  )}
+                </button>
+              )}
             </div>
 
           </div>
