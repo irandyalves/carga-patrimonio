@@ -2461,7 +2461,7 @@ export const AssetTableRowCard = ({
                   <Server className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">Equipamento Enviado ao DTIN</h3>
+                  <h3 className="font-bold text-white text-base">Equipamento Enviado para: DTIN</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="font-mono text-xs text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
                       Nº {formattedXX}
@@ -2484,14 +2484,17 @@ export const AssetTableRowCard = ({
             {/* Conteúdo */}
             <div className="space-y-3.5 text-xs">
               {/* Box Item Info */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Item de Informática</span>
-                <p className="text-white font-medium text-sm">
-                  <strong className="font-mono text-cyan-400 mr-1.5"><HighlightText text={formattedXX} query={searchTerm} /></strong>
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-300 tracking-tight">
+                    <HighlightText text={formattedXX} query={searchTerm} />
+                  </span>
+                </div>
+                <p className="text-white font-semibold text-xs sm:text-sm leading-snug line-clamp-2" title={asset.descricao}>
                   <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
                 <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                  <span>Setor: <strong className="text-slate-300 font-medium"><HighlightText text={asset.setorNome || activeSector?.name} query={searchTerm} /></strong></span>
+                  <span>Origem: <strong className="text-slate-200 font-bold"><HighlightText text={asset.setorNome || activeSector?.name || 'Setor'} query={searchTerm} /></strong></span>
                   {asset.numeroSerie && <span>S/N: <strong className="font-mono text-slate-300"><HighlightText text={asset.numeroSerie} query={searchTerm} /></strong></span>}
                 </div>
               </div>
@@ -2512,30 +2515,38 @@ export const AssetTableRowCard = ({
                 </div>
               </div>
 
-              {/* Chamado & Responsável */}
+              {/* O.S. / Chamado se houver */}
+              {asset.dadosDtin?.chamado && (
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-[10px] text-slate-400 font-medium">Nº Chamado / O.S.:</span>
+                  <strong className="text-indigo-300 font-mono text-xs">
+                    {asset.dadosDtin.chamado}
+                  </strong>
+                </div>
+              )}
+
+              {/* Responsável (Detentor) & Quem enviou (Santana) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {asset.dadosDtin?.chamado && (
-                  <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Nº Chamado / O.S.:</span>
-                    <strong className="text-indigo-300 font-mono text-xs block">
-                      {asset.dadosDtin.chamado}
-                    </strong>
-                  </div>
-                )}
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Solicitante / Responsável:</span>
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Responsável (Detentor da Carga):</span>
                   <strong className="text-slate-200 text-xs block">
-                    {asset.dadosDtin?.responsavel || activeSector?.responsavel || 'Operador'}
+                    {asset.responsavel || activeSector?.responsavel || 'Detentor'}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
+                  <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Quem enviou:</span>
+                  <strong className="text-cyan-300 text-xs block font-bold">
+                    {asset.dadosDtin?.responsavel || 'Santana (TI)'}
                   </strong>
                 </div>
               </div>
 
-              {/* Observações / Descrição do Defeito */}
-              <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">
-                  Descrição do Problema / Procedimento
+              {/* Observações / Descrição do Defeito (em verde) */}
+              <div className="p-3.5 rounded-xl bg-emerald-950/25 border border-emerald-500/30 space-y-1">
+                <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider block">
+                  Observações / Procedimento
                 </span>
-                <p className="text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">
+                <p className="text-emerald-300 text-xs leading-relaxed whitespace-pre-wrap font-medium">
                   {asset.dadosDtin?.observacoes || 'Equipamento entregue ao DTIN para avaliação técnica.'}
                 </p>
               </div>

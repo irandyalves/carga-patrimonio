@@ -43,7 +43,7 @@ export const PendenciasDtinModal = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-white text-base sm:text-lg">
-                  Autorização de Envio para a DTIN
+                  Autorização de Envio para: DTIN
                 </h3>
                 {pendencias.length > 0 && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono animate-pulse">
@@ -97,24 +97,22 @@ export const PendenciasDtinModal = ({
                     key={item.id}
                     className="p-4 rounded-2xl bg-slate-850 border border-cyan-500/30 hover:border-cyan-500/50 transition-all space-y-3 shadow-lg shadow-slate-950/40"
                   >
-                    {/* Topo do Item: Patrimônio, Descrição e Setor */}
+                    {/* Topo do Item: Patrimônio 100% Maior, Descrição e Origem */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-750 pb-3">
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-base font-black text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-500/40">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-300 tracking-tight">
                             {formatPatrimonio(item.numeroPatrimonio)}
                           </span>
-                          <span className="text-sm font-bold text-white">
-                            {item.descricao}
-                          </span>
                         </div>
+                        <p className="text-sm font-bold text-white leading-snug line-clamp-2">
+                          {item.descricao}
+                        </p>
                         
-                        <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400 flex-wrap">
-                          <span>Setor Atual: <strong className="text-slate-200 font-semibold">{item.setorNome || 'Setor'}</strong> ({item.responsavel || 'Detentor'})</span>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-400 flex-wrap">
+                          <span>Origem: <strong className="text-slate-200 font-bold">{item.setorNome || 'Setor'}</strong></span>
                           <span>•</span>
-                          <span>Solicitado por: <strong className="text-cyan-300 font-semibold">{dados.responsavel || dados.solicitante || 'Santana (TI)'}</strong></span>
-                          <span>•</span>
-                          <span className="text-slate-400">{dados.data || dados.dataSolicitacao || 'Hoje'}</span>
+                          <span>Data: <strong className="text-slate-300">{dados.data || dados.dataSolicitacao || 'Hoje'}</strong></span>
                         </div>
                       </div>
 
@@ -128,28 +126,45 @@ export const PendenciasDtinModal = ({
                     {/* Detalhes do Envio */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                        <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
                           Finalidade / Motivo
                         </span>
-                        <p className="text-slate-200 font-medium">{dados.motivo || 'Manutenção Corretiva'}</p>
+                        <p className="text-cyan-300 font-medium">{dados.motivo || 'Manutenção Corretiva'}</p>
                       </div>
 
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                        <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
                           Nº Chamado / O.S.
                         </span>
-                        <p className="text-cyan-300 font-mono font-medium">{dados.chamado || 'Não informado'}</p>
+                        <p className="text-indigo-300 font-mono font-medium">{dados.chamado || 'Não informado'}</p>
                       </div>
                     </div>
 
-                    {/* Observações e Diagnóstico */}
-                    {dados.observacoes && (
-                      <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-                        <span className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider block">
-                          Observações / Diagnóstico do Santana (TI):
+                    {/* Responsável (Detentor) & Quem enviou (Santana) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
+                          Responsável (Detentor da Carga)
                         </span>
-                        <p className="text-slate-200 leading-relaxed italic">
-                          "{dados.observacoes}"
+                        <p className="text-slate-200 font-semibold">{item.responsavel || 'Detentor'}</p>
+                      </div>
+
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
+                          Quem enviou
+                        </span>
+                        <p className="text-cyan-300 font-bold">{dados.responsavel || dados.solicitante || 'Santana (TI)'}</p>
+                      </div>
+                    </div>
+
+                    {/* Observações e Diagnóstico (em verde) */}
+                    {dados.observacoes && (
+                      <div className="bg-emerald-950/25 p-3 rounded-xl border border-emerald-500/30 text-xs space-y-1">
+                        <span className="text-[10.5px] font-bold text-emerald-400 uppercase tracking-wider block">
+                          Observações / Procedimento:
+                        </span>
+                        <p className="text-emerald-300 leading-relaxed whitespace-pre-wrap font-medium">
+                          {dados.observacoes}
                         </p>
                       </div>
                     )}
