@@ -2430,15 +2430,7 @@ export const AssetTableRowCard = ({
                   <Server className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">Equipamento Enviado para: DTIN</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="font-mono text-xs text-cyan-300 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                      Nº {formattedXX}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
-                      EM ATENDIMENTO NO DTIN
-                    </span>
-                  </div>
+                  <h3 className="font-extrabold text-white text-base sm:text-lg">Equipamento enviado para a DTIN</h3>
                 </div>
               </div>
               <button
@@ -2452,20 +2444,26 @@ export const AssetTableRowCard = ({
 
             {/* Conteúdo */}
             <div className="space-y-3.5 text-xs">
-              {/* Box Item Info */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-300 tracking-tight">
-                    <HighlightText text={formattedXX} query={searchTerm} />
-                  </span>
-                </div>
-                <p className="text-white font-semibold text-xs sm:text-sm leading-snug line-clamp-2" title={asset.descricao}>
+              {/* Em cima do quadro: Patrimônio à esquerda • Setor à direita */}
+              <div className="flex items-baseline justify-between gap-3 px-1">
+                <span className="text-3xl sm:text-4xl font-black font-mono text-cyan-400 tracking-tight drop-shadow-[0_0_12px_rgba(34,211,238,0.25)]">
+                  <HighlightText text={formattedXX} query={searchTerm} />
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-slate-300">
+                  <HighlightText text={asset.setorNome || activeSector?.name || 'Setor'} query={searchTerm} />
+                </span>
+              </div>
+
+              {/* Quadro Fundo Preto: Dentro do quadro a Descrição */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-1.5">
+                <p className="text-white font-medium text-xs sm:text-sm leading-relaxed" title={asset.descricao}>
                   <HighlightText text={asset.descricao} query={searchTerm} />
                 </p>
-                <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                  <span>Origem: <strong className="text-slate-200 font-bold"><HighlightText text={asset.setorNome || activeSector?.name || 'Setor'} query={searchTerm} /></strong></span>
-                  {asset.numeroSerie && <span>S/N: <strong className="font-mono text-slate-300"><HighlightText text={asset.numeroSerie} query={searchTerm} /></strong></span>}
-                </div>
+                {asset.numeroSerie && (
+                  <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-900 mt-1">
+                    S/N: <strong className="font-mono text-slate-300"><HighlightText text={asset.numeroSerie} query={searchTerm} /></strong>
+                  </div>
+                )}
               </div>
 
               {/* Informações do Envio */}
