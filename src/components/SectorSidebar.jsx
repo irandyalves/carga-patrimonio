@@ -266,57 +266,6 @@ export const SectorSidebar = ({
                       <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                     </button>
                   )}
-
-                  {/* Botão Importar Geral */}
-                  {userRole === 'admin' && onOpenImport && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenImport()}
-                      title="Importar carga de bens (Excel, Word, CSV, TXT)"
-                      className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
-                    >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <UploadCloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 shrink-0" />
-                        <span className="truncate">Importar</span>
-                      </div>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0">Carga</span>
-                    </button>
-                  )}
-
-                  {/* Ações em Lote para Toda a Carga Geral */}
-                  {userRole === 'admin' && onOpenBatchStatusChange && (
-                    <div className="pt-1 mt-1 border-t border-slate-800/80 space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => onOpenBatchStatusChange({ targetType: 'ALL', newStatus: 'PENDENTE' })}
-                        title="Tornar toda a carga geral como PENDENTE (desmarcar conferência de todos os bens)"
-                        className="w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-amber-400 hover:text-amber-200 hover:bg-amber-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20"
-                      >
-                        <div className="flex items-center gap-1.5 truncate">
-                          <RotateCcw className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300 shrink-0" />
-                          <span className="truncate font-semibold">Tornar Toda Carga Pendente</span>
-                        </div>
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold shrink-0">
-                          {assets.filter(a => a.status === 'CONFERIDO').length}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onOpenBatchStatusChange({ targetType: 'ALL', newStatus: 'CONFERIDO' })}
-                        title="Tornar toda a carga geral como CONFERIDA (marcar todos os bens como conferidos)"
-                        className="w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
-                      >
-                        <div className="flex items-center gap-1.5 truncate">
-                          <CheckCheck className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 shrink-0" />
-                          <span className="truncate font-semibold">Tornar Toda Carga Conferida</span>
-                        </div>
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
-                          {assets.filter(a => a.status !== 'CONFERIDO' && a.status !== 'BAIXADO').length}
-                        </span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
