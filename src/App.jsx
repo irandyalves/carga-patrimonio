@@ -858,6 +858,18 @@ export function App() {
     }
   };
 
+  // Somente o Santana dentro do departamento dele (TI) ou Admin Geral pode criar novo envio para DTIN
+  const isTISector = (activeSector?.name || '').toLowerCase().trim() === 'ti' || 
+                     (activeSector?.name || '').toLowerCase().includes('tecnologia') ||
+                     (activeSector?.responsavel || '').toLowerCase().includes('santana') ||
+                     activeSector?.id === 'sec-ti';
+
+  const isSantanaUser = (effectiveUser?.displayName || currentUser?.displayName || currentUser?.name || '').toLowerCase().includes('santana') ||
+                        (simulatedPersona?.sectorName || '').toLowerCase().includes('santana') ||
+                        effectiveUserRole === 'admin';
+
+  const canCreateNovoEnvioDtin = isTISector && isSantanaUser;
+
   // Auth Handlers
   const handleLoginSuccess = (user) => {
     if (!user) return;
@@ -2779,8 +2791,8 @@ export function App() {
                     )}
                     <span className="text-slate-400 font-medium">({filteredAssets.length} {filteredAssets.length === 1 ? 'item' : 'itens'})</span>
 
-                    {/* Botão de Envio Rápido para DTIN quando o filtro de DTIN está ativo */}
-                    {statusFilter === 'ENVIADOS_DTIN' && (
+                    {/* Botão de Envio Rápido para DTIN quando o filtro de DTIN está ativo (Apenas Santana em TI ou Admin) */}
+                    {statusFilter === 'ENVIADOS_DTIN' && canCreateNovoEnvioDtin && (
                       <button
                         type="button"
                         onClick={() => {
@@ -3038,7 +3050,7 @@ export function App() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {statusFilter === 'ENVIADOS_DTIN' && (
+                  {statusFilter === 'ENVIADOS_DTIN' && canCreateNovoEnvioDtin && (
                     <button
                       type="button"
                       onClick={() => {

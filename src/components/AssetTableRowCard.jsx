@@ -602,43 +602,12 @@ export const AssetTableRowCard = ({
       } ${
         cardColorClass
           ? cardColorClass
-          : isOutOfPlace 
-            ? 'bg-amber-950/20 hover:bg-amber-950/30' 
-            : isConferido 
-              ? 'bg-slate-900/40 hover:bg-slate-850/60' 
-              : isBaixado
-                ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
-                : 'hover:bg-slate-850/50'
+          : isConferido 
+            ? 'bg-slate-900/40 hover:bg-slate-850/60' 
+            : isBaixado
+              ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
+              : 'hover:bg-slate-850/50'
       }`}>
-      
-      {/* Aviso se for item fora da seção oficial */}
-      {isOutOfPlace && (
-        <div className="bg-amber-500/15 border-b border-amber-500/30 pl-10 pr-9 py-1.5 text-xs text-amber-300 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 font-medium truncate">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="truncate text-[11px]">
-              Carga oficial de: <strong className="text-amber-200"><HighlightText text={asset.setorNome} query={searchTerm} /></strong> (<HighlightText text={asset.responsavel} query={searchTerm} />)
-            </span>
-          </div>
-          {canManageAsset ? (
-            <button
-              onClick={() => onTransferSector(asset)}
-              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/30 hover:bg-amber-500 text-amber-100 hover:text-slate-950 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <ArrowRightLeft className="w-3 h-3" />
-              <span>Transferir</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onOpenSolicitacao(asset)}
-              className="text-[10px] font-bold px-2.5 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
-            >
-              <Send className="w-3 h-3" />
-              <span>Informar / Fazer Pedido</span>
-            </button>
-          )}
-        </div>
-      )}
 
       {/* VISUALIZAÇÃO DESKTOP: Linha Horizontal de Tabela (Alinhada com cabeçalho de colunas) */}
       <div className="hidden md:flex pl-6 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
