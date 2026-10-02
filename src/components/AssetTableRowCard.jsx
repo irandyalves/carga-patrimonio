@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
-import { formatCurrency, formatDepreciacao, formatPatrimonio, formatDisplayDate } from '../utils/formatters';
+import { formatCurrency, formatDepreciacao, getAssetDepreciationDisplay, formatPatrimonio, formatDisplayDate } from '../utils/formatters';
 
 const COLOR_OPTIONS = [
   { id: 'default', label: 'Padrão', bg: 'bg-slate-700', border: 'border-slate-600' },
@@ -127,7 +127,8 @@ export const AssetTableRowCard = ({
     valorAtual: true
   },
   index = 0,
-  appSettings = {}
+  appSettings = {},
+  depreciationMode = 'currency'
 }) => {
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
@@ -1190,13 +1191,7 @@ export const AssetTableRowCard = ({
         {visibleColumns?.depreciacao !== false && (
           <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-semibold text-amber-400 text-[11px] whitespace-nowrap" title={String(asset.depreciacao || '')}>
-              {formatDepreciacao(
-                asset.depreciacao || 
-                (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
-                  ? Number(asset.valorOriginal) - Number(asset.valorAtual) 
-                  : ''),
-                appSettings?.showCurrencyPrefix
-              )}
+              {getAssetDepreciationDisplay(asset, depreciationMode, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}

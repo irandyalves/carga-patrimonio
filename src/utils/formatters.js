@@ -165,3 +165,50 @@ export const formatDepreciacao = (val, showCurrencyPrefix = false) => {
   return showCurrencyPrefix ? `R$ ${formatted}` : formatted;
 };
 
+/**
+ * Retorna o valor de depreciação formatado para exibição conforme o modo ('currency' ou 'percent')
+ */
+export const getAssetDepreciationDisplay = (asset, mode = 'currency', showCurrencyPrefix = false) => {
+  if (!asset) return '---';
+  const rawDepr = asset.depreciacao;
+  const orig = parseCleanNumber(asset.valorOriginal);
+  const atual = parseCleanNumber(asset.valorAtual);
+
+  let deprAmount = 0;
+  const isPctString = typeof rawDepr === 'string' && rawDepr.trim().endsWith('%');
+  let pctVal = 0;
+
+  if (isPctString) {
+    pctVal = parseFloat(rawDepr.replace('%', '').trim()) || 0;
+    if (orig > 0) {
+      deprAmount = (orig * pctVal) / 100;
+    }
+  } else {
+    const rawNum = parseCleanNumber(rawDepr);
+    if (rawNum > 0) {
+      deprAmount = rawNum;
+    } else if (orig > 0 && atual > 0 && orig > atual) {
+      deprAmount = orig - atual;
+    }
+    if (orig > 0 && deprAmount > 0) {
+      pctVal = Math.round((deprAmount / orig) * 100);
+    }
+  }
+
+  if (mode === 'percent') {
+    if (isPctString) return rawDepr.trim();
+    if (pctVal > 0) return `${pctVal}%`;
+    if (deprAmount > 0 && orig > 0) return `${Math.round((deprAmount / orig) * 100)}%`;
+    return '---';
+  } else {
+    // Modo moeda (R$)
+    if (deprAmount > 0) {
+      return formatCurrency(deprAmount, showCurrencyPrefix);
+    }
+    if (isPctString && orig > 0 && pctVal > 0) {
+      return formatCurrency((orig * pctVal) / 100, showCurrencyPrefix);
+    }
+    return '---';
+  }
+};
+

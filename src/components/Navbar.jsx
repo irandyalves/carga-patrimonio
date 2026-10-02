@@ -529,7 +529,7 @@ export const Navbar = ({
                       <p className="text-[10px] uppercase font-bold flex items-center gap-0.5">
                         {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline text-emerald-400" />}
                         <span className={isAdmin ? 'text-amber-400' : 'text-emerald-400'}>
-                          {isAdmin ? 'Admin' : (currentPersona?.sectorName || 'Operador')}
+                          {isAdmin ? 'Admin' : 'Operador'}
                         </span>
                       </p>
                     </div>
@@ -567,7 +567,7 @@ export const Navbar = ({
                                 : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             }`}>
                               {isAdmin ? <Crown className="w-2.5 h-2.5" /> : <Shield className="w-2.5 h-2.5" />}
-                              {isAdmin ? 'Administrador' : `Operador: ${currentPersona?.sectorName || 'Setor'}`}
+                              {isAdmin ? 'Administrador' : 'Operador'}
                             </span>
                           </div>
                         </div>

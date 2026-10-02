@@ -480,7 +480,7 @@ export const SectorSidebar = ({
                           >
                             <div className="flex items-center gap-1.5 truncate">
                               <RotateCcw className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300 shrink-0" />
-                              <span className="truncate font-semibold">Tornar Setor Pendente</span>
+                              <span className="truncate font-semibold">Tornar TUDO pendente</span>
                             </div>
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold shrink-0">
                               {assets.filter(a => a.setorId === sec.id && a.status === 'CONFERIDO').length}
@@ -504,7 +504,7 @@ export const SectorSidebar = ({
                           >
                             <div className="flex items-center gap-1.5 truncate">
                               <CheckCheck className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 shrink-0" />
-                              <span className="truncate font-semibold">Tornar Setor Conferido</span>
+                              <span className="truncate font-semibold">Tornar TUDO conferido</span>
                             </div>
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
                               {assets.filter(a => a.setorId === sec.id && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO').length}

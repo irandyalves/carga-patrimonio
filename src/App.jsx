@@ -335,6 +335,25 @@ export function App() {
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
   const columnDropdownRef = useRef(null);
 
+  // Modo de exibição da depreciação: 'currency' (R$) ou 'percent' (%)
+  const [depreciationMode, setDepreciationMode] = useState(() => {
+    try {
+      return localStorage.getItem('carga_patrimonio_depr_mode') || 'currency';
+    } catch (e) {
+      return 'currency';
+    }
+  });
+
+  const toggleDepreciationMode = () => {
+    setDepreciationMode(prev => {
+      const next = prev === 'currency' ? 'percent' : 'currency';
+      try {
+        localStorage.setItem('carga_patrimonio_depr_mode', next);
+      } catch (e) {}
+      return next;
+    });
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (columnDropdownRef.current && !columnDropdownRef.current.contains(e.target)) {
@@ -2313,10 +2332,28 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 12: Depreciação com Olhinho para Ocultar */}
+                  {/* Coluna 12: Depreciação com Alternador R$ / % e Olhinho para Ocultar */}
                   {visibleColumns.depreciacao && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <span className="text-slate-400 font-medium whitespace-nowrap">Depreciação</span>
+                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                      <button
+                        type="button"
+                        onClick={toggleDepreciationMode}
+                        title={depreciationMode === 'currency' ? "Modo R$ (Clique para ver % de depreciação)" : "Modo % (Clique para ver valor R$ da depreciação)"}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1 select-none shadow-sm active:scale-95 ${
+                          depreciationMode === 'percent'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60'
+                        }`}
+                      >
+                        <span>Deprec.</span>
+                        <span className={`text-[9px] font-extrabold px-1 py-0.2 rounded ${
+                          depreciationMode === 'percent'
+                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                            : 'bg-slate-700 text-amber-300'
+                        }`}>
+                          {depreciationMode === 'percent' ? '%' : 'R$'}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2698,6 +2735,7 @@ export function App() {
                         searchTerm={searchTerm}
                         visibleColumns={visibleColumns}
                         appSettings={displaySettings}
+                        depreciationMode={depreciationMode}
                       />
                     </React.Fragment>
                   );
@@ -2998,8 +3036,8 @@ export function App() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-white text-base sm:text-lg">
                   {batchStatusModalData.newStatus === 'CONFERIDO' 
-                    ? 'Tornar Toda a Carga Conferida' 
-                    : 'Tornar Toda a Carga Pendente'}
+                    ? 'Tornar TUDO conferido' 
+                    : 'Tornar TUDO pendente'}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Confirmação de alteração em lote com sincronização
