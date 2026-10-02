@@ -139,6 +139,7 @@ export const AssetTableRowCard = ({
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
   const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
+  const [showModalReturnConfirm, setShowModalReturnConfirm] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [isCheckingBurst, setIsCheckingBurst] = useState(false);
@@ -1458,7 +1459,7 @@ export const AssetTableRowCard = ({
 
                         {showReturnDtinConfirm ? (
                           <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirmar retorno do DTIN?</p>
+                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma a volta do item?</p>
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={(e) => {
@@ -2580,25 +2581,53 @@ export const AssetTableRowCard = ({
 
             {/* Rodapé */}
             <div className="flex items-center justify-between gap-2 mt-5 pt-3.5 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm('Deseja confirmar o retorno deste equipamento do DTIN para o setor?')) {
-                    setIsDtinResumoOpen(false);
-                    onReturnDtin && onReturnDtin(asset.id);
-                  }
-                }}
-                className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="Confirmar retorno do DTIN e reintegrar equipamento ao setor"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Confirmar Retorno do DTIN</span>
-              </button>
+              {showModalReturnConfirm ? (
+                <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl animate-in zoom-in-95 duration-100">
+                  <span className="text-xs text-emerald-300 font-bold">Confirma a volta do item?</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDtinResumoOpen(false);
+                      setShowModalReturnConfirm(false);
+                      onReturnDtin && onReturnDtin(asset.id);
+                    }}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
+                  >
+                    Sim, Devolver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowModalReturnConfirm(false);
+                    }}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowModalReturnConfirm(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Confirmar retorno do DTIN e reintegrar equipamento ao setor"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Confirmar Retorno do DTIN</span>
+                </button>
+              )}
 
               <button
                 type="button"
-                onClick={() => setIsDtinResumoOpen(false)}
+                onClick={() => {
+                  setShowModalReturnConfirm(false);
+                  setIsDtinResumoOpen(false);
+                }}
                 className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
