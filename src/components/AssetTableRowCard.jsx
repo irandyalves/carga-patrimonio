@@ -158,17 +158,20 @@ export const AssetTableRowCard = ({
     }
   };
 
-  // Estados de edição inline de localização com suporte a voz e auto-close
+  const currentSectorName = asset.setorNome || activeSector?.name || (sectors?.find(s => s.id === asset.setorId)?.name) || '';
+  const displayLocation = asset.localizacao || currentSectorName || 'Onde está?';
+
+  // Estados de edição inline de localização e auto-close
   const [isEditingLocation, setIsEditingLocation] = useState(false);
-  const [locationValue, setLocationValue] = useState(asset.localizacao || '');
+  const [locationValue, setLocationValue] = useState(asset.localizacao || currentSectorName || '');
   const [showLocListbox, setShowLocListbox] = useState(false);
   const [isListeningLoc, setIsListeningLoc] = useState(false);
   const locTimerRef = useRef(null);
   const locContainerRef = useRef(null);
 
   useEffect(() => {
-    setLocationValue(asset.localizacao || '');
-  }, [asset.localizacao]);
+    setLocationValue(asset.localizacao || currentSectorName || '');
+  }, [asset.localizacao, currentSectorName]);
 
   // Estados de edição inline de observação com inteligência de setor, voz e auto-close
   const [isEditingObs, setIsEditingObs] = useState(false);
@@ -832,22 +835,6 @@ export const AssetTableRowCard = ({
                     </div>
                   )}
                 </div>
-
-                {/* Botão de Voz */}
-                <div className="inline-flex items-center ml-1.5">
-                  <button
-                    type="button"
-                    onClick={startLocationVoice}
-                    title="Ditar localização por voz"
-                    className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
-                      isListeningLoc 
-                        ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                        : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
-                    }`}
-                  >
-                    <Mic className="w-3 h-3" />
-                  </button>
-                </div>
               </div>
             ) : (
               <div className="inline-flex items-center gap-0.5 group/loc">
@@ -864,25 +851,9 @@ export const AssetTableRowCard = ({
                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer"
                 >
                   <span className="truncate max-w-[175px]">
-                    <HighlightText text={asset.localizacao || 'Onde está?'} query={searchTerm} />
+                    <HighlightText text={displayLocation} query={searchTerm} />
                   </span>
                   <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    openLocEdit(e);
-                    startLocationVoice(e);
-                  }}
-                  title="Ditar localização por voz"
-                  className={`p-1 rounded transition-all cursor-pointer ${
-                    isListeningLoc 
-                      ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                      : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400'
-                  }`}
-                >
-                  <Mic className="w-3 h-3" />
                 </button>
               </div>
             )}
@@ -1151,11 +1122,6 @@ export const AssetTableRowCard = ({
               <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
                 <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
               </span>
-              {isGeneralView && asset.setorNome && (
-                <span className="text-[8.5px] text-slate-400 block truncate">
-                  <HighlightText text={asset.setorNome} query={searchTerm} />
-                </span>
-              )}
             </div>
           </div>
         )}
