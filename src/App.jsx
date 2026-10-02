@@ -2031,6 +2031,10 @@ export function App() {
     });
     setAssets(updated);
     saveLocalAssets(updated);
+    const remainingPendencias = updated.filter(a => a.pendenciaDtin);
+    if (remainingPendencias.length === 0) {
+      setIsPendenciasDtinOpen(false);
+    }
     showToast('Envio ao DTIN autorizado e confirmado com sucesso!', 'success');
   };
 
@@ -2058,6 +2062,10 @@ export function App() {
     });
     setAssets(updated);
     saveLocalAssets(updated);
+    const remainingPendencias = updated.filter(a => a.pendenciaDtin);
+    if (remainingPendencias.length === 0) {
+      setIsPendenciasDtinOpen(false);
+    }
     showToast('Envio ao DTIN recusado. O equipamento permanece no setor.', 'info');
   };
 

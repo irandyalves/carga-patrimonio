@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   X, 
   Bell, 
   Check, 
   Server, 
   FileText, 
-  CheckCircle2, 
   ExternalLink
 } from 'lucide-react';
 import { formatPatrimonio } from '../utils/formatters';
@@ -19,7 +18,30 @@ export const PendenciasDtinModal = ({
   currentUser,
   isAdmin = false
 }) => {
-  if (!isOpen) return null;
+  // Se estiver aberto mas não houver pendências, fecha imediatamente sem mostrar tela vazia
+  useEffect(() => {
+    if (isOpen && pendencias.length === 0) {
+      onClose();
+    }
+  }, [isOpen, pendencias.length, onClose]);
+
+  if (!isOpen || pendencias.length === 0) return null;
+
+  // Confirmação com fechamento imediato se for a última pendência
+  const handleConfirmItem = (itemId) => {
+    onAuthorizeDtin(itemId);
+    if (pendencias.length <= 1) {
+      onClose();
+    }
+  };
+
+  // Recusa com fechamento imediato se for a última pendência
+  const handleRejectItem = (itemId) => {
+    onRejectDtin(itemId);
+    if (pendencias.length <= 1) {
+      onClose();
+    }
+  };
 
   // Nome do detentor para o cabeçalho (em maiúsculas)
   const detentorName = (
@@ -175,7 +197,7 @@ export const PendenciasDtinModal = ({
                   <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800">
                     <button
                       type="button"
-                      onClick={() => onRejectDtin(item.id)}
+                      onClick={() => handleRejectItem(item.id)}
                       className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 transition-all cursor-pointer active:scale-95"
                       title="Recusar a saída deste equipamento para o DTIN"
                     >
@@ -184,7 +206,7 @@ export const PendenciasDtinModal = ({
 
                     <button
                       type="button"
-                      onClick={() => onAuthorizeDtin(item.id)}
+                      onClick={() => handleConfirmItem(item.id)}
                       className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-all cursor-pointer active:scale-95"
                       title="Confirmar e autorizar o envio deste equipamento para o DTIN"
                     >
