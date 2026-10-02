@@ -957,7 +957,6 @@ export function App() {
     // Check if whole sector reached 100%
     const itemChecked = updated.find(a => a.id === assetId);
     if (itemChecked && itemChecked.status === 'CONFERIDO') {
-      showToast(`Bem ${itemChecked.numeroPatrimonio} conferido com sucesso!`);
       const sectorRemaining = updated.filter(a => a.setorId === activeSectorId && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO');
       if (sectorRemaining.length === 0) {
         confetti({
@@ -967,8 +966,6 @@ export function App() {
         });
         showToast('Parabéns! 100% da carga do setor foi conferida com sucesso!', 'success');
       }
-    } else if (itemChecked) {
-      showToast(`Conferência do bem ${itemChecked.numeroPatrimonio} desmarcada.`, 'info');
     }
   };
 
