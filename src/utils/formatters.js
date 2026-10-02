@@ -142,24 +142,26 @@ export const parseCleanNumber = (val) => {
 };
 
 /**
- * Formata moeda para padrão Real Brasileiro BRL forçando exatamente 2 casas decimais (centavos)
+ * Formata valor monetário (padrão sem R$, apenas números com 2 casas decimais e separador brasileiro)
  */
-export const formatCurrency = (val) => {
-  if (val === null || val === undefined || val === '') return 'R$ 0,00';
+export const formatCurrency = (val, showCurrencyPrefix = false) => {
+  if (val === null || val === undefined || val === '') return showCurrencyPrefix ? 'R$ 0,00' : '0,00';
   const num = parseCleanNumber(val);
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return showCurrencyPrefix ? `R$ ${formatted}` : formatted;
 };
 
 /**
- * Formata valor de depreciação (se porcentagem mantém %, se número formata em moeda com 2 casas)
+ * Formata valor de depreciação (se porcentagem mantém %, se número formata com ou sem prefixo R$)
  */
-export const formatDepreciacao = (val) => {
+export const formatDepreciacao = (val, showCurrencyPrefix = false) => {
   if (val === null || val === undefined || val === '' || val === 0 || val === '0') return '---';
   const str = String(val).trim();
   if (str.endsWith('%')) return str;
 
   const num = parseCleanNumber(val);
   if (num === 0) return str || '---';
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return showCurrencyPrefix ? `R$ ${formatted}` : formatted;
 };
 

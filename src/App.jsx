@@ -57,6 +57,10 @@ import {
 import { 
   PedidosCargaModal 
 } from './components/PedidosCargaModal';
+import {
+  DisplaySettingsModal,
+  DEFAULT_DISPLAY_SETTINGS
+} from './components/DisplaySettingsModal';
 import { 
   DeleteAssetModal 
 } from './components/DeleteAssetModal';
@@ -86,7 +90,10 @@ import {
   deletePedidoFromCloud,
   saveAssetToCloud,
   deleteAssetFromCloud,
-  saveAssetsBatchToCloud
+  saveAssetsBatchToCloud,
+  subscribeToCloudDisplaySettings,
+  saveDisplaySettingsToCloud,
+  loadDisplaySettingsFromCloud
 } from './services/firebase';
 import { 
   generateLabelsPDF, 
@@ -118,7 +125,9 @@ import {
   Trash2,
   Building2,
   X,
-  Eraser
+  Eraser,
+  RotateCcw,
+  CheckCheck
 } from 'lucide-react';
 
 export function App() {
@@ -394,6 +403,32 @@ export function App() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState(null);
 
+  // Modal de Confirmação para Alteração em Lote (Tornar Todos Pendentes / Conferidos)
+  const [batchStatusModalData, setBatchStatusModalData] = useState(null);
+  const [isProcessingBatchStatus, setIsProcessingBatchStatus] = useState(false);
+
+  // Configurações Visuais e de Exibição (localStorage)
+  const [displaySettings, setDisplaySettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_display_settings');
+      return stored ? { ...DEFAULT_DISPLAY_SETTINGS, ...JSON.parse(stored) } : DEFAULT_DISPLAY_SETTINGS;
+    } catch (e) {
+      return DEFAULT_DISPLAY_SETTINGS;
+    }
+  });
+  const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(false);
+
+  const handleSaveDisplaySettings = (newSettings) => {
+    setDisplaySettings(newSettings);
+    try {
+      localStorage.setItem('carga_patrimonio_display_settings', JSON.stringify(newSettings));
+    } catch (e) {}
+    saveDisplaySettingsToCloud(newSettings).catch((err) => {
+      console.warn('Erro ao sincronizar configurações na nuvem:', err);
+    });
+    showToast('Configurações salvas e sincronizadas na nuvem!', 'success');
+  };
+
   // Persona Simulada para Teste de Operadores e Departamentos
   const [simulatedPersonaId, setSimulatedPersonaId] = useState('admin');
 
@@ -501,6 +536,7 @@ export function App() {
     let unsubAssets = () => {};
     let unsubCautelas = () => {};
     let unsubPedidos = () => {};
+    let unsubSettings = () => {};
 
     if (isConfigured) {
       unsubSectors = subscribeToCloudSectors((cloudSectors) => {
@@ -525,6 +561,12 @@ export function App() {
       unsubPedidos = subscribeToCloudPedidos((cloudPedidos) => {
         if (cloudPedidos) {
           setPedidosCarga(cloudPedidos);
+        }
+      });
+
+      unsubSettings = subscribeToCloudDisplaySettings((cloudSettings) => {
+        if (cloudSettings) {
+          setDisplaySettings(prev => ({ ...prev, ...cloudSettings }));
         }
       });
     }
@@ -557,6 +599,7 @@ export function App() {
       unsubAssets();
       unsubCautelas();
       unsubPedidos();
+      unsubSettings();
     };
   }, []);
 
@@ -1001,47 +1044,60 @@ export function App() {
     }
   };
 
-  // Direct Voice Search Handler (Sem modal, busca instantânea sem precisar de confirmação)
+  // Direct Voice Search Handler (Busca por voz inteligente com suporte a múltiplos resultados por descrição)
   const handleVoiceDirectSearch = (spokenText) => {
     if (!spokenText || !spokenText.trim()) return;
 
     const rawClean = spokenText.trim();
-    // Extrai números para buscar por patrimônio (ex: 42542 ou últimos 5 dígitos)
     const digitsOnly = rawClean.replace(/\D/g, '');
-    const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : (digitsOnly.length > 0 ? digitsOnly : null);
+    const nonDigitChars = rawClean.replace(/[\d\s.,\-_/]/g, '');
 
-    let found = null;
-    if (last5 || digitsOnly) {
-      found = assets.find(a => {
+    // Se for uma busca estritamente numérica por número de patrimônio (ex: "42542", "42.542", "42 542")
+    const isStrictNumericSearch = digitsOnly.length >= 3 && nonDigitChars.length === 0;
+
+    if (isStrictNumericSearch) {
+      const last5 = digitsOnly.length >= 5 ? digitsOnly.slice(-5) : digitsOnly;
+      const foundAsset = assets.find(a => {
         const aNum = String(a.numeroPatrimonio || '').trim();
         const aDigits = aNum.replace(/\D/g, '');
         const aLast5 = aDigits.length >= 5 ? aDigits.slice(-5) : aDigits;
-        return aNum === rawClean || (last5 && aLast5 === last5) || (digitsOnly && aDigits.endsWith(digitsOnly));
+        return aNum === rawClean || aDigits === digitsOnly || (last5 && aLast5 === last5) || (digitsOnly && aDigits.endsWith(digitsOnly));
       });
-    }
 
-    // Se não localizou por número, busca por descrição
-    if (!found && rawClean.length >= 2) {
-      const q = rawClean.toLowerCase();
-      found = assets.find(a => 
-        a.descricao?.toLowerCase().includes(q) || 
-        a.numeroPatrimonio?.toLowerCase().includes(q)
-      );
-    }
-
-    if (found) {
-      // Se estiver em outro setor, comuta automaticamente para a aba do setor correspondente
-      if (found.setorId !== activeSectorId) {
-        setActiveSectorId(found.setorId);
-        showToast(`🎯 Encontrado no setor "${found.setorNome}" (${found.responsavel}): ${formatLast5Patrimonio(found.numeroPatrimonio)} - ${found.descricao}`, 'success');
-      } else {
-        showToast(`🎯 Encontrado: ${formatLast5Patrimonio(found.numeroPatrimonio)} - ${found.descricao}`, 'success');
+      if (foundAsset) {
+        if (filterMode !== 'ALL_SECTORS' && foundAsset.setorId !== activeSectorId) {
+          setActiveSectorId(foundAsset.setorId);
+          showToast(`🎯 Encontrado no setor "${foundAsset.setorNome}": ${formatLast5Patrimonio(foundAsset.numeroPatrimonio)} - ${foundAsset.descricao}`, 'success');
+        } else {
+          showToast(`🎯 Encontrado: ${formatLast5Patrimonio(foundAsset.numeroPatrimonio)} - ${foundAsset.descricao}`, 'success');
+        }
+        setSearchTerm(formatLast5Patrimonio(foundAsset.numeroPatrimonio));
+        return;
       }
-      // Filtra diretamente pelo patrimônio formatado no formato XX.XXX
-      setSearchTerm(formatLast5Patrimonio(found.numeroPatrimonio));
+    }
+
+    // Busca textual por descrição / múltiplos bens (ex: "mesa quadrada", "cadeira", "monitor", etc.)
+    setSearchTerm(rawClean);
+
+    // Conta quantos itens correspondem no setor atual e no geral
+    const currentSectorMatches = assets.filter(a => a.setorId === activeSectorId && matchesAsset(a, rawClean));
+    const allMatches = assets.filter(a => matchesAsset(a, rawClean));
+
+    if (currentSectorMatches.length > 0) {
+      showToast(`🎙️ Voz: "${rawClean}" (${currentSectorMatches.length} iten${currentSectorMatches.length === 1 ? '' : 's'} no setor)`, 'info');
+    } else if (allMatches.length > 0) {
+      // Se não tem no setor atual mas todos pertencem a outro setor específico, comuta para o setor correspondente
+      const uniqueSectors = [...new Set(allMatches.map(a => a.setorId))];
+      if (uniqueSectors.length === 1 && filterMode === 'MY_SECTOR') {
+        const targetSectorId = uniqueSectors[0];
+        const targetSector = sectors.find(s => s.id === targetSectorId);
+        setActiveSectorId(targetSectorId);
+        showToast(`🎙️ Voz: "${rawClean}" (${allMatches.length} iten${allMatches.length === 1 ? '' : 's'} no setor ${targetSector?.name || ''})`, 'info');
+      } else {
+        showToast(`🎙️ Voz: "${rawClean}" (${allMatches.length} iten${allMatches.length === 1 ? '' : 's'} encontrados)`, 'info');
+      }
     } else {
-      setSearchTerm(rawClean);
-      showToast(`🎙️ Pesquisando por: "${rawClean}"`, 'info');
+      showToast(`🎙️ Voz: "${rawClean}" (Nenhum item correspondente)`, 'info');
     }
   };
 
@@ -1382,6 +1438,89 @@ export function App() {
     }
   };
 
+  // Abre Modal de Confirmação para Alteração em Lote (Tornar Todos Pendentes ou Conferidos)
+  const handleOpenBatchStatusChange = ({ targetType, sectorId, sectorName, newStatus }) => {
+    let targetAssets = [];
+    let titleSectorName = '';
+
+    if (targetType === 'SECTOR') {
+      const sec = sectors.find(s => s.id === sectorId);
+      titleSectorName = sectorName || sec?.name || 'Setor Selecionado';
+      if (newStatus === 'PENDENTE') {
+        targetAssets = assets.filter(a => a.setorId === sectorId && a.status === 'CONFERIDO');
+      } else {
+        targetAssets = assets.filter(a => a.setorId === sectorId && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO');
+      }
+    } else {
+      titleSectorName = 'Toda a Carga Geral (Todos os Setores)';
+      if (newStatus === 'PENDENTE') {
+        targetAssets = assets.filter(a => a.status === 'CONFERIDO');
+      } else {
+        targetAssets = assets.filter(a => a.status !== 'CONFERIDO' && a.status !== 'BAIXADO');
+      }
+    }
+
+    if (targetAssets.length === 0) {
+      showToast(
+        newStatus === 'PENDENTE' 
+          ? 'Nenhum bem conferido encontrado para alterar.' 
+          : 'Todos os bens já estão conferidos ou baixados.',
+        'info'
+      );
+      return;
+    }
+
+    setBatchStatusModalData({
+      targetType,
+      sectorId,
+      sectorName: titleSectorName,
+      newStatus,
+      targetAssets,
+      count: targetAssets.length
+    });
+  };
+
+  // Executa a alteração em lote com sincronização no Firestore
+  const handleExecuteBatchStatusChange = async () => {
+    if (!batchStatusModalData) return;
+    const { targetAssets, newStatus, sectorName } = batchStatusModalData;
+    setIsProcessingBatchStatus(true);
+
+    try {
+      const now = new Date().toISOString();
+      const updatedList = targetAssets.map(a => ({
+        ...a,
+        status: newStatus,
+        conferidoEm: newStatus === 'CONFERIDO' ? now : null,
+        conferidoPor: newStatus === 'CONFERIDO' ? (currentUser?.displayName || 'Operador') : null,
+        updatedAt: now
+      }));
+
+      const targetIdMap = new Map(updatedList.map(u => [u.id, u]));
+      const newAllAssets = assets.map(a => targetIdMap.get(a.id) || a);
+
+      setAssets(newAllAssets);
+      saveLocalAssets(newAllAssets);
+
+      if (isFirebaseActive) {
+        await saveAssetsBatchToCloud(updatedList);
+      }
+
+      showToast(
+        newStatus === 'CONFERIDO'
+          ? `✅ ${updatedList.length} bens de "${sectorName}" marcados como CONFERIDOS!`
+          : `🔄 ${updatedList.length} bens de "${sectorName}" marcados como PENDENTES!`,
+        'success'
+      );
+      setBatchStatusModalData(null);
+    } catch (err) {
+      console.error('Erro ao atualizar bens em lote:', err);
+      showToast('Erro ao processar alteração em lote na nuvem.', 'error');
+    } finally {
+      setIsProcessingBatchStatus(false);
+    }
+  };
+
   // Open Cautela creation for an asset
   const handleOpenCautela = (asset) => {
     setAssetForCautela(asset);
@@ -1564,7 +1703,43 @@ export function App() {
   };
 
   // Confirm Envio ao DTIN
-  const handleConfirmDtin = (assetId, dadosDtin) => {
+  const handleConfirmDtin = (assetId, dadosDtin, newAssetData = null) => {
+    const nowStr = new Date().toLocaleString('pt-BR');
+
+    // Se for um cadastro de novo equipamento fora da carga
+    if (newAssetData) {
+      const newAsset = {
+        id: `asset-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        numeroPatrimonio: newAssetData.numeroPatrimonio.trim(),
+        descricao: newAssetData.descricao.trim(),
+        setorId: newAssetData.setorId || activeSectorId || 'sec-ti',
+        setorNome: newAssetData.setorNome || activeSector?.name || 'TI',
+        responsavel: newAssetData.responsavel || activeSector?.responsavel || 'Responsável',
+        localizacao: newAssetData.localizacao || '',
+        numeroSerie: newAssetData.numeroSerie || '',
+        status: 'ENVIADO_DTIN',
+        enviadoDtin: true,
+        dadosDtin: {
+          ...dadosDtin,
+          dataHoraRegistro: new Date().toISOString()
+        },
+        dataAquisicao: dadosDtin.data || new Date().toLocaleDateString('pt-BR'),
+        valorOriginal: 0,
+        valorAtual: 0,
+        historico: [
+          {
+            data: dadosDtin.data || nowStr,
+            acao: `Cadastrado e Enviado ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`,
+            usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel
+          }
+        ]
+      };
+      saveAssetToCloud(newAsset);
+      setAssets(prev => [newAsset, ...prev]);
+      showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DTIN!`, 'success');
+      return;
+    }
+
     const updated = assets.map(a => {
       if (a.id === assetId) {
         const updatedItem = {
@@ -1783,6 +1958,9 @@ export function App() {
             }
             setIsExcelModalOpen(true);
           }}
+          displaySettings={displaySettings}
+          onOpenDisplaySettings={() => setIsDisplaySettingsOpen(true)}
+          onOpenBatchStatusChange={handleOpenBatchStatusChange}
         />
 
         {/* Área Principal de Conteúdo */}
@@ -1793,8 +1971,8 @@ export function App() {
         >
           <div style={{ minWidth: isMobile ? '100%' : tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
 
-            {/* Cabeçalho Fixo da Tabela Desktop */}
-            <div className="hidden md:flex sticky top-0 z-20 shrink-0 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-[0_18px_42px_-4px_rgba(0,0,0,0.95),0_8px_20px_-2px_rgba(0,0,0,0.8)] w-full h-[58px] items-center">
+            {/* Cabeçalho Fixo da Tabela Desktop (Permanentemente Visível e Sticky) */}
+            <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center">
               <div className="w-full">
                 <div className="pl-6 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
@@ -2041,29 +2219,16 @@ export function App() {
                   {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
                   {visibleColumns.valorOriginal && (
                     <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <button
-                        onClick={() => handleSort('valorOriginal')}
-                        title="Clique para ordenar por valor original"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
-                          sortField === 'valorOriginal' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
-                        }`}
-                      >
-                        <span>$ Original</span>
-                        <span className="shrink-0 ml-0.5">
-                          {sortField === 'valorOriginal' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-indigo-400" /> : <ArrowDown className="w-3.5 h-3.5 text-indigo-400" />
-                          ) : (
-                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                          )}
-                        </span>
-                      </button>
+                      <span className="text-slate-400 font-medium whitespace-nowrap">
+                        {displaySettings.showCurrencyPrefix ? '$ Original' : 'Original'}
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleColumn('valorOriginal');
                         }}
-                        title="Ocultar coluna $ Original"
+                        title="Ocultar coluna Original"
                         className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
                       >
                         <Eye className="w-3 h-3" />
@@ -2074,29 +2239,16 @@ export function App() {
                   {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
                   {visibleColumns.valorAtual && (
                     <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <button
-                        onClick={() => handleSort('valorAtual')}
-                        title="Clique para ordenar por valor atual"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
-                          sortField === 'valorAtual' ? 'text-emerald-400 font-bold' : 'hover:text-slate-200'
-                        }`}
-                      >
-                        <span>$ Atual</span>
-                        <span className="shrink-0 ml-0.5">
-                          {sortField === 'valorAtual' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                          )}
-                        </span>
-                      </button>
+                      <span className="text-slate-400 font-medium whitespace-nowrap">
+                        {displaySettings.showCurrencyPrefix ? '$ Atual' : 'Atual'}
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleColumn('valorAtual');
                         }}
-                        title="Ocultar coluna $ Atual"
+                        title="Ocultar coluna Atual"
                         className="p-1 text-slate-400 hover:text-rose-400 opacity-60 group-hover/col:opacity-100 hover:bg-slate-800 rounded-md transition-all cursor-pointer"
                       >
                         <Eye className="w-3 h-3" />
@@ -2107,22 +2259,7 @@ export function App() {
                   {/* Coluna 12: Depreciação com Olhinho para Ocultar */}
                   {visibleColumns.depreciacao && (
                     <div className="w-28 shrink-0 flex items-center justify-end gap-0.5 group/col animate-in fade-in duration-150 pr-2">
-                      <button
-                        onClick={() => handleSort('depreciacao')}
-                        title="Clique para ordenar por depreciação"
-                        className={`flex items-center justify-end gap-0.5 transition-colors cursor-pointer group whitespace-nowrap ${
-                          sortField === 'depreciacao' ? 'text-amber-400 font-bold' : 'hover:text-slate-200'
-                        }`}
-                      >
-                        <span>Depreciação</span>
-                        <span className="shrink-0 ml-0.5">
-                          {sortField === 'depreciacao' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-amber-400" /> : <ArrowDown className="w-3.5 h-3.5 text-amber-400" />
-                          ) : (
-                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                          )}
-                        </span>
-                      </button>
+                      <span className="text-slate-400 font-medium whitespace-nowrap">Depreciação</span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2267,6 +2404,21 @@ export function App() {
                       </span>
                     )}
                     <span className="text-slate-400 font-medium">({filteredAssets.length} {filteredAssets.length === 1 ? 'item' : 'itens'})</span>
+
+                    {/* Botão de Envio Rápido para DTIN quando o filtro de DTIN está ativo */}
+                    {statusFilter === 'ENVIADOS_DTIN' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAssetForDtin(null);
+                          setIsDtinModalOpen(true);
+                        }}
+                        className="ml-2 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-600/30 transition-all cursor-pointer active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>Novo Envio DTIN</span>
+                      </button>
+                    )}
 
                     {/* Controles de ordenação rápida quando filtrado por conferidos */}
                     {statusFilter === 'CONFERIDOS' && (
@@ -2487,6 +2639,7 @@ export function App() {
                         hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
                         searchTerm={searchTerm}
                         visibleColumns={visibleColumns}
+                        appSettings={displaySettings}
                       />
                     </React.Fragment>
                   );
@@ -2503,20 +2656,37 @@ export function App() {
                   <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
                     {searchTerm 
                       ? `Nenhum bem corresponde ao termo de busca "${searchTerm}".`
-                      : `Nenhum bem com o status selecionado neste setor.`}
+                      : statusFilter === 'ENVIADOS_DTIN'
+                        ? 'Nenhum equipamento foi enviado para a DTIN neste setor ainda.'
+                        : `Nenhum bem com o status selecionado neste setor.`}
                   </p>
                 </div>
-                {(searchTerm || statusFilter !== 'ALL') && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('');
-                      setStatusFilter('ALL');
-                    }}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                  >
-                    Ver todos os bens do setor
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {statusFilter === 'ENVIADOS_DTIN' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssetForDtin(null);
+                        setIsDtinModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
+                    >
+                      <Plus className="w-4 h-4 stroke-[3]" />
+                      <span>Registrar Envio para o DTIN</span>
+                    </button>
+                  )}
+                  {(searchTerm || statusFilter !== 'ALL') && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('ALL');
+                      }}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      Ver todos os bens do setor
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -2602,6 +2772,9 @@ export function App() {
           setAssetForDtin(null);
         }}
         asset={assetForDtin}
+        assets={assets}
+        sectors={sectors}
+        defaultSectorId={activeSectorId}
         onConfirmDtin={handleConfirmDtin}
         currentUserName={currentUser?.displayName || currentUser?.email}
       />
@@ -2746,6 +2919,115 @@ export function App() {
         </div>
       )}
 
+      {/* Modal Seguro de Confirmação para Alteração de Status em Lote (Tornar Pendente / Conferido) */}
+      {batchStatusModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-750 w-full max-w-md rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col space-y-4">
+            
+            {/* Ícone e Cabeçalho */}
+            <div className="flex items-start gap-3.5">
+              <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-lg ${
+                batchStatusModalData.newStatus === 'CONFERIDO'
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-emerald-950/50'
+                  : 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-amber-950/50'
+              }`}>
+                {batchStatusModalData.newStatus === 'CONFERIDO' ? (
+                  <CheckCheck className="w-6 h-6 animate-pulse text-emerald-400" />
+                ) : (
+                  <RotateCcw className="w-6 h-6 animate-pulse text-amber-400" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-white text-base sm:text-lg">
+                  {batchStatusModalData.newStatus === 'CONFERIDO' 
+                    ? 'Tornar Toda a Carga Conferida' 
+                    : 'Tornar Toda a Carga Pendente'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Confirmação de alteração em lote com sincronização
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBatchStatusModalData(null)}
+                disabled={isProcessingBatchStatus}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Card de Destaque do Alvo */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-950/90 to-slate-900 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 truncate pr-2">
+                  <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span className="font-bold text-white text-sm truncate">{batchStatusModalData.sectorName}</span>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold shrink-0 border ${
+                  batchStatusModalData.newStatus === 'CONFERIDO'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {batchStatusModalData.count} {batchStatusModalData.count === 1 ? 'bem' : 'bens'}
+                </span>
+              </div>
+            </div>
+
+            {/* Mensagem Explicativa */}
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {batchStatusModalData.newStatus === 'CONFERIDO' ? (
+                <>
+                  Deseja realmente marcar todos os <strong>{batchStatusModalData.count} bens</strong> como <strong>CONFERIDOS</strong>? 
+                  Todos os itens pendentes serão validados e o progresso atingirá 100%.
+                </>
+              ) : (
+                <>
+                  Deseja realmente reverter todos os <strong>{batchStatusModalData.count} bens</strong> para <strong>PENDENTES</strong>? 
+                  As conferências anteriores serão desmarcadas e o progresso será zerado para novos testes/conferência real.
+                </>
+              )}
+            </p>
+
+            {/* Botões de Ação */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setBatchStatusModalData(null)}
+                disabled={isProcessingBatchStatus}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteBatchStatusChange}
+                disabled={isProcessingBatchStatus}
+                className={`px-5 py-2.5 rounded-xl text-white font-bold text-xs shadow-lg flex items-center gap-2 transition-all cursor-pointer hover:scale-102 disabled:opacity-50 ${
+                  batchStatusModalData.newStatus === 'CONFERIDO'
+                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-emerald-950/50'
+                    : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-950/50'
+                }`}
+              >
+                {batchStatusModalData.newStatus === 'CONFERIDO' ? (
+                  <CheckCheck className="w-4 h-4" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>
+                  {isProcessingBatchStatus
+                    ? 'Processando e Sincronizando...'
+                    : batchStatusModalData.newStatus === 'CONFERIDO'
+                      ? `Sim, Tornar ${batchStatusModalData.count} Bens Conferidos`
+                      : `Sim, Tornar ${batchStatusModalData.count} Bens Pendentes`}
+                </span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Modal Seguro de Exclusão de Bem com Motivo Obrigatório */}
       <DeleteAssetModal
         isOpen={isDeleteModalOpen}
@@ -2755,6 +3037,14 @@ export function App() {
         }}
         asset={assetToDelete}
         onConfirmDelete={handleConfirmDeleteAsset}
+      />
+
+      {/* Modal de Configurações Visuais e de Exibição */}
+      <DisplaySettingsModal
+        isOpen={isDisplaySettingsOpen}
+        onClose={() => setIsDisplaySettingsOpen(false)}
+        settings={displaySettings}
+        onSaveSettings={handleSaveDisplaySettings}
       />
 
     </div>

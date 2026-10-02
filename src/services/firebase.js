@@ -643,3 +643,73 @@ export const uploadFileAttachment = async (file, path = 'documentos_baixa') => {
     reader.readAsDataURL(file);
   });
 };
+
+// --- CONFIGURAÇÕES VISUAIS NA NUVEM (FIRESTORE) ---
+const STORAGE_KEY_DISPLAY_SETTINGS = 'carga_patrimonio_display_settings';
+
+export const subscribeToCloudDisplaySettings = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(doc(db, 'app_config', 'display_settings'), (snapshot) => {
+      if (snapshot.exists()) {
+        const cloudSettings = snapshot.data();
+        callback(cloudSettings);
+        try {
+          localStorage.setItem(STORAGE_KEY_DISPLAY_SETTINGS, JSON.stringify(cloudSettings));
+        } catch (e) {}
+      }
+    }, (error) => {
+      console.warn('Realtime display settings listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de configurações visuais:', e);
+    return () => {};
+  }
+};
+
+export const saveDisplaySettingsToCloud = async (settings) => {
+  const { isConfigured, db } = initFirebase();
+  if (!settings) return;
+
+  // Atualiza cache local imediatamente
+  try {
+    localStorage.setItem(STORAGE_KEY_DISPLAY_SETTINGS, JSON.stringify(settings));
+  } catch (e) {}
+
+  // Salva no Firestore
+  if (isConfigured && db) {
+    try {
+      await setDoc(doc(db, 'app_config', 'display_settings'), {
+        ...settings,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao salvar configurações visuais no Firestore:', e);
+    }
+  }
+};
+
+export const loadDisplaySettingsFromCloud = async () => {
+  const { isConfigured, db } = initFirebase();
+  if (isConfigured && db) {
+    try {
+      const snap = await getDoc(doc(db, 'app_config', 'display_settings'));
+      if (snap.exists()) {
+        const data = snap.data();
+        localStorage.setItem(STORAGE_KEY_DISPLAY_SETTINGS, JSON.stringify(data));
+        return data;
+      }
+    } catch (e) {
+      console.warn('Modo offline/local para configurações visuais:', e);
+    }
+  }
+  try {
+    const local = localStorage.getItem(STORAGE_KEY_DISPLAY_SETTINGS);
+    if (local) return JSON.parse(local);
+  } catch (e) {}
+  return null;
+};
+

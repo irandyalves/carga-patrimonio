@@ -263,7 +263,7 @@ export const Navbar = ({
               </div>
             </div>
 
-            {/* GRUPO ISOLADO: Microfone (Voz) e QR Code (Câmera) separados da barra */}
+            {/* GRUPO ISOLADO: Microfone (Voz), QR Code (Câmera), Fullscreen e Ordenação (junto à busca) */}
             <div className="flex items-center gap-1.5 ml-1.5 shrink-0">
               {/* Equalizador de Voz em tempo real quando ouvindo */}
               {isVoiceListening && (
@@ -327,85 +327,46 @@ export const Navbar = ({
 
           </div>
 
-          {/* GRUPO DIREITA: Ordenação (no mobile fica à direita) + Ações Desktop */}
+          {/* GRUPO DIREITA: Ações Desktop */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            
-            {/* Botões de Ordenação (Patrimônio e Item/Descrição) posicionados no lado direito */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              {/* Ordenar Patrimônio */}
-              <button
-                type="button"
-                onClick={() => onSort && onSort('numeroPatrimonio')}
-                title={`Ordenar por Nº de Patrimônio (${sortField === 'numeroPatrimonio' && sortDirection === 'desc' ? 'Decrescente ▼' : 'Crescente ▲'})`}
-                className={`px-2 py-2 rounded-xl text-xs font-bold flex items-center gap-0.5 transition-all cursor-pointer active:scale-95 ${
-                  sortField === 'numeroPatrimonio'
-                    ? 'bg-blue-600/30 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Hash className={`w-4 h-4 ${sortField === 'numeroPatrimonio' ? 'text-blue-400' : 'text-slate-400'}`} />
-                <span className="text-[10px] leading-none select-none font-bold">
-                  {sortField === 'numeroPatrimonio' ? (
-                    sortDirection === 'asc' ? '▲' : '▼'
-                  ) : (
-                    <span className="opacity-40">▲</span>
-                  )}
-                </span>
-              </button>
-
-              {/* Ordenar Item / Descrição */}
-              <button
-                type="button"
-                onClick={() => onSort && onSort('descricao')}
-                title={`Ordenar por Item / Descrição (${sortField === 'descricao' && sortDirection === 'desc' ? 'Z-A ▼' : 'A-Z ▲'})`}
-                className={`px-2 py-2 rounded-xl text-xs font-bold flex items-center gap-0.5 transition-all cursor-pointer active:scale-95 ${
-                  sortField === 'descricao'
-                    ? 'bg-blue-600/30 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <FileText className={`w-4 h-4 ${sortField === 'descricao' ? 'text-blue-400' : 'text-slate-400'}`} />
-                <span className="text-[10px] leading-none select-none font-bold">
-                  {sortField === 'descricao' ? (
-                    sortDirection === 'asc' ? '▲' : '▼'
-                  ) : (
-                    <span className="opacity-40">▲</span>
-                  )}
-                </span>
-              </button>
-            </div>
 
             {/* Ações Desktop (Visíveis apenas em telas maiores / md+) */}
             <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
               
               {/* Pedidos & Solicitações de Carga */}
               <button
+                type="button"
                 onClick={onOpenPedidos}
-                title="Central de Pedidos e Solicitações de Carga"
-                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title={`Central de Pedidos e Solicitações de Carga (${pedidosCount || 0} pendente${pedidosCount === 1 ? '' : 's'})`}
+                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
               >
                 <Inbox className="w-4 h-4 text-amber-400 shrink-0" />
                 <span className="hidden md:inline">Pedidos</span>
-                {pedidosCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px] animate-pulse">
-                    {pedidosCount}
-                  </span>
-                )}
+                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                  pedidosCount > 0 
+                    ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/40 animate-pulse' 
+                    : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
+                }`}>
+                  {pedidosCount || 0}
+                </span>
               </button>
 
               {/* Cautelas / Empréstimos Button with Badge */}
               <button
+                type="button"
                 onClick={onOpenCautelas}
-                title="Módulo de Empréstimos & Cautelas"
-                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title={`Módulo de Empréstimos & Cautelas (${cautelasCount || 0} em andamento)`}
+                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
               >
                 <Handshake className="w-4 h-4 text-amber-400 shrink-0" />
                 <span className="hidden md:inline">Cautelas</span>
-                {cautelasCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px]">
-                    {cautelasCount}
-                  </span>
-                )}
+                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                  cautelasCount > 0 
+                    ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/40' 
+                    : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
+                }`}>
+                  {cautelasCount || 0}
+                </span>
               </button>
 
               {/* Backup Tríplice Button */}

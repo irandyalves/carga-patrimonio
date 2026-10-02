@@ -125,7 +125,8 @@ export const AssetTableRowCard = ({
     valorOriginal: true,
     valorAtual: true
   },
-  index = 0
+  index = 0,
+  appSettings = {}
 }) => {
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
@@ -354,24 +355,24 @@ export const AssetTableRowCard = ({
       console.error('Confetti trigger error:', err);
     }
 
-    // Fase 1: Ativa o brilho pulsante no botão (0.35s)
+    // Fase 1: Ativa o brilho pulsante no botão (0.25s)
     setIsCheckingBurst(true);
 
-    // Fase 2: APÓS 350ms, inicia o deslizamento suave do card para cima, enfiando debaixo dos outros e puxando os de baixo (0.7s)
+    // Fase 2: APÓS 250ms, inicia o recolhimento contínuo e suave da linha (450ms)
     setTimeout(() => {
       setIsRowSliding(true);
-    }, 350);
+    }, 250);
 
-    // Fase 3: Ao concluir 1.05s totais (350ms + 700ms), efetiva no estado global e limpa os estados
+    // Fase 3: Ao concluir 700ms totais (250ms + 450ms), efetiva no estado global e limpa os estados
     setTimeout(() => {
       onToggleConference(asset.id, true);
       setIsCheckingBurst(false);
       setIsRowSliding(false);
-    }, 1050);
+    }, 700);
   };
 
   // Desmarcar conferência (ao clicar em "Sim"):
-  // O card desliza suavemente para cima, enfiando debaixo dos outros e puxando os de baixo (0.7s)
+  // O card recolhe continuamente e de forma fluida (450ms)
   const handleConfirmUncheck = (e) => {
     e.stopPropagation();
     setShowUncheckConfirm(false);
@@ -383,12 +384,7 @@ export const AssetTableRowCard = ({
     setTimeout(() => {
       onToggleConference(asset.id, false);
       setIsRowSliding(false);
-    }, 700);
-  };
-
-  const formatCurrency = (val) => {
-    const num = Number(val || 0);
-    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }, 450);
   };
 
   const locRecognitionRef = useRef(null);
@@ -654,15 +650,17 @@ export const AssetTableRowCard = ({
           ) : (isGeneralView && isConferido) ? (
             <div
               title="Item Conferido"
-              className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.35)]"
+              className="flex items-center justify-center shrink-0 p-0.5"
             >
-              <Check className="w-3 h-3 stroke-[3]" />
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 sm:w-[18px] sm:h-[18px] drop-shadow-[0_0_8px_rgba(74,222,128,0.95)]">
+                <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           ) : null}
 
           <div className="flex items-center">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
-              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
+              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -1169,7 +1167,7 @@ export const AssetTableRowCard = ({
         {visibleColumns?.valorOriginal !== false && (
           <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-semibold text-slate-200 text-[11px] whitespace-nowrap">
-              {formatCurrency(asset.valorOriginal)}
+              {formatCurrency(asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}
@@ -1178,7 +1176,7 @@ export const AssetTableRowCard = ({
         {visibleColumns?.valorAtual !== false && (
           <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
             <span className="font-bold text-emerald-400 text-[11px] whitespace-nowrap">
-              {formatCurrency(asset.valorAtual || asset.valorOriginal)}
+              {formatCurrency(asset.valorAtual || asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}
@@ -1191,7 +1189,8 @@ export const AssetTableRowCard = ({
                 asset.depreciacao || 
                 (asset.valorOriginal && asset.valorAtual && Number(asset.valorOriginal) > Number(asset.valorAtual) 
                   ? Number(asset.valorOriginal) - Number(asset.valorAtual) 
-                  : '')
+                  : ''),
+                appSettings?.showCurrencyPrefix
               )}
             </span>
           </div>
@@ -1245,30 +1244,35 @@ export const AssetTableRowCard = ({
                 Não
               </button>
             </div>
+          ) : isConferido ? (
+            <button
+              onClick={handleConferenceClick}
+              title="Bem conferido (clique para desmarcar)"
+              className="p-1 bg-transparent border-0 text-emerald-400 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center active:scale-95 shrink-0"
+            >
+              {isCheckingBurst ? (
+                <Check className="w-4 h-4 stroke-[3] text-emerald-400 animate-in zoom-in-75 duration-150" />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 drop-shadow-[0_0_8px_rgba(74,222,128,0.95)]">
+                  <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
           ) : (
             <button
               onClick={handleConferenceClick}
-              className={`relative px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
+              title="Conferir carga"
+              className={`relative px-2 py-1 rounded text-[11px] font-bold transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1 active:scale-95 ${
                 isCheckingBurst
                   ? 'animate-btn-pulse bg-emerald-500 text-white z-20 shadow-[0_0_18px_rgba(16,185,129,0.9)]'
-                  : isConferido
-                    ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 hover:scale-[1.02]'
               }`}
             >
               {isCheckingBurst && (
                 <span className="absolute inset-0 rounded border-2 border-emerald-400 animate-btn-shockwave pointer-events-none" />
               )}
               {isCheckingBurst ? (
-                <>
-                  <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
-                  <span className="tracking-wider uppercase font-black">CONFERIDO</span>
-                </>
-              ) : isConferido ? (
-                <>
-                  <Check className="w-3 h-3 stroke-[3]" />
-                  <span>Conferido</span>
-                </>
+                <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
               ) : (
                 <span>Conferir</span>
               )}
@@ -1607,9 +1611,7 @@ export const AssetTableRowCard = ({
 
       {/* VISUALIZAÇÃO MOBILE: Card Compacto Otimizado para Celular / Conferência Rápida Touch */}
       <div 
-        className={`flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left relative overflow-hidden transition-all duration-300 ${
-          isRowSliding ? 'animate-card-slide-curtain' : ''
-        }`}
+        className="flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left relative overflow-hidden transition-all duration-300"
       >
         {/* Linha 1: Patrimônio + Localização / Observação + Botão Conferir + Ações */}
         <div className="flex items-center justify-between gap-1.5">
@@ -1619,14 +1621,16 @@ export const AssetTableRowCard = ({
                 <Archive className="w-2.5 h-2.5" /> Baixado
               </span>
             ) : isConferido ? (
-              <span className="w-4 h-4 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_6px_rgba(52,211,153,0.35)]">
-                <Check className="w-3 h-3 stroke-[3]" />
+              <span className="flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 drop-shadow-[0_0_8px_rgba(74,222,128,0.95)]">
+                  <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
             ) : null}
 
             {/* Nº Patrimônio */}
             <span className={`font-mono text-[15px] font-black tracking-tight select-all leading-none shrink-0 ${
-              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? 'text-emerald-400' : 'text-indigo-400')
+              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -1733,30 +1737,35 @@ export const AssetTableRowCard = ({
                     Não
                   </button>
                 </div>
+              ) : isConferido ? (
+                <button
+                  onClick={handleConferenceClick}
+                  title="Bem conferido (clique para desmarcar)"
+                  className="p-1 bg-transparent border-0 text-emerald-400 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center active:scale-95 shrink-0"
+                >
+                  {isCheckingBurst ? (
+                    <Check className="w-4 h-4 stroke-[3] text-emerald-400 animate-in zoom-in-75 duration-150" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 drop-shadow-[0_0_8px_rgba(74,222,128,0.95)]">
+                      <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
               ) : (
                 <button
                   onClick={handleConferenceClick}
-                  className={`relative px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1 active:scale-95 ${
+                  title="Conferir carga"
+                  className={`relative px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1 active:scale-95 ${
                     isCheckingBurst
                       ? 'animate-btn-pulse bg-emerald-500 text-white z-20 shadow-[0_0_18px_rgba(16,185,129,0.9)]'
-                      : isConferido
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
                   }`}
                 >
                   {isCheckingBurst && (
                     <span className="absolute inset-0 rounded-lg border-2 border-emerald-400 animate-btn-shockwave pointer-events-none" />
                   )}
                   {isCheckingBurst ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
-                      <span className="tracking-wider uppercase font-black">CONFERIDO</span>
-                    </>
-                  ) : isConferido ? (
-                    <>
-                      <Check className="w-3 h-3 stroke-[3]" />
-                      <span>Conferido</span>
-                    </>
+                    <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-75 duration-150" />
                   ) : (
                     <span>Conferir</span>
                   )}

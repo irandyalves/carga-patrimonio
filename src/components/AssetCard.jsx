@@ -221,13 +221,13 @@ export const AssetCard = ({
             <div>
               <span className="text-[10px] text-slate-400 block">Vlr Original</span>
               <span className="font-semibold text-slate-200">
-                R$ {Number(asset.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {Number(asset.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 block">Vlr Atual</span>
               <span className="font-bold text-emerald-400">
-                R$ {Number(asset.valorAtual || asset.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {Number(asset.valorAtual || asset.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
           </div>
