@@ -62,27 +62,32 @@ export const PendenciasDtinModal = ({
       <div className="bg-slate-900 border border-slate-700/80 w-full max-w-5xl rounded-3xl p-5 sm:p-7 shadow-2xl relative flex flex-col max-h-[92vh]">
         
         {/* Cabeçalho com Ícone Sino Vermelho Pulsante Suave */}
-        <div className="flex items-start justify-between pb-5 border-b border-slate-800 shrink-0 gap-4">
-          <div className="flex items-start gap-3.5 min-w-0">
+        <div className="flex items-start justify-between pb-4 border-b border-slate-800 shrink-0 gap-4">
+          <div className="flex items-start gap-3.5 min-w-0 flex-1">
             {/* Sino Vermelho com Pulsação Suave */}
             <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-500 flex items-center justify-center shadow-lg shadow-rose-950/50 shrink-0 mt-0.5 animate-pulse">
               <Bell className="w-6 h-6 text-rose-500 fill-rose-500/20" />
             </div>
             
-            <div className="space-y-1.5 min-w-0">
+            <div className="space-y-2.5 min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h3 className="font-extrabold text-white text-base sm:text-lg leading-snug">
-                  <span className="text-rose-400 font-black">{detentorName}</span>, o Santana está solicitando autorização para enviar para DTIN os equipamentos abaixo.
+                  <span className="text-cyan-400 font-black">{detentorName}</span>, o <span className="text-emerald-400 font-black">SANTANA</span> está solicitando autorização para enviar para DTIN os equipamentos abaixo.
                 </h3>
                 {pendencias.length > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
                     {pendencias.length} pendente{pendencias.length > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400">
-                Data da solicitação: <strong className="text-slate-200 font-semibold">{dataSolicitacao}</strong>
-              </p>
+
+              {/* Data no centro com borda */}
+              <div className="flex justify-center pt-0.5">
+                <div className="px-4 py-1 rounded-xl bg-slate-950/90 border border-slate-700 shadow-md flex items-center gap-2 text-xs text-slate-300">
+                  <span className="text-slate-400 font-medium">Data da solicitação:</span>
+                  <strong className="text-white font-mono font-bold tracking-wide">{dataSolicitacao}</strong>
+                </div>
+              </div>
             </div>
           </div>
 
