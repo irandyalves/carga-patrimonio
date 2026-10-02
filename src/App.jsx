@@ -171,62 +171,124 @@ export function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Visibilidade das Colunas [Quantidade, Marca, Modelo, Responsável, Aquisição, $ Original, $ Atual, Depreciação]
-  const [visibleColumns, setVisibleColumns] = useState(() => {
+  // Padrões de Visibilidade de Colunas:
+  // 1. DENTRO DE SETORES: Quantidade, Localização e Responsável vêm por padrão ESCONDIDOS (false)
+  const DEFAULT_SECTOR_COLUMNS = useMemo(() => ({
+    quantidade: false,
+    marca: true,
+    modelo: true,
+    localizacao: false,
+    responsavel: false,
+    dataAquisicao: true,
+    valorOriginal: true,
+    valorAtual: true,
+    depreciacao: true
+  }), []);
+
+  // 2. VISUALIZAÇÃO GERAL (Todos os Setores): Todas as colunas visíveis por padrão (true)
+  const DEFAULT_GENERAL_COLUMNS = useMemo(() => ({
+    quantidade: true,
+    marca: true,
+    modelo: true,
+    localizacao: true,
+    responsavel: true,
+    dataAquisicao: true,
+    valorOriginal: true,
+    valorAtual: true,
+    depreciacao: true
+  }), []);
+
+  const [sectorColumns, setSectorColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_visible_columns');
+      const stored = localStorage.getItem('carga_patrimonio_sector_visible_columns_v2');
       if (stored) {
         return {
-          quantidade: true,
-          marca: true,
-          modelo: true,
-          responsavel: true,
-          dataAquisicao: true,
-          valorOriginal: true,
-          valorAtual: true,
-          depreciacao: true,
+          ...DEFAULT_SECTOR_COLUMNS,
           ...JSON.parse(stored)
         };
       }
     } catch (e) {}
-    return {
-      quantidade: true,
-      marca: true,
-      modelo: true,
-      localizacao: true,
-      responsavel: true,
-      dataAquisicao: true,
-      valorOriginal: true,
-      valorAtual: true,
-      depreciacao: true
-    };
+    return DEFAULT_SECTOR_COLUMNS;
+  });
+
+  const [generalColumns, setGeneralColumns] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_general_visible_columns_v2');
+      if (stored) {
+        return {
+          ...DEFAULT_GENERAL_COLUMNS,
+          ...JSON.parse(stored)
+        };
+      }
+    } catch (e) {}
+    return DEFAULT_GENERAL_COLUMNS;
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('carga_patrimonio_visible_columns', JSON.stringify(visibleColumns));
+      localStorage.setItem('carga_patrimonio_sector_visible_columns_v2', JSON.stringify(sectorColumns));
     } catch (e) {}
-  }, [visibleColumns]);
+  }, [sectorColumns]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('carga_patrimonio_general_visible_columns_v2', JSON.stringify(generalColumns));
+    } catch (e) {}
+  }, [generalColumns]);
+
+  // Colunas ativas dinâmicas com base no modo atual (Dentro de Setor vs Geral)
+  const visibleColumns = useMemo(() => {
+    return filterMode === 'MY_SECTOR' ? sectorColumns : generalColumns;
+  }, [filterMode, sectorColumns, generalColumns]);
 
   const toggleColumn = (columnKey) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [columnKey]: !prev[columnKey]
-    }));
+    if (filterMode === 'MY_SECTOR') {
+      setSectorColumns(prev => ({
+        ...prev,
+        [columnKey]: !prev[columnKey]
+      }));
+    } else {
+      setGeneralColumns(prev => ({
+        ...prev,
+        [columnKey]: !prev[columnKey]
+      }));
+    }
   };
 
   const showAllColumns = () => {
-    setVisibleColumns({
-      quantidade: true,
-      marca: true,
-      modelo: true,
-      localizacao: true,
-      responsavel: true,
-      dataAquisicao: true,
-      valorOriginal: true,
-      valorAtual: true,
-      depreciacao: true
-    });
+    if (filterMode === 'MY_SECTOR') {
+      setSectorColumns({
+        quantidade: true,
+        marca: true,
+        modelo: true,
+        localizacao: true,
+        responsavel: true,
+        dataAquisicao: true,
+        valorOriginal: true,
+        valorAtual: true,
+        depreciacao: true
+      });
+    } else {
+      setGeneralColumns({
+        quantidade: true,
+        marca: true,
+        modelo: true,
+        localizacao: true,
+        responsavel: true,
+        dataAquisicao: true,
+        valorOriginal: true,
+        valorAtual: true,
+        depreciacao: true
+      });
+    }
+  };
+
+  const resetToModeDefaultColumns = () => {
+    if (filterMode === 'MY_SECTOR') {
+      setSectorColumns(DEFAULT_SECTOR_COLUMNS);
+    } else {
+      setGeneralColumns(DEFAULT_GENERAL_COLUMNS);
+    }
   };
 
   const hiddenColumnsCount = useMemo(() => {
@@ -1998,14 +2060,22 @@ export function App() {
                         className="absolute right-0 top-full mt-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2.5 min-w-[210px] text-xs space-y-1.5 animate-in fade-in zoom-in-95 duration-100 text-left"
                       >
                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1.5 border-b border-slate-800 flex items-center justify-between">
-                          <span>Exibir Colunas</span>
+                          <span>{filterMode === 'MY_SECTOR' ? 'Colunas do Setor' : 'Colunas Visão Geral'}</span>
                           <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={resetToModeDefaultColumns}
+                              className="text-amber-400 hover:text-amber-300 text-[9.5px] lowercase font-semibold underline cursor-pointer"
+                              title="Restaurar padrão deste modo"
+                            >
+                              padrão
+                            </button>
                             <button
                               type="button"
                               onClick={showAllColumns}
                               className="text-indigo-400 hover:text-indigo-300 text-[9.5px] lowercase font-semibold underline cursor-pointer"
                             >
-                              exibir todas
+                              todas
                             </button>
                           </div>
                         </div>
