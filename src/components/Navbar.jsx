@@ -6,11 +6,6 @@ import {
   MicOff,
   QrCode, 
   Plus, 
-  FileSpreadsheet,
-  FileText,
-  FileCode,
-  File,
-  UploadCloud, 
   Handshake, 
   ShieldCheck,
   Users,
@@ -72,10 +67,8 @@ export const Navbar = ({
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
   
   const userMenuRef = useRef(null);
-  const importMenuRef = useRef(null);
   const recognitionRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -84,17 +77,14 @@ export const Navbar = ({
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);
       }
-      if (importMenuRef.current && !importMenuRef.current.contains(event.target)) {
-        setIsImportMenuOpen(false);
-      }
     };
-    if (isUserMenuOpen || isImportMenuOpen) {
+    if (isUserMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isUserMenuOpen, isImportMenuOpen]);
+  }, [isUserMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -379,104 +369,6 @@ export const Navbar = ({
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="hidden md:inline">Backup</span>
               </button>
-
-              {/* Menu Importar com Listbox de Formatos (Excel, Word, CSV, TXT) */}
-              <div className="relative" ref={importMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsImportMenuOpen(!isImportMenuOpen)}
-                  title="Importar Carga de Arquivos (Excel, Word, CSV, TXT)"
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isImportMenuOpen
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80 bg-slate-800/40'
-                  }`}
-                >
-                  <UploadCloud className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Importar</span>
-                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isImportMenuOpen ? 'rotate-180 text-white' : ''}`} />
-                </button>
-
-                {/* Listbox Dropdown com Excel, Word, CSV, TXT */}
-                {isImportMenuOpen && (
-                  <div 
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 min-w-[220px] text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100"
-                  >
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800">
-                      Selecione o Formato
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsImportMenuOpen(false);
-                        onOpenExcel?.('excel');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2.5 cursor-pointer group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20">
-                        <FileSpreadsheet className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-200 group-hover:text-white">Excel</div>
-                        <div className="text-[10px] text-slate-400 font-mono">.xlsx, .xls</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsImportMenuOpen(false);
-                        onOpenExcel?.('word');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2.5 cursor-pointer group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-200 group-hover:text-white">Word</div>
-                        <div className="text-[10px] text-slate-400 font-mono">.docx (tabelas e listas)</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsImportMenuOpen(false);
-                        onOpenExcel?.('csv');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2.5 cursor-pointer group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20">
-                        <FileCode className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-200 group-hover:text-white">CSV</div>
-                        <div className="text-[10px] text-slate-400 font-mono">.csv (delimitado)</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsImportMenuOpen(false);
-                        onOpenExcel?.('txt');
-                      }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2.5 cursor-pointer group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20">
-                        <File className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-200 group-hover:text-white">TXT</div>
-                        <div className="text-[10px] text-slate-400 font-mono">.txt (tabular)</div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
 
               {/* Admin: Users Management */}
               {isAdmin && (
