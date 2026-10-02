@@ -127,7 +127,8 @@ import {
   X,
   Eraser,
   RotateCcw,
-  CheckCheck
+  CheckCheck,
+  Plus
 } from 'lucide-react';
 
 export function App() {
