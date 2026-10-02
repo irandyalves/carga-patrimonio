@@ -1952,27 +1952,28 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Menu de Ações Mobile (Bottom-Sheet / Modal Touch Amigável com Opções Visíveis) */}
+      {/* Menu de Ações Mobile / Modal Compacto e Centralizado na Tela */}
       {isActionsOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100 md:hidden"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100"
           onClick={(e) => {
             e.stopPropagation();
             setIsActionsOpen(false);
             setShowDeleteConfirm(false);
+            setShowCancelBaixaConfirm(false);
           }}
         >
           <div 
-            className="bg-slate-900 border border-slate-700/80 w-full max-w-sm rounded-3xl p-4 shadow-2xl relative animate-in slide-in-from-bottom-6 duration-150 text-left"
+            className="bg-slate-900 border border-slate-700/80 w-full max-w-[320px] rounded-2xl p-3 shadow-2xl relative animate-in zoom-in-95 duration-100 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Topo do Menu Mobile */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-base font-black text-emerald-400">
+            {/* Topo do Menu Compacto */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-mono text-sm font-black text-emerald-400">
                   {formattedXX}
                 </span>
-                <span className="text-xs text-slate-400 truncate max-w-[180px]">
+                <span className="text-[11px] text-slate-400 truncate">
                   — Opções do Bem
                 </span>
               </div>
@@ -1981,15 +1982,16 @@ export const AssetTableRowCard = ({
                 onClick={() => {
                   setIsActionsOpen(false);
                   setShowDeleteConfirm(false);
+                  setShowCancelBaixaConfirm(false);
                 }}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Lista de Opções Mobile Touch */}
-            <div className="flex flex-col gap-1.5">
+            {/* Grid Compacto de Opções (2 Colunas - Reduz pela metade a altura) */}
+            <div className="grid grid-cols-2 gap-1.5">
               {!canManageAsset ? (
                 <>
                   <button
@@ -1998,10 +2000,10 @@ export const AssetTableRowCard = ({
                       setIsActionsOpen(false);
                       onOpenSolicitacao(asset);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800 bg-amber-500/10 border border-amber-500/20 font-bold transition-all cursor-pointer"
+                    className="col-span-2 flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs text-amber-300 hover:bg-amber-500/20 bg-amber-500/10 font-bold transition-all cursor-pointer active:scale-95"
                   >
-                    <Send className="w-4 h-4 text-amber-400" />
-                    <span>Fazer Pedido de Carga</span>
+                    <Send className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Pedir Carga</span>
                   </button>
 
                   <button
@@ -2010,38 +2012,41 @@ export const AssetTableRowCard = ({
                       setIsActionsOpen(false);
                       onPrintSingleLabel(asset);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 transition-all cursor-pointer"
+                    className="col-span-2 flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-700 bg-slate-800/80 transition-all cursor-pointer active:scale-95"
                   >
-                    <Printer className="w-4 h-4 text-cyan-400" />
+                    <Printer className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Imprimir Etiqueta</span>
                   </button>
                 </>
               ) : (
                 <>
+                  {/* Editar */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsActionsOpen(false);
                       onOpenEdit(asset);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-blue-300 hover:bg-slate-800 bg-blue-500/10 border border-blue-500/20 font-bold transition-all cursor-pointer"
+                    className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-blue-300 hover:bg-blue-500/20 bg-blue-500/10 font-bold transition-all cursor-pointer active:scale-95 truncate"
                   >
-                    <Edit3 className="w-4 h-4 text-blue-400" />
-                    <span>Editar Dados do Bem</span>
+                    <Edit3 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span className="truncate">Editar</span>
                   </button>
 
+                  {/* Etiqueta */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsActionsOpen(false);
                       onPrintSingleLabel(asset);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                    className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-slate-200 hover:bg-slate-700 bg-slate-800/80 font-medium transition-all cursor-pointer active:scale-95 truncate"
                   >
-                    <Printer className="w-4 h-4 text-cyan-400" />
-                    <span>Imprimir Etiqueta</span>
+                    <Printer className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span className="truncate">Etiqueta</span>
                   </button>
 
+                  {/* Transferir */}
                   {!isGeneralView && (
                     <button
                       onClick={(e) => {
@@ -2049,13 +2054,14 @@ export const AssetTableRowCard = ({
                         setIsActionsOpen(false);
                         onTransferSector(asset);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-slate-200 hover:bg-slate-700 bg-slate-800/80 font-medium transition-all cursor-pointer active:scale-95 truncate"
                     >
-                      <ArrowRightLeft className="w-4 h-4 text-cyan-400" />
-                      <span>Transferir Setor</span>
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span className="truncate">Transferir</span>
                     </button>
                   )}
 
+                  {/* Cautela */}
                   {!isBaixado && (
                     <button
                       onClick={(e) => {
@@ -2063,10 +2069,10 @@ export const AssetTableRowCard = ({
                         setIsActionsOpen(false);
                         onOpenCautela(asset);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-slate-200 hover:bg-slate-700 bg-slate-800/80 font-medium transition-all cursor-pointer active:scale-95 truncate"
                     >
-                      <Handshake className="w-4 h-4 text-amber-400" />
-                      <span>Emitir Cautela / Empréstimo</span>
+                      <Handshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="truncate">Cautela</span>
                     </button>
                   )}
 
@@ -2079,10 +2085,10 @@ export const AssetTableRowCard = ({
                           setIsActionsOpen(false);
                           setIsDtinResumoOpen(true);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 bg-cyan-950/20 border border-cyan-500/30 font-medium transition-all cursor-pointer"
+                        className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-cyan-300 hover:bg-cyan-950/60 bg-cyan-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
                       >
-                        <Server className="w-4 h-4 text-cyan-400" />
-                        <span>Ver Detalhes DTIN</span>
+                        <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="truncate">Ver DTIN</span>
                       </button>
                     ) : (
                       <button
@@ -2091,10 +2097,10 @@ export const AssetTableRowCard = ({
                           setIsActionsOpen(false);
                           onOpenDtin && onOpenDtin(asset);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                        className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-cyan-300 hover:bg-cyan-950/60 bg-cyan-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
                       >
-                        <Server className="w-4 h-4 text-cyan-400" />
-                        <span>Enviar DTIN (TI)</span>
+                        <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="truncate">Enviar DTIN</span>
                       </button>
                     )
                   )}
@@ -2102,8 +2108,8 @@ export const AssetTableRowCard = ({
                   {/* Baixa */}
                   {isBaixado ? (
                     showCancelBaixaConfirm ? (
-                      <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center">
-                        <p className="text-xs text-emerald-300 font-medium mb-2">Cancelar baixa e reativar bem?</p>
+                      <div className="col-span-2 p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center">
+                        <p className="text-[11px] text-emerald-300 font-medium mb-1.5">Reativar este bem?</p>
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={(e) => {
@@ -2112,7 +2118,7 @@ export const AssetTableRowCard = ({
                               setShowCancelBaixaConfirm(false);
                               onCancelBaixa && onCancelBaixa(asset.id);
                             }}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer"
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer"
                           >
                             Reativar
                           </button>
@@ -2121,9 +2127,9 @@ export const AssetTableRowCard = ({
                               e.stopPropagation();
                               setShowCancelBaixaConfirm(false);
                             }}
-                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
                           >
-                            Cancelar
+                            Não
                           </button>
                         </div>
                       </div>
@@ -2133,10 +2139,10 @@ export const AssetTableRowCard = ({
                           e.stopPropagation();
                           setShowCancelBaixaConfirm(true);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 bg-emerald-500/10 border border-emerald-500/20 font-bold transition-all cursor-pointer"
+                        className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-emerald-400 hover:bg-emerald-500/20 bg-emerald-500/10 font-bold transition-all cursor-pointer active:scale-95 truncate"
                       >
-                        <RotateCcw className="w-4 h-4" />
-                        <span>Cancelar Baixa Patrimonial</span>
+                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Reativar</span>
                       </button>
                     )
                   ) : (
@@ -2146,17 +2152,17 @@ export const AssetTableRowCard = ({
                         setIsActionsOpen(false);
                         onOpenBaixa(asset);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-purple-300 hover:bg-slate-800 bg-slate-800/40 font-medium transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-purple-300 hover:bg-purple-950/60 bg-purple-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
                     >
-                      <Archive className="w-4 h-4 text-purple-400" />
-                      <span>Baixa Patrimonial</span>
+                      <Archive className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                      <span className="truncate">Baixa</span>
                     </button>
                   )}
 
-                  {/* Excluir */}
+                  {/* Excluir (ocupa as 2 colunas na parte inferior) */}
                   {showDeleteConfirm ? (
-                    <div className="p-3 bg-rose-950/40 rounded-xl border border-rose-500/30 text-center">
-                      <p className="text-xs text-rose-300 font-medium mb-2">Confirmar exclusão definitiva do bem?</p>
+                    <div className="col-span-2 p-2 bg-rose-950/40 rounded-xl border border-rose-500/30 text-center">
+                      <p className="text-[11px] text-rose-300 font-medium mb-1.5">Confirmar exclusão definitiva?</p>
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={(e) => {
@@ -2164,7 +2170,7 @@ export const AssetTableRowCard = ({
                             setIsActionsOpen(false);
                             onDeleteAsset(asset.id);
                           }}
-                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer"
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer"
                         >
                           Excluir
                         </button>
@@ -2173,7 +2179,7 @@ export const AssetTableRowCard = ({
                             e.stopPropagation();
                             setShowDeleteConfirm(false);
                           }}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
                         >
                           Cancelar
                         </button>
@@ -2185,9 +2191,9 @@ export const AssetTableRowCard = ({
                         e.stopPropagation();
                         setShowDeleteConfirm(true);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 bg-rose-500/10 border border-rose-500/20 font-bold transition-all cursor-pointer"
+                      className="col-span-2 flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 bg-rose-500/10 font-bold transition-all cursor-pointer active:scale-95"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                       <span>Excluir Bem</span>
                     </button>
                   )}
