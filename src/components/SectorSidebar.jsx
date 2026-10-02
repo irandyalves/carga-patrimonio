@@ -412,8 +412,13 @@ export const SectorSidebar = ({
                         </button>
                       )}
 
-                      {/* Menu exclusivo do setor de TI: Enviados para a DTIN (logo abaixo de Emitir Relatório) */}
-                      {(sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia')) && (
+                      {/* Menu de Enviados para a DTIN: no setor de TI (com total geral) ou em qualquer setor que tenha itens no DTIN */}
+                      {(
+                        sec.id === 'sec-ti' || 
+                        (sec.name || '').toUpperCase().trim() === 'TI' || 
+                        (sec.name || '').toLowerCase().includes('tecnologia') ||
+                        assets.some(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin))
+                      ) && (
                         <button
                           type="button"
                           onClick={() => onSelectStatusFilter('ENVIADOS_DTIN')}
@@ -433,7 +438,10 @@ export const SectorSidebar = ({
                               ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold'
                               : 'bg-slate-800/80 text-cyan-400'
                           }`}>
-                            {assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length}
+                            {(sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia'))
+                              ? assets.filter(a => a.status === 'ENVIADO_DTIN' || a.enviadoDtin).length
+                              : assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length
+                            }
                           </span>
                         </button>
                       )}

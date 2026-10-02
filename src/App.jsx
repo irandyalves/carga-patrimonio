@@ -890,17 +890,28 @@ export function App() {
   // Filtered Assets for Display
   const filteredAssets = useMemo(() => {
     return assets.filter(item => {
-      // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado
-      if (filterMode === 'MY_SECTOR') {
-        if (item.setorId !== activeSectorId) return false;
-      }
+      // Status filter de DTIN
+      if (statusFilter === 'ENVIADOS_DTIN') {
+        const isEnviado = item.status === 'ENVIADO_DTIN' || !!item.enviadoDtin;
+        if (!isEnviado) return false;
 
-      // Status filter
-      if (statusFilter === 'PENDENTES' && (item.status === 'CONFERIDO' || item.status === 'BAIXADO')) return false;
-      if (statusFilter === 'CONFERIDOS' && item.status !== 'CONFERIDO') return false;
-      if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
-      if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
-      if (statusFilter === 'ENVIADOS_DTIN' && item.status !== 'ENVIADO_DTIN' && !item.enviadoDtin) return false;
+        const isTi = activeSectorId === 'sec-ti' || (activeSector?.name || '').toUpperCase().trim() === 'TI' || (activeSector?.name || '').toLowerCase().includes('tecnologia');
+        // Se estiver no setor de TI, exibe todos os equipamentos em atendimento no DTIN
+        if (!isTi && filterMode === 'MY_SECTOR') {
+          if (item.setorId !== activeSectorId) return false;
+        }
+      } else {
+        // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado
+        if (filterMode === 'MY_SECTOR') {
+          if (item.setorId !== activeSectorId) return false;
+        }
+
+        // Demais filtros de Status
+        if (statusFilter === 'PENDENTES' && (item.status === 'CONFERIDO' || item.status === 'BAIXADO')) return false;
+        if (statusFilter === 'CONFERIDOS' && item.status !== 'CONFERIDO') return false;
+        if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
+        if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
+      }
 
       // Text search filter (busca flexível, não exata, multi-termos, com e sem ponto, sem acentos)
       if (searchTerm) {
@@ -911,7 +922,7 @@ export function App() {
 
       return true;
     });
-  }, [assets, activeSectorId, filterMode, statusFilter, searchTerm]);
+  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, searchTerm]);
 
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
@@ -1806,12 +1817,14 @@ export function App() {
           {
             data: dadosDtin.data || nowStr,
             acao: `Cadastrado e Enviado ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`,
-            usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel
+            usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
           }
         ]
       };
+      const updatedList = [newAsset, ...assets];
+      setAssets(updatedList);
+      saveLocalAssets(updatedList);
       saveAssetToCloud(newAsset);
-      setAssets(prev => [newAsset, ...prev]);
       showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DTIN!`, 'success');
       return;
     }
@@ -1829,9 +1842,9 @@ export function App() {
           historico: [
             ...(a.historico || []),
             { 
-              data: dadosDtin.data, 
+              data: dadosDtin.data || nowStr, 
               acao: `Envio ao DTIN: ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
-              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
             }
           ]
         };
@@ -1841,6 +1854,7 @@ export function App() {
       return a;
     });
     setAssets(updated);
+    saveLocalAssets(updated);
     showToast('Equipamento enviado ao DTIN com sucesso!');
   };
 
@@ -1859,7 +1873,7 @@ export function App() {
             { 
               data: nowStr, 
               acao: 'Retorno do DTIN: Equipamento reintegrado ao setor', 
-              usuario: currentUser?.displayName || currentUser?.email || activeSector.responsavel 
+              usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
             }
           ]
         };
@@ -1869,6 +1883,7 @@ export function App() {
       return a;
     });
     setAssets(updated);
+    saveLocalAssets(updated);
     showToast('Retorno do DTIN confirmado e equipamento reintegrado!');
   };
 

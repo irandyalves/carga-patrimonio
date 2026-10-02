@@ -264,6 +264,11 @@ export const DtinModal = ({
                             <span className="text-[10px] uppercase font-bold text-slate-400 px-1.5 py-0.2 rounded bg-slate-800">
                               {a.setorNome || 'Sem Setor'}
                             </span>
+                            {(a.status === 'ENVIADO_DTIN' || a.enviadoDtin) && (
+                              <span className="text-[9.5px] uppercase font-bold text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-500/30">
+                                No DTIN
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-slate-200 truncate group-hover:text-cyan-200">
                             {a.descricao}

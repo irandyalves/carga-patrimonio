@@ -1191,6 +1191,19 @@ export const AssetTableRowCard = ({
             <div className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 select-none">
               Baixado
             </div>
+          ) : isEnviadoDtin ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDtinResumoOpen(true);
+              }}
+              title="Equipamento no DTIN (Clique para ver detalhes e documentos ou registrar retorno)"
+              className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
+            >
+              <Server className="w-3 h-3 text-cyan-400" />
+              <span>No DTIN</span>
+            </button>
           ) : showUncheckConfirm ? (
             <div className="z-20 flex items-center gap-2 bg-slate-950/95 border-2 border-amber-500 px-3.5 py-1.5 rounded-xl shadow-2xl shadow-black select-none whitespace-nowrap animate-in zoom-in-95 duration-150">
               <span className="text-xs text-amber-300 font-black">Desmarcar?</span>
