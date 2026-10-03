@@ -424,130 +424,135 @@ export const SmartImportModal = ({
                 )}
               </div>
 
-              {/* ESCOLHA DO FORMATO DE ARQUIVO (REDUZIDO PARA 1/3) */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                  2. Tipo de Arquivo a Importar
-                </label>
+              {/* SEÇÃO LADO A LADO: FORMATOS & ENVIO (ESQUERDA REDUZIDA) + HISTÓRICO (DIREITA) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {FORMAT_OPTIONS.map(fmt => {
-                    const Icon = fmt.icon;
-                    const isSelected = selectedFormat === fmt.id;
-                    return (
-                      <button
-                        key={fmt.id}
-                        type="button"
-                        onClick={() => setSelectedFormat(fmt.id)}
-                        className={`py-1.5 px-3 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                          isSelected
-                            ? `${fmt.activeColor} font-bold shadow-md`
-                            : 'bg-slate-850/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span className="text-xs font-semibold">{fmt.title}</span>
-                        <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">{fmt.desc}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 3. SELEÇÃO DE ARQUIVO (ESQUERDA REDUZIDA) E HISTÓRICO (DIREITA EM 2 COLUNAS) */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                  3. Selecionar Arquivo & Histórico
-                </label>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
-                  {/* Coluna Esquerda: Dropzone Compacta / Esmagada */}
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`md:col-span-4 border-2 border-dashed ${
-                      isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
-                    } rounded-2xl p-2.5 px-3 flex items-center gap-2.5 cursor-pointer transition-all group min-h-[105px]`}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
-                      <UploadCloud className="w-4 h-4" />
+                {/* LADO ESQUERDO: Botões de Formato (compactos) + Dropzone Esmagada */}
+                <div className="md:col-span-4 flex flex-col gap-2">
+                  {/* 2. Tipo de Arquivo */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                      2. Tipo de Arquivo
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {FORMAT_OPTIONS.map(fmt => {
+                        const Icon = fmt.icon;
+                        const isSelected = selectedFormat === fmt.id;
+                        return (
+                          <button
+                            key={fmt.id}
+                            type="button"
+                            onClick={() => setSelectedFormat(fmt.id)}
+                            className={`py-1 px-2 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                              isSelected
+                                ? `${fmt.activeColor} font-bold shadow-xs`
+                                : 'bg-slate-850/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
+                            }`}
+                          >
+                            <Icon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="text-[11px] font-semibold">{fmt.title}</span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="text-left flex-1 min-w-0">
-                      <span className="text-[11.5px] font-bold text-slate-200 group-hover:text-white block leading-snug">
-                        {isLoading ? 'Lendo arquivo...' : 'Clique para enviar ou arraste o arquivo aqui'}
-                      </span>
-                      <span className="text-[9.5px] text-slate-400 font-mono mt-0.5 block">
-                        .xlsx, .docx, .csv, .txt
-                      </span>
-                    </div>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.docx,.csv,.txt"
-                      onChange={handleFileInputChange}
-                      disabled={isLoading}
-                      className="hidden"
-                    />
                   </div>
 
-                  {/* Coluna Direita: Histórico de Arquivos em 2 Colunas com Destino por Setor */}
-                  <div className="md:col-span-8 rounded-2xl bg-slate-850/60 border border-slate-800 p-2.5 flex flex-col min-h-[115px]">
-                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0 gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 shrink-0">
-                          Histórico
+                  {/* 3. Selecionar Arquivo (Esmagado / Reduzido pela metade) */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                      3. Enviar Arquivo
+                    </label>
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed ${
+                        isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
+                      } rounded-xl p-2 px-2.5 flex items-center gap-2 cursor-pointer transition-all group min-h-[58px]`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
+                        <UploadCloud className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="text-left flex-1 min-w-0">
+                        <span className="text-[10.5px] font-bold text-slate-200 group-hover:text-white block leading-tight truncate">
+                          {isLoading ? 'Lendo...' : 'Clique ou arraste aqui'}
                         </span>
-                        
-                        {/* Filtro Todos vs Deste Setor */}
-                        {importHistory.length > 0 && (
-                          <div className="flex items-center gap-1 ml-1">
+                        <span className="text-[9px] text-slate-400 font-mono block truncate">
+                          .xlsx, .docx, .csv, .txt
+                        </span>
+                      </div>
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.docx,.csv,.txt"
+                        onChange={handleFileInputChange}
+                        disabled={isLoading}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* LADO DIREITO: Histórico de Arquivos começando junto com o topo dos formatos */}
+                <div className="md:col-span-8 flex flex-col gap-1">
+                  {/* Cabeçalho FORA e EM CIMA do Card */}
+                  <div className="flex items-center justify-between px-0.5 shrink-0 gap-2 min-h-[18px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 shrink-0">
+                        Histórico de Arquivos
+                      </span>
+
+                      {/* Filtro Todos vs Deste Setor */}
+                      {importHistory.length > 0 && (
+                        <div className="flex items-center gap-1 ml-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setHistoryFilterMode('ALL')}
+                            className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer ${
+                              historyFilterMode === 'ALL'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            Todos ({importHistory.length})
+                          </button>
+                          {currentTargetSector && (
                             <button
                               type="button"
-                              onClick={() => setHistoryFilterMode('ALL')}
-                              className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer ${
-                                historyFilterMode === 'ALL'
+                              onClick={() => setHistoryFilterMode('SECTOR')}
+                              className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer truncate max-w-[130px] ${
+                                historyFilterMode === 'SECTOR'
                                   ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                               }`}
+                              title={`Filtrar apenas arquivos do setor ${currentTargetSector.name}`}
                             >
-                              Todos ({importHistory.length})
+                              {currentTargetSector.name.split(' ')[0]} ({sectorHistoryCount})
                             </button>
-                            {currentTargetSector && (
-                              <button
-                                type="button"
-                                onClick={() => setHistoryFilterMode('SECTOR')}
-                                className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer truncate max-w-[130px] ${
-                                  historyFilterMode === 'SECTOR'
-                                    ? 'bg-indigo-600 text-white shadow-xs'
-                                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                                }`}
-                                title={`Filtrar apenas arquivos do setor ${currentTargetSector.name}`}
-                              >
-                                {currentTargetSector.name.split(' ')[0]} ({sectorHistoryCount})
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {importHistory.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleClearHistory}
-                          className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-                          title="Limpar histórico"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Limpar</span>
-                        </button>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[110px] pt-1.5 pr-0.5">
+                    {importHistory.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearHistory}
+                        className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                        title="Limpar histórico"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Limpar</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Card do Histórico com 100% do espaço dedicado à lista */}
+                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-2 flex-1 flex flex-col min-h-[125px]">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[125px] pr-0.5">
                       {displayedHistory.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-[11px] py-4 gap-1">
                           <span>
