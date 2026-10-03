@@ -89,8 +89,8 @@ export const PedidosCargaModal = ({
                       key={ped.id}
                       className="p-3.5 rounded-2xl bg-slate-850/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
                     >
-                      {/* Esquerda: Informações do Bem e Solicitante */}
-                      <div className="flex-1 min-w-0">
+                      {/* Coluna 1: Informações do Bem e Solicitante */}
+                      <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-xs font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md shrink-0">
                             {formatLast5Patrimonio(ped.numeroPatrimonio)}
@@ -110,39 +110,36 @@ export const PedidosCargaModal = ({
                         </div>
                       </div>
 
-                      {/* Direita: Coluna Rota Origem/Destino (sem borda) + Botões sem ícones */}
-                      <div className="flex items-center gap-4 shrink-0 self-end md:self-center">
-                        {/* Coluna Origem e Destino (Sem borda) */}
-                        <div className="flex items-center gap-1.5 text-xs shrink-0">
-                          <span className="text-slate-400 font-medium">De:</span>
-                          <span className="text-slate-200 font-semibold truncate max-w-[90px]" title={ped.setorOrigemNome}>
-                            {ped.setorOrigemNome}
-                          </span>
-                          <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mx-0.5" />
-                          <span className="text-slate-400 font-medium">Para:</span>
-                          <strong className="text-amber-300 font-bold truncate max-w-[90px]" title={ped.setorDestinoNome}>
-                            {ped.setorDestinoNome}
-                          </strong>
-                        </div>
+                      {/* Coluna 2: Origem e Destino (com separadores verticais) */}
+                      <div className="flex items-center gap-1.5 text-xs shrink-0 md:px-4 md:border-r md:border-slate-800/80">
+                        <span className="text-slate-400 font-medium">De:</span>
+                        <span className="text-slate-200 font-semibold truncate max-w-[95px]" title={ped.setorOrigemNome}>
+                          {ped.setorOrigemNome}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mx-0.5" />
+                        <span className="text-slate-400 font-medium">Para:</span>
+                        <strong className="text-amber-300 font-bold truncate max-w-[95px]" title={ped.setorDestinoNome}>
+                          {ped.setorDestinoNome}
+                        </strong>
+                      </div>
 
-                        {/* Botões de Ação (Sem ícones) */}
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => onRecusarPedido(ped.id)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95"
-                            title="Rejeitar pedido"
-                          >
-                            Rejeitar
-                          </button>
+                      {/* Coluna 3: Botões de Ação (Sem ícones) */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => onRecusarPedido(ped.id)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95"
+                          title="Rejeitar pedido"
+                        >
+                          Rejeitar
+                        </button>
 
-                          <button
-                            onClick={() => onAprovarPedido(ped)}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95"
-                            title="Autorizar pedido"
-                          >
-                            Autorizar
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => onAprovarPedido(ped)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95"
+                          title="Autorizar pedido"
+                        >
+                          Autorizar
+                        </button>
                       </div>
                     </div>
                   ))}
