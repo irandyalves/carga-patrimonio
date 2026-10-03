@@ -67,6 +67,17 @@ import {
 import { 
   DeleteAssetModal 
 } from './components/DeleteAssetModal';
+import { 
+  BulkActionBar 
+} from './components/BulkActionBar';
+import { 
+  TiManagementModal 
+} from './components/TiManagementModal';
+
+import { 
+  analyzeDuplicateAssets, 
+  isTiAsset 
+} from './utils/duplicateUtils';
 
 import { 
   loadLocalData, 
@@ -111,27 +122,30 @@ import {
   Sparkles, 
   PackageSearch, 
   Hash, 
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  User,
-  Calendar,
-  DollarSign,
-  FileText,
-  Archive,
-  Eye,
-  EyeOff,
-  Columns3,
-  Check,
-  CheckCircle2,
-  AlertTriangle,
-  Trash2,
-  Building2,
-  X,
-  Eraser,
-  RotateCcw,
-  CheckCheck,
-  Plus
+  ArrowUpDown, 
+  ArrowUp, 
+  ArrowDown, 
+  User, 
+  Calendar, 
+  DollarSign, 
+  FileText, 
+  Archive, 
+  Eye, 
+  EyeOff, 
+  Columns3, 
+  Check, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Trash2, 
+  Building2, 
+  X, 
+  Eraser, 
+  RotateCcw, 
+  CheckCheck, 
+  Plus,
+  Copy,
+  Server,
+  Laptop
 } from 'lucide-react';
 
 export function App() {
@@ -199,6 +213,7 @@ export function App() {
     modelo: true,
     localizacao: false,
     responsavel: false,
+    financeiro: true,
     dataAquisicao: true,
     valorOriginal: true,
     valorAtual: true,
@@ -212,6 +227,7 @@ export function App() {
     modelo: true,
     localizacao: true,
     responsavel: true,
+    financeiro: true,
     dataAquisicao: true,
     valorOriginal: true,
     valorAtual: true,
@@ -938,13 +954,14 @@ export function App() {
 
   const canCreateNovoEnvioDtin = isTISector && isSantanaUser;
 
-  // Conference Statistics Calculation
+  // Conference Statistics Calculation (Calcula por setor ou em TODOS os setores dinamicamente)
   const stats = useMemo(() => {
-    const sectorAssets = assets.filter(a => a.setorId === activeSectorId);
-    const total = sectorAssets.length;
-    const conferidos = sectorAssets.filter(a => a.status === 'CONFERIDO').length;
-    const cautelasCount = sectorAssets.filter(a => a.status === 'EM_CAUTELA').length;
-    const baixados = sectorAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length;
+    const isAllSectors = filterMode === 'ALL_SECTORS';
+    const targetAssets = isAllSectors ? assets : assets.filter(a => a.setorId === activeSectorId);
+    const total = targetAssets.length;
+    const conferidos = targetAssets.filter(a => a.status === 'CONFERIDO').length;
+    const cautelasCount = targetAssets.filter(a => a.status === 'EM_CAUTELA').length;
+    const baixados = targetAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length;
     const pendentes = total - conferidos - baixados;
     const pctConferido = total > 0 ? Math.round((conferidos / (total - baixados || 1)) * 100) : 0;
 
@@ -956,7 +973,7 @@ export function App() {
       baixados,
       pctConferido: Math.min(100, pctConferido)
     };
-  }, [assets, activeSectorId]);
+  }, [assets, activeSectorId, filterMode]);
 
   // Lista de Equipamentos com Autorização de Envio ao DTIN Pendente
   const pendingDtinAssets = useMemo(() => {
@@ -980,11 +997,200 @@ export function App() {
     }).length;
   }, [pendingDtinAssets, effectiveUserRole, effectiveUserSectorIds, effectiveUserSectorId, effectiveUser, currentUser]);
 
+  // Análise Detalhada de Patrimônios Duplicados em toda a base
+  const { duplicateMap, duplicateCount } = useMemo(() => {
+    return analyzeDuplicateAssets(assets, sectors);
+  }, [assets, sectors]);
+
+  // Modal de Gestão e Seleção de Bens de Informática (TI)
+  const [isTiModalOpen, setIsTiModalOpen] = useState(false);
+
+  // Lista de Bens de Informática (TI) identificados em toda a base
+  const allTiAssets = useMemo(() => {
+    return assets.filter(a => isTiAsset(a));
+  }, [assets]);
+
+  // Estado de Seleção em Lote (Bulk Select)
+  const [selectedAssetIds, setSelectedAssetIds] = useState(() => new Set());
+
+  // Alterna seleção de um item individual
+  const handleToggleSelectAsset = (assetId) => {
+    setSelectedAssetIds(prev => {
+      const next = new Set(prev);
+      if (next.has(assetId)) next.delete(assetId);
+      else next.add(assetId);
+      return next;
+    });
+  };
+
+  // Selecionar / Desmarcar Todos os Itens Visíveis
+  const handleSelectAllVisible = () => {
+    const visibleIds = filteredAssets.map(a => a.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedAssetIds.has(id));
+    if (allSelected) {
+      setSelectedAssetIds(prev => {
+        const next = new Set(prev);
+        visibleIds.forEach(id => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedAssetIds(prev => {
+        const next = new Set(prev);
+        visibleIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  // Seleção Inteligente de Bens de Informática (Computador, Notebook, Monitor, etc.)
+  const handleSelectTiItems = (useAllBase = false) => {
+    const targetPool = useAllBase 
+      ? allTiAssets 
+      : (filteredAssets.filter(a => isTiAsset(a)).length > 0 ? filteredAssets.filter(a => isTiAsset(a)) : allTiAssets);
+
+    if (targetPool.length === 0) {
+      showToast('Nenhum item de Informática/TI encontrado.', 'info');
+      return;
+    }
+    setSelectedAssetIds(prev => {
+      const next = new Set(prev);
+      targetPool.forEach(a => next.add(a.id));
+      return next;
+    });
+    showToast(`💻 ${targetPool.length} itens de Informática/TI selecionados!`, 'info');
+  };
+
+  // Limpar Seleção
+  const handleClearSelection = () => {
+    setSelectedAssetIds(new Set());
+  };
+
+  // Atribuição em Massa de Setor
+  const handleBulkAssignSector = (targetSectorId) => {
+    const targetSector = sectors.find(s => s.id === targetSectorId);
+    if (!targetSector || selectedAssetIds.size === 0) return;
+
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const count = selectedAssetIds.size;
+
+    const updatedAssets = assets.map(a => {
+      if (selectedAssetIds.has(a.id)) {
+        const prevSectorName = a.setorNome || sectors.find(s => s.id === a.setorId)?.name || 'Setor Anterior';
+        return {
+          ...a,
+          setorId: targetSector.id,
+          setorNome: targetSector.name,
+          historico: [
+            ...(a.historico || []),
+            {
+              data: nowStr,
+              acao: `Transferência em lote do setor "${prevSectorName}" para "${targetSector.name}"`,
+              usuario: currentUser?.displayName || currentUser?.email || 'Administrador'
+            }
+          ]
+        };
+      }
+      return a;
+    });
+
+    setAssets(updatedAssets);
+    saveLocalAssets(updatedAssets);
+    
+    if (isFirebaseActive) {
+      const changedItems = updatedAssets.filter(a => selectedAssetIds.has(a.id));
+      saveAssetsBatchToCloud(changedItems).catch(err => console.warn('Erro sync nuvem:', err));
+    }
+
+    showToast(`⚡ ${count} ${count === 1 ? 'item atribuído' : 'itens atribuídos'} ao setor "${targetSector.name}" com sucesso!`, 'success');
+    setSelectedAssetIds(new Set());
+  };
+
+  // Atribuição Rápida de TI em 1 Clique
+  const handleBulkAssignTi = () => {
+    const tiSector = sectors.find(s => s.id === 'sec-ti' || (s.name || '').toUpperCase().trim() === 'TI' || (s.name || '').toLowerCase().includes('tecnologia')) || sectors.find(s => (s.name || '').toUpperCase().includes('TI')) || sectors[0];
+    if (tiSector) {
+      handleBulkAssignSector(tiSector.id);
+    }
+  };
+
+  // Marcar Selecionados como Conferidos
+  const handleBulkMarkConferidos = () => {
+    if (selectedAssetIds.size === 0) return;
+    const now = new Date().toISOString();
+    const count = selectedAssetIds.size;
+    const updatedAssets = assets.map(a => {
+      if (selectedAssetIds.has(a.id)) {
+        return {
+          ...a,
+          status: 'CONFERIDO',
+          conferidoEm: now,
+          conferidoPor: currentUser?.displayName || 'Operador',
+          updatedAt: now
+        };
+      }
+      return a;
+    });
+    setAssets(updatedAssets);
+    saveLocalAssets(updatedAssets);
+    if (isFirebaseActive) {
+      const changedItems = updatedAssets.filter(a => selectedAssetIds.has(a.id));
+      saveAssetsBatchToCloud(changedItems).catch(err => console.warn('Erro sync nuvem:', err));
+    }
+    showToast(`✅ ${count} itens marcados como CONFERIDOS!`, 'success');
+    setSelectedAssetIds(new Set());
+  };
+
+  // Marcar Selecionados como Pendentes
+  const handleBulkMarkPendentes = () => {
+    if (selectedAssetIds.size === 0) return;
+    const now = new Date().toISOString();
+    const count = selectedAssetIds.size;
+    const updatedAssets = assets.map(a => {
+      if (selectedAssetIds.has(a.id)) {
+        return {
+          ...a,
+          status: 'PENDENTE',
+          conferidoEm: null,
+          conferidoPor: null,
+          updatedAt: now
+        };
+      }
+      return a;
+    });
+    setAssets(updatedAssets);
+    saveLocalAssets(updatedAssets);
+    if (isFirebaseActive) {
+      const changedItems = updatedAssets.filter(a => selectedAssetIds.has(a.id));
+      saveAssetsBatchToCloud(changedItems).catch(err => console.warn('Erro sync nuvem:', err));
+    }
+    showToast(`🔄 ${count} itens marcados como PENDENTES!`, 'info');
+    setSelectedAssetIds(new Set());
+  };
+
+  // Excluir Selecionados em Lote
+  const handleBulkDeleteSelected = () => {
+    if (selectedAssetIds.size === 0) return;
+    const count = selectedAssetIds.size;
+    if (confirm(`Atenção: Deseja realmente excluir os ${count} bens selecionados? Esta ação é permanente.`)) {
+      const remaining = assets.filter(a => !selectedAssetIds.has(a.id));
+      setAssets(remaining);
+      saveLocalAssets(remaining);
+      if (isFirebaseActive) {
+        selectedAssetIds.forEach(id => deleteAssetFromCloud(id));
+      }
+      showToast(`🗑️ ${count} bens selecionados foram excluídos com sucesso!`, 'info');
+      setSelectedAssetIds(new Set());
+    }
+  };
+
   // Filtered Assets for Display
   const filteredAssets = useMemo(() => {
     return assets.filter(item => {
-      // Status filter de DTIN
-      if (statusFilter === 'ENVIADOS_DTIN') {
+      // Filtro Exclusivo de Patrimônios Duplicados
+      if (filterMode === 'DUPLICATES') {
+        if (!duplicateMap.has(item.id)) return false;
+      } else if (statusFilter === 'ENVIADOS_DTIN') {
+        // Status filter de DTIN
         const isEnviado = item.status === 'ENVIADO_DTIN' || !!item.enviadoDtin;
         if (!isEnviado) return false;
 
@@ -1015,7 +1221,7 @@ export function App() {
 
       return true;
     });
-  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, searchTerm]);
+  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, searchTerm, duplicateMap]);
 
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
@@ -1035,6 +1241,23 @@ export function App() {
   };
 
   const sortedAssets = useMemo(() => {
+    // MODO DUPLICADOS: Agrupa itens de mesmo patrimônio UM EMBAIXO DO OUTRO para fácil comparação
+    if (filterMode === 'DUPLICATES') {
+      return [...filteredAssets].sort((a, b) => {
+        const dupA = duplicateMap.get(a.id);
+        const dupB = duplicateMap.get(b.id);
+        const keyA = dupA?.key || String(a.numeroPatrimonio || '');
+        const keyB = dupB?.key || String(b.numeroPatrimonio || '');
+        const cmpKey = keyA.localeCompare(keyB, undefined, { numeric: true });
+        if (cmpKey !== 0) return sortDirection === 'asc' ? cmpKey : -cmpKey;
+        
+        // Dentro do mesmo patrimônio, ordena pelo nome do setor
+        const secA = a.setorNome || '';
+        const secB = b.setorNome || '';
+        return secA.localeCompare(secB, 'pt-BR');
+      });
+    }
+
     // Função de ordenação geral / itens pendentes
     const sortFn = (a, b) => {
       if (sortField === 'numeroPatrimonio') {
@@ -1104,7 +1327,7 @@ export function App() {
     baixados.sort(sortFn);
 
     return [...pendentes, ...conferidos, ...baixados];
-  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection]);
+  }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection, filterMode, duplicateMap]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {
@@ -2235,6 +2458,9 @@ export function App() {
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
         onOpenDtinPendencias={() => setIsPendenciasDtinOpen(true)}
         dtinPendenciasCount={userPendingDtinCount}
+        onToggleTiCard={() => setIsTiModalOpen(prev => !prev)}
+        isTiCardOpen={isTiModalOpen}
+        tiAssetsCount={allTiAssets.length}
         currentPersona={simulatedPersona}
         onSelectPersona={handleSelectPersona}
         sectors={sectors}
@@ -2261,6 +2487,7 @@ export function App() {
           filterMode={filterMode}
           onSelectFilterMode={setFilterMode}
           assets={assets}
+          duplicateCount={duplicateCount}
           onOpenManageSectors={() => setIsManageSectorsOpen(true)}
           userRole={effectiveUserRole}
           userSectorId={effectiveUserSectorId}
@@ -2292,8 +2519,28 @@ export function App() {
             {/* Cabeçalho Fixo da Tabela Desktop (Permanentemente Visível e Sticky) */}
             <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center">
               <div className="w-full">
-                <div className="pl-6 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+                <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
+                  {/* Master Checkbox: Seleção em Lote */}
+                  <button
+                    type="button"
+                    onClick={handleSelectAllVisible}
+                    title={
+                      filteredAssets.length > 0 && filteredAssets.every(a => selectedAssetIds.has(a.id))
+                        ? "Desmarcar todos os itens visíveis"
+                        : `Selecionar todos os ${filteredAssets.length} itens visíveis`
+                    }
+                    className={`w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                      filteredAssets.length > 0 && filteredAssets.every(a => selectedAssetIds.has(a.id))
+                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm'
+                        : selectedAssetIds.size > 0
+                          ? 'bg-indigo-900/60 border-indigo-500 text-indigo-300'
+                          : 'border-slate-600 bg-slate-800 hover:border-indigo-400 text-transparent'
+                    }`}
+                  >
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </button>
+
                   {/* Coluna 1: Patrimônio */}
                   <button
                     onClick={() => handleSort('numeroPatrimonio')}
@@ -2349,11 +2596,11 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 3: Item (Expande dinamicamente para ocupar todo o espaço liberado pelas colunas ocultadas) */}
+                  {/* Coluna 3: Item (Largura reduzida em 30% com flex-1 min-w-[240px]) */}
                   <button
                     onClick={() => handleSort('descricao')}
                     title="Clique para ordenar alfabeticamente pelo item"
-                    className={`flex-1 min-w-0 shrink flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
+                    className={`flex-1 min-w-[240px] shrink-0 flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
                       sortField === 'descricao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                     }`}
                   >
@@ -2372,7 +2619,7 @@ export function App() {
 
                   {/* Coluna 4: Marca */}
                   {visibleColumns.marca && (
-                    <div className="w-28 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
                       <button
                         onClick={() => handleSort('marca')}
                         title="Clique para ordenar por marca"
@@ -2407,7 +2654,7 @@ export function App() {
 
                   {/* Coluna 5: Modelo */}
                   {visibleColumns.modelo && (
-                    <div className="w-28 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
                       <button
                         onClick={() => handleSort('modelo')}
                         title="Clique para ordenar por modelo"
@@ -2442,7 +2689,7 @@ export function App() {
 
                   {/* Coluna 6: Localização com Olhinho para Ocultar */}
                   {visibleColumns.localizacao !== false && (
-                    <div className="w-48 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
+                    <div className="w-40 shrink-0 flex items-center justify-start gap-1 group/col animate-in fade-in duration-150">
                       <button
                         onClick={() => handleSort('localizacao')}
                         title="Clique para ordenar por localização"
@@ -2476,13 +2723,13 @@ export function App() {
                   )}
 
                   {/* Coluna 7: Observação */}
-                  <div className="w-52 shrink-0 flex items-center justify-start text-left">
+                  <div className="w-28 shrink-0 flex items-center justify-start text-left">
                     <span>Observação</span>
                   </div>
 
-                  {/* Coluna 6: Responsável com Olhinho para Ocultar */}
+                  {/* Coluna 8: Responsável com Olhinho para Ocultar */}
                   {visibleColumns.responsavel && (
-                    <div className="w-28 shrink-0 flex items-center justify-center gap-1 group/col animate-in fade-in duration-150">
+                    <div className="w-24 shrink-0 flex items-center justify-center gap-1 group/col animate-in fade-in duration-150">
                       <button
                         onClick={() => handleSort('responsavel')}
                         title="Clique para ordenar por responsável"
@@ -2515,9 +2762,9 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 7: Data Aquisição com Olhinho para Ocultar */}
+                  {/* Coluna 9: Data Aquisição */}
                   {visibleColumns.dataAquisicao && (
-                    <div className="w-24 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
+                    <div className="w-20 shrink-0 flex items-center justify-center gap-0.5 group/col animate-in fade-in duration-150">
                       <button
                         onClick={() => handleSort('dataAquisicao')}
                         title="Clique para ordenar por data de aquisição"
@@ -2550,9 +2797,9 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 8: Valor Original com Olhinho para Ocultar */}
+                  {/* Coluna 10: Valor Original */}
                   {visibleColumns.valorOriginal && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-1.5">
                       <button
                         onClick={() => handleSort('valorOriginal')}
                         title="Clique para ordenar por valor original"
@@ -2587,9 +2834,9 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 11: Valor Atual com Olhinho para Ocultar */}
+                  {/* Coluna 11: Valor Atual */}
                   {visibleColumns.valorAtual && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-1.5">
                       <button
                         onClick={() => handleSort('valorAtual')}
                         title="Clique para ordenar por valor atual"
@@ -2624,14 +2871,14 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 12: Depreciação com Alternador R$ / % e Olhinho para Ocultar */}
+                  {/* Coluna 12: Depreciação com Alternador R$ / % */}
                   {visibleColumns.depreciacao && (
-                    <div className="w-28 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-2">
+                    <div className="w-24 shrink-0 flex items-center justify-end gap-1 group/col animate-in fade-in duration-150 pr-1.5">
                       <button
                         type="button"
                         onClick={toggleDepreciationMode}
                         title={depreciationMode === 'currency' ? "Modo R$ (Clique para ver % de depreciação)" : "Modo % (Clique para ver valor R$ da depreciação)"}
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1 select-none shadow-sm active:scale-95 ${
+                        className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold cursor-pointer transition-all flex items-center gap-0.5 select-none shadow-sm active:scale-95 ${
                           depreciationMode === 'percent'
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
                             : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60'
@@ -2773,7 +3020,31 @@ export function App() {
               </div>
             </div>
 
-            {/* Barra Informativa Compacta (quando há busca ou filtro ativo) */}
+            {/* Banner Informativo Exclusivo do Modo Patrimônio Duplicado */}
+            {filterMode === 'DUPLICATES' && (
+              <div className="px-4 pt-3 animate-in fade-in duration-200">
+                <div className="p-3.5 bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/50 border-2 border-amber-500/60 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-amber-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0 shadow-md">
+                      <AlertTriangle className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span>Análise Detalhada: Patrimônios Duplicados Detectados</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/30 text-amber-300 font-black border border-amber-400/50">
+                          {duplicateCount} {duplicateCount === 1 ? 'bem em conflito' : 'bens em conflito'}
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-amber-300/85">
+                        Os itens com o mesmo número de patrimônio estão ordenados <strong>um imediatamente abaixo do outro</strong> para fácil comparação entre setores. A decisão humana define o setor correto ou a exclusão.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Barra Informativa Compacta (apenas quando há busca por texto ou filtro de status ativo) */}
             {(searchTerm || statusFilter !== 'ALL') && (
               <div className="px-4 pt-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-slate-900/70 border border-slate-800 rounded-xl text-xs text-slate-300 animate-in fade-in">
@@ -2999,7 +3270,10 @@ export function App() {
                         activeSector={activeSector}
                         sectors={sectors}
                         currentUserName={currentUser?.displayName || currentUser?.email}
-                        isGeneralView={filterMode === 'ALL_SECTORS'}
+                        isGeneralView={filterMode === 'ALL_SECTORS' || filterMode === 'DUPLICATES'}
+                        isSelected={selectedAssetIds.has(asset.id)}
+                        onToggleSelect={handleToggleSelectAsset}
+                        duplicateInfo={duplicateMap.get(asset.id) || null}
                         onToggleConference={handleToggleConference}
                         onOpenEdit={(a) => {
                           setAssetToEdit(a);
@@ -3452,6 +3726,31 @@ export function App() {
         onClose={() => setIsDisplaySettingsOpen(false)}
         settings={displaySettings}
         onSaveSettings={handleSaveDisplaySettings}
+      />
+
+      {/* Modal / Card Inteligente de Gestão de Bens de TI */}
+      <TiManagementModal
+        isOpen={isTiModalOpen}
+        onClose={() => setIsTiModalOpen(false)}
+        tiAssets={allTiAssets}
+        onSelectAllTi={() => handleSelectTiItems(true)}
+        onDirectAssignTi={() => {
+          handleSelectTiItems(true);
+          handleBulkAssignTi();
+        }}
+        selectedCount={selectedAssetIds.size}
+      />
+
+      {/* Barra Flutuante de Ações em Lote (Posicionada à Direita) */}
+      <BulkActionBar
+        selectedCount={selectedAssetIds.size}
+        onClearSelection={handleClearSelection}
+        onAssignTi={handleBulkAssignTi}
+        onAssignSector={handleBulkAssignSector}
+        onMarkConferidos={handleBulkMarkConferidos}
+        onMarkPendentes={handleBulkMarkPendentes}
+        onDeleteSelected={handleBulkDeleteSelected}
+        sectors={sectors}
       />
 
     </div>

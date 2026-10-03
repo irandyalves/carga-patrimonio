@@ -25,7 +25,8 @@ import {
   ArrowLeft,
   Bell,
   Server,
-  Building2
+  Building2,
+  Laptop
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -56,6 +57,9 @@ export const Navbar = ({
   pedidosCount = 0,
   onOpenDtinPendencias,
   dtinPendenciasCount = 0,
+  onToggleTiCard,
+  isTiCardOpen = false,
+  tiAssetsCount = 0,
   currentPersona,
   onSelectPersona,
   sectors = [],
@@ -191,15 +195,17 @@ export const Navbar = ({
               <PanelLeft className="w-5 h-5" />
             </button>
 
-            {/* Ir direto para Conferidos */}
+            {/* Ir direto para Conferidos (Número na esquerda e ícone na direita) */}
             <button
               type="button"
               onClick={onScrollToConferidos}
               title={`Ir para a seção de Conferidos (${conferidosCount || 0} itens)`}
-              className="px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 transition-all cursor-pointer shadow-sm active:scale-95 group"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="text-[10px] font-mono font-bold text-emerald-400">{conferidosCount || 0}</span>
+              <span className="text-[12px] font-mono font-black text-emerald-400 leading-none">{conferidosCount || 0}</span>
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 shrink-0 drop-shadow-[0_0_6px_rgba(74,222,128,0.95)] group-hover:scale-110 transition-transform">
+                <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
 
@@ -342,6 +348,32 @@ export const Navbar = ({
 
           {/* GRUPO DIREITA: Ações Desktop */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+
+            {/* Botão Informática (TI) com Ícone de Computador */}
+            <button
+              type="button"
+              onClick={onToggleTiCard}
+              title={`Gestão Inteligente de Bens de Informática (TI) - ${tiAssetsCount || 0} equipamentos detectados`}
+              className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+                isTiCardOpen
+                  ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/40 ring-2 ring-cyan-400 font-bold'
+                  : (tiAssetsCount || 0) > 0
+                    ? 'bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/70 hover:text-white shadow-md shadow-cyan-950/50'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+              }`}
+            >
+              <Laptop className={`w-4 h-4 shrink-0 transition-transform ${isTiCardOpen ? 'text-white scale-110' : 'text-cyan-400'}`} />
+              <span className="hidden lg:inline font-bold">TI</span>
+              {(tiAssetsCount || 0) > 0 && (
+                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                  isTiCardOpen
+                    ? 'bg-slate-950 text-cyan-300'
+                    : 'bg-cyan-500 text-slate-950 font-black shadow-sm shadow-cyan-500/40'
+                }`}>
+                  {tiAssetsCount}
+                </span>
+              )}
+            </button>
 
             {/* Sino / Notificações de Envio ao DTIN (Visível em todas as telas) */}
             <button

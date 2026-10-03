@@ -105,7 +105,7 @@ export const SectorTabs = ({
           className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none scroll-smooth flex-1"
         >
           
-          {/* Aba: Todas as Áreas */}
+          {/* Aba: TODOS */}
           <button
             onClick={() => onSelectFilterMode('ALL_SECTORS')}
             className={`shrink-0 px-3 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${
@@ -115,7 +115,7 @@ export const SectorTabs = ({
             }`}
           >
             {filterMode === 'ALL_SECTORS' && <Layers className="w-3.5 h-3.5" />}
-            <span className="font-semibold whitespace-nowrap">Todas as Áreas</span>
+            <span className="font-semibold whitespace-nowrap uppercase tracking-wide">TODOS</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 font-mono font-bold">
               {totalAssetsCount}
             </span>

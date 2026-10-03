@@ -31,7 +31,9 @@ import {
   RotateCcw,
   Server,
   Laptop,
-  Bell
+  Bell,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
@@ -129,7 +131,10 @@ export const AssetTableRowCard = ({
   },
   index = 0,
   appSettings = {},
-  depreciationMode = 'currency'
+  depreciationMode = 'currency',
+  isSelected = false,
+  onToggleSelect,
+  duplicateInfo = null
 }) => {
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
@@ -143,6 +148,8 @@ export const AssetTableRowCard = ({
   const [showModalReturnConfirm, setShowModalReturnConfirm] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isHoveringColor, setIsHoveringColor] = useState(false);
+  const [isColorSubmenuOpen, setIsColorSubmenuOpen] = useState(false);
   const [isCheckingBurst, setIsCheckingBurst] = useState(false);
   const [isRowSliding, setIsRowSliding] = useState(false);
 
@@ -182,11 +189,25 @@ export const AssetTableRowCard = ({
   const [isListeningObs, setIsListeningObs] = useState(false);
   const obsTimerRef = useRef(null);
   const obsContainerRef = useRef(null);
-  const colorPickerRef = useRef(null);
-
   useEffect(() => {
     setObsValue(asset.observacao || '');
   }, [asset.observacao]);
+
+  // Fecha o menu de ações e submenus ao pressionar ESC
+  useEffect(() => {
+    if (!isActionsOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsActionsOpen(false);
+        setIsHoveringColor(false);
+        setIsColorSubmenuOpen(false);
+        setShowDeleteConfirm(false);
+        setShowReturnDtinConfirm(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActionsOpen]);
 
   // Temporizador de inatividade de 8 segundos para fechar edições inline automaticamente
   const resetLocTimer = () => {
@@ -600,21 +621,44 @@ export const AssetTableRowCard = ({
       className={`relative transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
         isRowSliding ? 'animate-card-slide-curtain' : ''
       } ${
-        cardColorClass
-          ? cardColorClass
-          : isConferido 
-            ? 'bg-slate-900/40 hover:bg-slate-850/60' 
-            : isBaixado
-              ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
-              : 'hover:bg-slate-850/50'
+        isSelected
+          ? 'bg-indigo-950/40 border-l-4 border-l-indigo-400'
+          : duplicateInfo?.isDuplicate
+            ? 'bg-amber-950/25 border-l-4 border-l-amber-500 hover:bg-amber-950/35'
+            : cardColorClass
+              ? cardColorClass
+              : isConferido 
+                ? 'bg-slate-900/40 hover:bg-slate-850/60' 
+                : isBaixado
+                  ? 'bg-slate-950/60 opacity-70 hover:opacity-85'
+                  : 'hover:bg-slate-850/50'
       }`}>
 
       {/* VISUALIZAÇÃO DESKTOP: Linha Horizontal de Tabela (Alinhada com cabeçalho de colunas) */}
-      <div className="hidden md:flex pl-6 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
+      <div className="hidden md:flex pl-4 sm:pl-5 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
         
+        {/* Checkbox de Seleção em Lote */}
+        {onToggleSelect && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(asset.id);
+            }}
+            className={`w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+              isSelected
+                ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm'
+                : 'border-slate-700 bg-slate-900/80 hover:border-indigo-500 text-transparent'
+            }`}
+            title={isSelected ? "Desmarcar item" : "Selecionar item"}
+          >
+            <Check className="w-3 h-3 stroke-[3]" />
+          </button>
+        )}
+
         {/* Coluna 1: Patrimônio */}
         <div className="w-28 shrink-0 flex items-center gap-1.5">
-          {/* Ícone de Baixa ou Indicador Visual de Conferido em TODAS AS ÁREAS */}
+          {/* Ícone de Baixa ou Indicador Visual de Conferido em TODOS */}
           {isBaixado ? (
             <button
               type="button"
@@ -662,20 +706,31 @@ export const AssetTableRowCard = ({
           </div>
         )}
 
-        {/* Coluna 3: Item / Descrição (Expande e ocupa o espaço liberado pelas colunas ocultadas) */}
-        <div className="flex-1 min-w-0 shrink flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
+        {/* Coluna 3: Item / Descrição (Largura reduzida em 30% e fonte reduzida em 20%) */}
+        <div className="flex-1 min-w-[240px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
           <h4 
             onClick={(e) => {
               e.stopPropagation();
               setIsDescModalOpen(true);
             }}
-            className={`text-xs sm:text-[12.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
+            className={`text-[10px] sm:text-[10.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
               FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'
             }`}
             title="Clique para ver a descrição completa no modal"
           >
             <HighlightText text={asset.descricao} query={searchTerm} />
           </h4>
+
+          {/* Sinalizador de Patrimônio Duplicado */}
+          {duplicateInfo?.isDuplicate && (
+            <span 
+              title={`⚠️ PATRIMÔNIO DUPLICADO! Presente em "${duplicateInfo.itemSector}" e também encontrado em: ${duplicateInfo.otherSectors.join(', ')}`}
+              className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/50 text-[10px] flex items-center gap-1 shadow-sm shrink-0"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+              <span>DUPLICADO ({duplicateInfo.itemSector})</span>
+            </span>
+          )}
 
           {isEnviadoDtin && (
             <button
@@ -717,19 +772,19 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 4: Marca */}
+        {/* Coluna 4: Marca (Fonte 15% menor que Itens) */}
         {visibleColumns?.marca !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
-            <span className="text-[11px] font-semibold text-slate-300 truncate" title={asset.marca || '---'}>
+          <div className="w-24 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
+            <span className="text-[8.5px] sm:text-[9px] font-semibold text-slate-300 truncate" title={asset.marca || '---'}>
               <HighlightText text={asset.marca || '---'} query={searchTerm} />
             </span>
           </div>
         )}
 
-        {/* Coluna 5: Modelo */}
+        {/* Coluna 5: Modelo (Fonte 15% menor que Itens) */}
         {visibleColumns?.modelo !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
-            <span className="text-[11px] font-medium text-slate-400 truncate" title={asset.modelo || '---'}>
+          <div className="w-24 shrink-0 flex items-center justify-start text-left truncate animate-in fade-in duration-150">
+            <span className="text-[8.5px] sm:text-[9px] font-medium text-slate-400 truncate" title={asset.modelo || '---'}>
               <HighlightText text={asset.modelo || '---'} query={searchTerm} />
             </span>
           </div>
@@ -737,7 +792,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 6: Localização */}
         {visibleColumns?.localizacao !== false && (
-          <div className="w-48 shrink-0 flex items-center justify-start text-left animate-in fade-in duration-150">
+          <div className="w-40 shrink-0 flex items-center justify-start text-left animate-in fade-in duration-150">
             {isEditingLocation ? (
               <div 
                 ref={locContainerRef}
@@ -841,8 +896,8 @@ export const AssetTableRowCard = ({
           </div>
         )}
 
-        {/* Coluna 7: Observação */}
-        <div className="w-52 shrink-0 flex items-center justify-start text-left">
+        {/* Coluna 7: Observação (Reduzida em 50% para w-28) */}
+        <div className="w-28 shrink-0 flex items-center justify-start text-left">
           {isEditingObs ? (
             <div 
               ref={obsContainerRef}
@@ -1041,7 +1096,7 @@ export const AssetTableRowCard = ({
                     {detected && (
                       <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
                     )}
-                    <span className="truncate max-w-[210px]" title={asset.observacao}>
+                    <span className="truncate max-w-[95px]" title={asset.observacao}>
                       <HighlightText text={asset.observacao} query={searchTerm} />
                     </span>
                     <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5" />
@@ -1098,7 +1153,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 6: Responsável */}
         {visibleColumns?.responsavel !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
             <div className="truncate w-full">
               <span className="font-semibold text-slate-200 truncate block text-[10px]" title={asset.responsavel}>
                 <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
@@ -1109,35 +1164,35 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 7: Data de Aquisição */}
         {visibleColumns?.dataAquisicao !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
-            <span className="font-medium text-[11px] text-slate-300">
-              {formatDisplayDate(asset.dataAquisicao || asset.anoAquisicao)}
+          <div className="w-20 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150">
+            <span className="font-medium text-[10px] text-slate-300">
+              {formatDisplayDate(asset.dataAquisicao || asset.anoAquisicao) || '---'}
             </span>
           </div>
         )}
 
         {/* Coluna 8: Valor Original */}
         {visibleColumns?.valorOriginal !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-semibold text-slate-200 text-[11px] whitespace-nowrap">
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-1.5 animate-in fade-in duration-150">
+            <span className="font-semibold text-slate-400 text-[10px] whitespace-nowrap">
               {formatCurrency(asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}
 
-        {/* Coluna 11: Valor Atual */}
+        {/* Coluna 9: Valor Atual */}
         {visibleColumns?.valorAtual !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-bold text-emerald-400 text-[11px] whitespace-nowrap">
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-1.5 animate-in fade-in duration-150">
+            <span className="font-bold text-emerald-400 text-[10.5px] whitespace-nowrap">
               {formatCurrency(asset.valorAtual || asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}
 
-        {/* Coluna 12: Depreciação */}
+        {/* Coluna 10: Depreciação */}
         {visibleColumns?.depreciacao !== false && (
-          <div className="w-28 shrink-0 flex items-center justify-end text-right pr-2 animate-in fade-in duration-150">
-            <span className="font-semibold text-amber-400 text-[11px] whitespace-nowrap" title={String(asset.depreciacao || '')}>
+          <div className="w-24 shrink-0 flex items-center justify-end text-right pr-1.5 animate-in fade-in duration-150">
+            <span className="font-semibold text-amber-400 text-[10px] whitespace-nowrap" title={String(asset.depreciacao || '')}>
               {getAssetDepreciationDisplay(asset, depreciationMode, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
@@ -1239,79 +1294,7 @@ export const AssetTableRowCard = ({
             </button>
           )}
 
-          {/* Seletor de Cor da Linha / Card (Visível apenas para o detentor do setor / admin) */}
-          {canManageAsset && (
-            <div className="relative" ref={colorPickerRef}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsColorPickerOpen(!isColorPickerOpen);
-                }}
-                title="Marcar / destacar linha com uma cor"
-                className={`p-1 rounded-lg transition-all cursor-pointer ${
-                  asset.cardColor 
-                    ? 'text-white bg-slate-800 ring-1 ring-white/30' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Palette className={`w-3.5 h-3.5 ${
-                  asset.cardColor === 'emerald' ? 'text-emerald-400' :
-                  asset.cardColor === 'blue' ? 'text-blue-400' :
-                  asset.cardColor === 'amber' ? 'text-amber-400' :
-                  asset.cardColor === 'rose' ? 'text-rose-400' :
-                  asset.cardColor === 'purple' ? 'text-purple-400' :
-                  asset.cardColor === 'cyan' ? 'text-cyan-400' :
-                  asset.cardColor === 'orange' ? 'text-orange-400' : 'text-slate-400'
-                }`} />
-              </button>
-
-              {isColorPickerOpen && (
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 bottom-full mb-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 flex flex-col gap-1.5 min-w-[170px] animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
-                    <span>Destacar Card</span>
-                    {asset.cardColor && (
-                      <button 
-                        onClick={() => {
-                          onUpdateCardColor?.(asset.id, 'default');
-                          setIsColorPickerOpen(false);
-                        }}
-                        className="text-[9px] text-rose-400 hover:underline cursor-pointer"
-                      >
-                        Limpar
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 p-1">
-                    {COLOR_OPTIONS.map((opt) => {
-                      const isSelected = (asset.cardColor || 'default') === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            onUpdateCardColor?.(asset.id, opt.id);
-                            setIsColorPickerOpen(false);
-                          }}
-                          title={opt.label}
-                          className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
-                            isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-105'
-                          } flex items-center justify-center transition-all cursor-pointer`}
-                        >
-                          {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Menu Dropdown de Ações colado à direita */}
+          {/* Menu Dropdown de Ações colado à direita - Revelando da direita para a esquerda */}
           <div className="relative">
             <button
               onClick={(e) => {
@@ -1323,6 +1306,8 @@ export const AssetTableRowCard = ({
                   setActionsPlacement('top');
                 }
                 setIsActionsOpen(!isActionsOpen);
+                setIsColorSubmenuOpen(false);
+                setIsHoveringColor(false);
               }}
               title="Mais opções do bem"
               className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -1337,12 +1322,23 @@ export const AssetTableRowCard = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsActionsOpen(false);
+                    setIsHoveringColor(false);
+                    setIsColorSubmenuOpen(false);
                     setShowDeleteConfirm(false);
                   }} 
                 />
-                <div className={`absolute right-0 ${
-                  actionsPlacement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
-                } w-48 bg-slate-900 border border-slate-700 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100`}>
+                <div 
+                  onMouseLeave={() => {
+                    setIsActionsOpen(false);
+                    setIsHoveringColor(false);
+                    setIsColorSubmenuOpen(false);
+                    setShowDeleteConfirm(false);
+                    setShowReturnDtinConfirm(false);
+                  }}
+                  className={`absolute right-0 ${
+                    actionsPlacement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
+                  } w-52 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-right-2 duration-150`}
+                >
                   {!canManageAsset ? (
                     <>
                       <button
@@ -1371,93 +1367,239 @@ export const AssetTableRowCard = ({
                     </>
                   ) : (
                     <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsActionsOpen(false);
-                      onOpenEdit(asset);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Editar Dados</span>
-                  </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsActionsOpen(false);
+                          onOpenEdit(asset);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Editar Dados</span>
+                      </button>
 
-                  {!isGeneralView && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsActionsOpen(false);
-                        onTransferSector(asset);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                    >
-                      <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Transferir Setor</span>
-                    </button>
-                  )}
-
-                  {!isBaixado && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsActionsOpen(false);
-                        onOpenCautela(asset);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                    >
-                      <Handshake className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Emitir Cautela</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsActionsOpen(false);
-                      onPrintSingleLabel(asset);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Imprimir Etiqueta</span>
-                  </button>
-
-                  {/* Opção DTIN para Equipamentos de Informática ou dentro de TI */}
-                  {!isBaixado && isInformática && (
-                    isEnviadoDtin ? (
-                      <>
+                      {!isGeneralView && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsActionsOpen(false);
-                            setIsDtinResumoOpen(true);
+                            onTransferSector(asset);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
                         >
-                          <Server className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>Ver Detalhes DTIN</span>
+                          <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Transferir Setor</span>
+                        </button>
+                      )}
+
+                      {!isBaixado && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsActionsOpen(false);
+                            onOpenCautela(asset);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                        >
+                          <Handshake className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Emitir Cautela</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsActionsOpen(false);
+                          onPrintSingleLabel(asset);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Imprimir Etiqueta</span>
+                      </button>
+
+                      {/* Opção Destacar Cor com submenu revelado da direita para a esquerda */}
+                      <div 
+                        className="relative"
+                        onMouseEnter={() => {
+                          setIsHoveringColor(true);
+                          setIsColorSubmenuOpen(true);
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsColorSubmenuOpen(!isColorSubmenuOpen);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
+                            isHoveringColor || isColorSubmenuOpen
+                              ? 'bg-slate-800 text-white'
+                              : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Palette className={`w-3.5 h-3.5 ${
+                              asset.cardColor === 'emerald' ? 'text-emerald-400' :
+                              asset.cardColor === 'blue' ? 'text-sky-400' :
+                              asset.cardColor === 'amber' ? 'text-amber-400' :
+                              asset.cardColor === 'rose' ? 'text-rose-400' :
+                              asset.cardColor === 'purple' ? 'text-purple-400' :
+                              asset.cardColor === 'cyan' ? 'text-cyan-400' :
+                              asset.cardColor === 'orange' ? 'text-orange-400' : 'text-indigo-400'
+                            }`} />
+                            <span>Destacar Cor</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {asset.cardColor && (
+                              <span className={`w-2.5 h-2.5 rounded-full ${
+                                COLOR_OPTIONS.find(c => c.id === asset.cardColor)?.bg || 'bg-slate-600'
+                              }`} />
+                            )}
+                            <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
                         </button>
 
-                        {showReturnDtinConfirm ? (
-                          <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                            <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                        {/* Submenu de Cores flutuando da direita para a esquerda - SEM ARREDONDAMENTO À DIREITA E SEM GAP */}
+                        {(isHoveringColor || isColorSubmenuOpen) && (
+                          <div 
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-full top-0 mr-0 w-44 bg-slate-900/98 backdrop-blur-xl border border-r-0 border-slate-700/80 rounded-l-2xl rounded-r-none shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-right-2 duration-150 flex flex-col gap-1.5"
+                          >
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
+                              <span>Cores do Card</span>
+                              {asset.cardColor && (
+                                <button 
+                                  onClick={() => {
+                                    onUpdateCardColor?.(asset.id, 'default');
+                                    setIsActionsOpen(false);
+                                    setIsHoveringColor(false);
+                                    setIsColorSubmenuOpen(false);
+                                  }}
+                                  className="text-[9.5px] text-rose-400 hover:underline cursor-pointer font-semibold"
+                                >
+                                  Limpar
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-4 gap-1.5 p-1">
+                              {COLOR_OPTIONS.map((opt) => {
+                                const isSelected = (asset.cardColor || 'default') === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      onUpdateCardColor?.(asset.id, opt.id);
+                                      setIsActionsOpen(false);
+                                      setIsHoveringColor(false);
+                                      setIsColorSubmenuOpen(false);
+                                    }}
+                                    title={opt.label}
+                                    className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
+                                      isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-110 hover:border-slate-400'
+                                    } flex items-center justify-center transition-all cursor-pointer`}
+                                  >
+                                    {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Opção DTIN para Equipamentos de Informática ou dentro de TI */}
+                      {!isBaixado && isInformática && (
+                        isEnviadoDtin ? (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsActionsOpen(false);
+                                setIsDtinResumoOpen(true);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                            >
+                              <Server className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>Ver Detalhes DTIN</span>
+                            </button>
+
+                            {showReturnDtinConfirm ? (
+                              <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                                <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIsActionsOpen(false);
+                                      setShowReturnDtinConfirm(false);
+                                      onReturnDtin && onReturnDtin(asset.id);
+                                    }}
+                                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Retornar
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowReturnDtinConfirm(false);
+                                    }}
+                                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowReturnDtinConfirm(true);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Confirmar o Retorno do Item</span>
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsActionsOpen(false);
+                              onOpenDtin && onOpenDtin(asset);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                          >
+                            <Server className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Enviar DTIN</span>
+                          </button>
+                        )
+                      )}
+
+                      {isBaixado ? (
+                        showCancelBaixaConfirm ? (
+                          <div className="p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center my-1">
+                            <p className="text-[11px] text-emerald-300 font-medium mb-1.5">Cancelar baixa e reativar bem?</p>
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setIsActionsOpen(false);
-                                  setShowReturnDtinConfirm(false);
-                                  onReturnDtin && onReturnDtin(asset.id);
+                                  setShowCancelBaixaConfirm(false);
+                                  onCancelBaixa && onCancelBaixa(asset.id);
                                 }}
-                                className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold cursor-pointer"
                               >
-                                Retornar
+                                Reativar
                               </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setShowReturnDtinConfirm(false);
+                                  setShowCancelBaixaConfirm(false);
                                 }}
                                 className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
                               >
@@ -1469,97 +1611,42 @@ export const AssetTableRowCard = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setShowReturnDtinConfirm(true);
+                              setShowCancelBaixaConfirm(true);
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left font-semibold"
+                            title="Cancelar a baixa patrimonial e reativar o bem no setor"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Confirmar o Retorno do Item</span>
+                            <span>Cancelar Baixa</span>
                           </button>
-                        )}
-                      </>
-                    ) : (
+                        )
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsActionsOpen(false);
+                            onOpenBaixa(asset);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
+                        >
+                          <Archive className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Baixa Patrimonial</span>
+                        </button>
+                      )}
+
+                      <div className="h-px bg-slate-800 my-1" />
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setIsActionsOpen(false);
-                          onOpenDtin && onOpenDtin(asset);
+                          onDeleteAsset && onDeleteAsset(asset);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors cursor-pointer text-left font-semibold"
                       >
-                        <Server className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Enviar DTIN</span>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Excluir Bem</span>
                       </button>
-                    )
-                  )}
-
-                  {isBaixado ? (
-                    showCancelBaixaConfirm ? (
-                      <div className="p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center my-1">
-                        <p className="text-[11px] text-emerald-300 font-medium mb-1.5">Cancelar baixa e reativar bem?</p>
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsActionsOpen(false);
-                              setShowCancelBaixaConfirm(false);
-                              onCancelBaixa && onCancelBaixa(asset.id);
-                            }}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold cursor-pointer"
-                          >
-                            Reativar
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowCancelBaixaConfirm(false);
-                            }}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowCancelBaixaConfirm(true);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left font-semibold"
-                        title="Cancelar a baixa patrimonial e reativar o bem no setor"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Cancelar Baixa</span>
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsActionsOpen(false);
-                        onOpenBaixa(asset);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
-                    >
-                      <Archive className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Baixa Patrimonial</span>
-                    </button>
-                  )}
-
-                  <div className="h-px bg-slate-800 my-1" />
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsActionsOpen(false);
-                      onDeleteAsset && onDeleteAsset(asset);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors cursor-pointer text-left font-semibold"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Excluir Bem</span>
-                  </button>
                     </>
                   )}
                 </div>
@@ -1573,11 +1660,32 @@ export const AssetTableRowCard = ({
 
       {/* VISUALIZAÇÃO MOBILE: Card Compacto Otimizado para Celular / Conferência Rápida Touch */}
       <div 
-        className="flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left relative overflow-hidden transition-all duration-300"
+        className={`flex md:hidden flex-col px-3 py-1.5 mx-1.5 my-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm gap-1 text-left relative overflow-hidden transition-all duration-300 ${
+          isSelected ? 'ring-2 ring-indigo-400 bg-indigo-950/40' : duplicateInfo?.isDuplicate ? 'border-amber-500/50 bg-amber-950/20' : ''
+        }`}
       >
-        {/* Linha 1: Patrimônio + Localização / Observação + Botão Conferir + Ações */}
+        {/* Linha 1: Checkbox + Patrimônio + Localização / Observação + Botão Conferir + Ações */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+            {/* Checkbox de Seleção no Mobile */}
+            {onToggleSelect && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSelect(asset.id);
+                }}
+                className={`w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                  isSelected
+                    ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm'
+                    : 'border-slate-700 bg-slate-900/80 hover:border-indigo-500 text-transparent'
+                }`}
+                title={isSelected ? "Desmarcar item" : "Selecionar item"}
+              >
+                <Check className="w-3 h-3 stroke-[3]" />
+              </button>
+            )}
+
             {isBaixado ? (
               <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 font-bold text-[9px] border border-rose-500/30 flex items-center gap-0.5 shrink-0">
                 <Archive className="w-2.5 h-2.5" /> Baixado
@@ -1760,6 +1868,16 @@ export const AssetTableRowCard = ({
           }}
           className="flex items-center justify-between gap-1.5 cursor-pointer active:opacity-80 group/mdesc py-0.5"
         >
+          {duplicateInfo?.isDuplicate && (
+            <span 
+              title={`⚠️ Duplicado: ${duplicateInfo.itemSector} vs ${duplicateInfo.otherSectors.join(', ')}`}
+              className="px-1.5 py-0.2 rounded bg-amber-500/25 text-amber-300 font-bold border border-amber-500/50 text-[9px] flex items-center gap-0.5 shrink-0"
+            >
+              <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
+              <span>DUPLICADO ({duplicateInfo.itemSector})</span>
+            </span>
+          )}
+
           <p className={`text-[11.5px] font-medium leading-tight truncate whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0 ${
             FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'
           }`} title={asset.descricao}>
@@ -1904,10 +2022,10 @@ export const AssetTableRowCard = ({
         </div>
       )}
 
-      {/* Menu de Ações Mobile / Modal Compacto e Centralizado na Tela */}
+      {/* Menu de Ações Mobile / Modal Compacto e Centralizado na Tela (Apenas Mobile) */}
       {isActionsOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100"
+          className="fixed inset-0 z-50 flex md:hidden items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-100"
           onClick={(e) => {
             e.stopPropagation();
             setIsActionsOpen(false);
@@ -2110,6 +2228,48 @@ export const AssetTableRowCard = ({
                       <span className="truncate">Baixa</span>
                     </button>
                   )}
+
+                  {/* Cores no Mobile */}
+                  <div className="col-span-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 my-0.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <span className="flex items-center gap-1">
+                        <Palette className="w-3 h-3 text-indigo-400" />
+                        <span>Destacar Cor</span>
+                      </span>
+                      {asset.cardColor && (
+                        <button 
+                          onClick={() => {
+                            onUpdateCardColor?.(asset.id, 'default');
+                            setIsActionsOpen(false);
+                          }}
+                          className="text-[9.5px] text-rose-400 hover:underline cursor-pointer font-semibold"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-8 gap-1">
+                      {COLOR_OPTIONS.map((opt) => {
+                        const isSelected = (asset.cardColor || 'default') === opt.id;
+                        return (
+                          <button
+                            key={`m-col-${opt.id}`}
+                            type="button"
+                            onClick={() => {
+                              onUpdateCardColor?.(asset.id, opt.id);
+                              setIsActionsOpen(false);
+                            }}
+                            title={opt.label}
+                            className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
+                              isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800'
+                            } flex items-center justify-center transition-all cursor-pointer active:scale-90`}
+                          >
+                            {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   {/* Excluir (ocupa as 2 colunas na parte inferior) */}
                   <button

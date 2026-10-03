@@ -26,7 +26,9 @@ import {
   Sliders,
   Settings,
   RotateCcw,
-  CheckCheck
+  CheckCheck,
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
 
 export const SectorSidebar = ({
@@ -35,9 +37,10 @@ export const SectorSidebar = ({
   sectors = [],
   activeSectorId,
   onSelectSector,
-  filterMode, // 'MY_SECTOR' | 'ALL_SECTORS'
+  filterMode, // 'MY_SECTOR' | 'ALL_SECTORS' | 'DUPLICATES'
   onSelectFilterMode,
   assets = [],
+  duplicateCount = 0,
   onOpenManageSectors,
   userRole = 'admin',
   userSectorId = null,
@@ -194,7 +197,7 @@ export const SectorSidebar = ({
         {/* Lista de Abas com Rolagem Vertical */}
         <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
           
-          {/* Aba: Todas as Áreas */}
+          {/* Aba: TODOS (Visão Geral de Todas as Áreas) */}
           <div className="space-y-0.5">
             <button
               onClick={() => {
@@ -209,7 +212,7 @@ export const SectorSidebar = ({
             >
               <div className="flex items-center gap-2 truncate">
                 <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
-                <span className="font-semibold truncate">Todas as Áreas</span>
+                <span className="font-semibold truncate uppercase tracking-wide">TODOS</span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
                 filterMode === 'ALL_SECTORS'
@@ -220,7 +223,7 @@ export const SectorSidebar = ({
               </span>
             </button>
 
-            {/* Sub-opções indentadas quando Todas as Áreas está selecionado (Animação Cortina 400ms) */}
+            {/* Sub-opções indentadas quando TODOS está selecionado (Animação Cortina 400ms) */}
             <div className={`curtain-menu ${filterMode === 'ALL_SECTORS' ? 'is-open' : ''}`}>
               <div className="curtain-content">
                 <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
@@ -272,6 +275,42 @@ export const SectorSidebar = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Aba Especial: Patrimônio Duplicado (Análise Detalhada & Ação Humana) */}
+          <div className="pt-0.5">
+            <button
+              onClick={() => {
+                onSelectFilterMode('DUPLICATES');
+                onSelectStatusFilter('ALL');
+              }}
+              className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
+                filterMode === 'DUPLICATES'
+                  ? 'bg-gradient-to-r from-amber-600/40 via-amber-600/15 to-transparent text-white font-bold border-l-4 border-l-amber-400 shadow-md shadow-amber-500/10'
+                  : duplicateCount > 0
+                    ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border-l-4 border-l-amber-500/60'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
+              }`}
+              title={duplicateCount > 0 ? `${duplicateCount} bens com número de patrimônio duplicado detectados` : "Nenhum patrimônio duplicado detectado"}
+            >
+              <div className="flex items-center gap-2 truncate">
+                {duplicateCount > 0 ? (
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" />
+                ) : (
+                  <Copy className="w-4 h-4 shrink-0 text-slate-400" />
+                )}
+                <span className="truncate font-semibold">Patrimônio Duplicado</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
+                filterMode === 'DUPLICATES'
+                  ? 'bg-amber-500/30 text-amber-300 border border-amber-400/50 shadow-sm'
+                  : duplicateCount > 0
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'bg-black/30 text-slate-500'
+              }`}>
+                {duplicateCount}
+              </span>
+            </button>
           </div>
 
           {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
@@ -532,8 +571,8 @@ export const SectorSidebar = ({
         {/* Rodapé da Sidebar - Seção Exclusiva das Barras de Progresso */}
         <div className="shrink-0 sticky bottom-0 z-20 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 p-3 text-[11px] text-slate-400 space-y-3 shadow-2xl">
           
-          {/* Barra de Progresso do Setor Ativo (50% mais larga/espessa, oculta em TODAS AS ÁREAS) */}
-          {filterMode !== 'ALL_SECTORS' && activeSector && (
+          {/* Barra de Progresso do Setor Ativo (oculta em TODOS e Duplicados) */}
+          {filterMode === 'MY_SECTOR' && activeSector && (
             <div>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5 min-w-0 truncate">
