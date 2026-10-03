@@ -68,8 +68,8 @@ export const PedidosCargaModal = ({
           </button>
         </div>
 
-        {/* Linha Divisória Superior: Encosta na borda do modal com gradiente (lado direito 100%) */}
-        <div className="h-[1px] -mx-6 bg-gradient-to-r from-transparent via-slate-800/60 to-slate-700 shrink-0" />
+        {/* Linha Divisória Superior: Encosta na borda do modal com gradiente (100% transparente na direita) */}
+        <div className="h-[1px] -mx-6 bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent shrink-0" />
 
         {/* Content List */}
         <div className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-thin">
@@ -92,11 +92,11 @@ export const PedidosCargaModal = ({
                       key={ped.id}
                       className="relative p-3.5 pr-6 -mr-6 rounded-l-2xl bg-slate-850/80 hover:bg-slate-850 border-l border-slate-800 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md group overflow-hidden"
                     >
-                      {/* Linha superior com gradiente encostando na borda direita (100%) */}
-                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+                      {/* Linha superior com gradiente (100% transparente na direita) */}
+                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
 
-                      {/* Linha inferior com gradiente encostando na borda direita (100%) */}
-                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+                      {/* Linha inferior com gradiente (100% transparente na direita) */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
 
                       {/* Coluna 1: Informações do Bem e Solicitante */}
                       <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
@@ -157,8 +157,8 @@ export const PedidosCargaModal = ({
               {/* Histórico de Pedidos Anteriores */}
               {pastPedidos.length > 0 && (
                 <div className="space-y-2 pt-3 overflow-x-hidden">
-                  {/* Linha Divisória Inferior: Encosta na borda do modal com gradiente (lado direito 100%) */}
-                  <div className="h-[1px] -mx-6 mb-3 bg-gradient-to-r from-transparent via-slate-800/60 to-slate-700 shrink-0" />
+                  {/* Linha Divisória Inferior: Encosta na borda do modal com gradiente (100% transparente na direita) */}
+                  <div className="h-[1px] -mx-6 mb-3 bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent shrink-0" />
 
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Histórico ({pastPedidos.length})
@@ -169,8 +169,8 @@ export const PedidosCargaModal = ({
                       key={ped.id}
                       className="relative p-3 pr-6 -mr-6 rounded-l-xl bg-slate-850/50 border-l border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400 overflow-hidden"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
-                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
                       <div>
                         <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
                         <div className="text-[11px] text-slate-500">
