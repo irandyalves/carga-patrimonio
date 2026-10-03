@@ -2562,9 +2562,114 @@ export function App() {
             {/* Cabeçalho Fixo da Tabela Desktop (Permanentemente Visível e Sticky - Altura h-[58px]) */}
             <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center relative">
               
-              {/* TÍTULOS PADRÃO DAS COLUNAS (Permanecem na base do cabeçalho, atenuados/esmagados quando há seleção) */}
+              {/* TÍTULOS DAS COLUNAS (Normal ou Modo DTIN) */}
               <div className={`w-full transition-all duration-300 ${selectedAssetIds.size > 0 ? 'opacity-20 pointer-events-none scale-x-[0.98] blur-[0.5px]' : 'opacity-100'}`}>
-                <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+                {statusFilter === 'ENVIADOS_DTIN' ? (
+                  /* Cabeçalho Especial da Aba: Enviados para a DTIN */
+                  <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
+                    
+                    {/* Botão + Verdinho Brilhoso para Novo Envio DTIN (no lugar do checkbox) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssetForDtin(null);
+                        setIsDtinModalOpen(true);
+                      }}
+                      title="Cadastrar Novo Envio de Equipamento para a DTIN"
+                      className="w-5 h-5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/70 text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer transition-all shadow-[0_0_12px_rgba(16,185,129,0.45)] hover:shadow-[0_0_18px_rgba(16,185,129,0.75)] hover:scale-110 active:scale-95 shrink-0 group"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[3.5] drop-shadow-[0_0_6px_rgba(52,211,153,0.95)]" />
+                    </button>
+
+                    {/* Coluna 1: Patrimônio */}
+                    <button
+                      onClick={() => handleSort('numeroPatrimonio')}
+                      title="Clique para ordenar por patrimônio"
+                      className={`w-28 shrink-0 flex items-center justify-start gap-1 transition-colors cursor-pointer group text-left ${
+                        sortField === 'numeroPatrimonio' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
+                      }`}
+                    >
+                      <span>Patrimônio</span>
+                      <span className="shrink-0 ml-0.5">
+                        {sortField === 'numeroPatrimonio' ? (
+                          <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </span>
+                    </button>
+
+                    {/* Coluna 2: Item */}
+                    <button
+                      onClick={() => handleSort('descricao')}
+                      title="Clique para ordenar alfabeticamente pelo item"
+                      className={`flex-1 min-w-[270px] shrink-0 flex items-center justify-start gap-1.5 transition-all cursor-pointer group ${
+                        sortField === 'descricao' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>Item</span>
+                      <span className="shrink-0 ml-0.5">
+                        {sortField === 'descricao' ? (
+                          <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
+                            {sortDirection === 'asc' ? '▲' : '▼'}
+                          </span>
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
+                        )}
+                      </span>
+                    </button>
+
+                    {/* Coluna 3: Marca */}
+                    <div className="w-24 shrink-0 flex items-center justify-start">
+                      <span>Marca</span>
+                    </div>
+
+                    {/* Coluna 4: Modelo */}
+                    <div className="w-24 shrink-0 flex items-center justify-start">
+                      <span>Modelo</span>
+                    </div>
+
+                    {/* Coluna 5: Setor de Origem */}
+                    <div className="w-32 shrink-0 flex items-center justify-center text-center">
+                      <span>Setor Origem</span>
+                    </div>
+
+                    {/* Coluna 6: Responsável do Setor */}
+                    <div className="w-28 shrink-0 flex items-center justify-center text-center">
+                      <span>Responsável</span>
+                    </div>
+
+                    {/* Coluna 7: Motivo do Recolhimento */}
+                    <div className="w-60 shrink-0 flex items-center justify-start">
+                      <span>Motivo (Recolhimento)</span>
+                    </div>
+
+                    {/* Coluna 8: Quem Mandou */}
+                    <div className="w-28 shrink-0 flex items-center justify-center text-center">
+                      <span>Quem Mandou</span>
+                    </div>
+
+                    {/* Coluna 9: Data do Envio */}
+                    <div className="w-24 shrink-0 flex items-center justify-center text-center">
+                      <span>Data Envio</span>
+                    </div>
+
+                    {/* Coluna 10: Doc */}
+                    <div className="w-14 shrink-0 flex items-center justify-center text-center">
+                      <span>Doc</span>
+                    </div>
+
+                    {/* Coluna 11: Ações */}
+                    <div className="w-10 shrink-0 flex items-center justify-center text-center">
+                      <span>Ações</span>
+                    </div>
+
+                  </div>
+                ) : (
+                  <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Master Checkbox: Seleção em Lote */}
                   <button
@@ -3061,7 +3166,8 @@ export function App() {
                     <span>Ações</span>
                   </div>
 
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* BARRA DE AÇÕES EM LOTE: Brota no centro do cabeçalho quando itens são selecionados */}
@@ -3289,8 +3395,8 @@ export function App() {
               </div>
             )}
 
-            {/* Barra Informativa Compacta (apenas quando há busca por texto ou filtro de status ativo) */}
-            {(searchTerm || statusFilter !== 'ALL') && (
+            {/* Barra Informativa Compacta (apenas quando há busca por texto ou filtro de status ativo exceto DTIN) */}
+            {(searchTerm || (statusFilter !== 'ALL' && statusFilter !== 'ENVIADOS_DTIN')) && (
               <div className="px-4 pt-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-slate-900/70 border border-slate-800 rounded-xl text-xs text-slate-300 animate-in fade-in">
                   <div className="flex flex-wrap items-center gap-2">
@@ -3544,6 +3650,8 @@ export function App() {
                         }}
                         hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
                         searchTerm={searchTerm}
+                        statusFilter={statusFilter}
+                        filterMode={filterMode}
                         visibleColumns={visibleColumns}
                         appSettings={displaySettings}
                         depreciationMode={depreciationMode}

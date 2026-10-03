@@ -31,3 +31,11 @@ export const STATUS = {
   EM_MANUTENCAO: { id: 'EM_MANUTENCAO', label: 'Em Manutenção', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
   BAIXADO: { id: 'BAIXADO', label: 'Baixado / Desincorporado', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' },
 };
+
+export const DTIN_CONFIG = {
+  acronym: 'DTIN',
+  fullName: 'Diretoria de Tecnologia da Informação',
+  shortLabel: 'DTIN',
+  tabLabel: 'Enviados para a DTIN'
+};
+

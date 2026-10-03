@@ -134,8 +134,10 @@ export const AssetTableRowCard = ({
   depreciationMode = 'currency',
   isSelected = false,
   onToggleSelect,
-  duplicateInfo = null
+  duplicateInfo = null,
+  statusFilter = 'ALL'
 }) => {
+  const isDtinTab = statusFilter === 'ENVIADOS_DTIN';
   const [copied, setCopied] = useState(false);
   const [showUncheckConfirm, setShowUncheckConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -145,6 +147,7 @@ export const AssetTableRowCard = ({
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
   const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
+  const [isMotivoModalOpen, setIsMotivoModalOpen] = useState(false);
   const [showModalReturnConfirm, setShowModalReturnConfirm] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
@@ -296,6 +299,7 @@ export const AssetTableRowCard = ({
       if (e.key === 'Escape') {
         setIsBaixaResumoOpen(false);
         setIsDtinResumoOpen(false);
+        setIsMotivoModalOpen(false);
         setIsDescModalOpen(false);
         setIsCautelaModalViewOpen(false);
         setIsColorPickerOpen(false);
@@ -635,7 +639,335 @@ export const AssetTableRowCard = ({
       }`}>
 
       {/* VISUALIZAÇÃO DESKTOP: Linha Horizontal de Tabela (Alinhada com cabeçalho de colunas) */}
-      <div className="hidden md:flex pl-4 sm:pl-5 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
+      {isDtinTab ? (
+        /* Linha Especial do Modo: Enviados para a DTIN */
+        <div className="hidden md:flex pl-4 sm:pl-5 pr-2 py-1 items-center gap-2 text-[11px] w-full">
+          
+          {/* Espaçador alinhado com o botão + verde do cabeçalho */}
+          <div className="w-5 h-5 flex items-center justify-center shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+          </div>
+
+          {/* Coluna 1: Patrimônio */}
+          <div className="w-28 shrink-0 flex items-center gap-1.5">
+            <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
+              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || 'text-cyan-400'
+            }`}>
+              <HighlightText text={formattedXX} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 2: Item / Descrição (+20% largura) */}
+          <div className="flex-1 min-w-[270px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
+            <h4 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDescModalOpen(true);
+              }}
+              className={`text-[10px] sm:text-[10.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
+                FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-cyan-300'
+              }`}
+              title="Clique para ver a descrição completa no modal"
+            >
+              <HighlightText text={asset.descricao} query={searchTerm} />
+            </h4>
+
+            {isDescLong && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDescModalOpen(true);
+                }}
+                className="p-1 rounded-lg text-cyan-400 hover:text-cyan-200 hover:bg-cyan-500/20 bg-cyan-500/10 border border-cyan-500/30 transition-all cursor-pointer shadow-sm shrink-0"
+                title="Clique para ver a descrição completa no modal"
+              >
+                <Info className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Coluna 3: Marca */}
+          <div className="w-24 shrink-0 flex items-center justify-start text-left truncate">
+            <span className="text-[8.5px] sm:text-[9px] font-semibold text-slate-300 truncate" title={asset.marca || '---'}>
+              <HighlightText text={asset.marca || '---'} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 4: Modelo */}
+          <div className="w-24 shrink-0 flex items-center justify-start text-left truncate">
+            <span className="text-[8.5px] sm:text-[9px] font-medium text-slate-400 truncate" title={asset.modelo || '---'}>
+              <HighlightText text={asset.modelo || '---'} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 5: Setor de Origem (Centralizado) */}
+          <div className="w-32 shrink-0 flex items-center justify-center text-center truncate">
+            <span className="text-xs font-medium text-slate-300 truncate" title={asset.dadosDtin?.setorOrigemNome || asset.setorNome || '---'}>
+              <HighlightText text={asset.dadosDtin?.setorOrigemNome || asset.setorNome || '---'} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 6: Responsável do Setor (Centralizado) */}
+          <div className="w-28 shrink-0 flex items-center justify-center text-center truncate">
+            <span className="text-xs font-semibold text-amber-300/90 truncate" title={asset.dadosDtin?.responsavelOrigem || asset.responsavel || '---'}>
+              <HighlightText text={asset.dadosDtin?.responsavelOrigem || asset.responsavel || '---'} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 7: Motivo do Recolhimento (+20% largura, Clicável para abrir modal com motivo completo) */}
+          <div className="w-60 shrink-0 flex items-center justify-start text-left truncate">
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMotivoModalOpen(true);
+              }}
+              className="w-full flex items-center justify-start truncate cursor-pointer group/motivo"
+              title="Clique para ver o motivo completo do envio/recolhimento"
+            >
+              <span className="text-xs font-medium text-cyan-300/90 truncate bg-cyan-950/40 group-hover/motivo:bg-cyan-900/60 group-hover/motivo:text-cyan-200 px-2 py-0.5 rounded border border-cyan-500/30 group-hover/motivo:border-cyan-400 transition-all max-w-full">
+                <HighlightText text={asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'} query={searchTerm} />
+              </span>
+            </div>
+          </div>
+
+          {/* Coluna 8: Quem Mandou (Centralizado) */}
+          <div className="w-28 shrink-0 flex items-center justify-center text-center truncate">
+            <span className="text-xs text-slate-300 truncate" title={asset.dadosDtin?.responsavel || 'Santana'}>
+              <HighlightText text={asset.dadosDtin?.responsavel || 'Santana'} query={searchTerm} />
+            </span>
+          </div>
+
+          {/* Coluna 9: Data do Envio */}
+          <div className="w-24 shrink-0 flex items-center justify-center text-center">
+            <span className="text-xs font-mono text-slate-300">
+              {asset.dadosDtin?.data || '---'}
+            </span>
+          </div>
+
+          {/* Coluna 10: Doc (Ícone de documento/PDF) */}
+          <div className="w-14 shrink-0 flex items-center justify-center">
+            {(() => {
+              const hasAnexos = asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0;
+              const firstUrl = hasAnexos ? asset.dadosDtin.anexos[0].url : (asset.dadosDtin?.documentoUrl || null);
+
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (firstUrl) {
+                      window.open(firstUrl, '_blank');
+                    } else {
+                      setIsDtinResumoOpen(true);
+                    }
+                  }}
+                  title={hasAnexos ? `Abrir documento/PDF (${asset.dadosDtin.anexos[0].nome || 'Anexo'})` : "Ver detalhes / anexos do envio DTIN"}
+                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 ${
+                    hasAnexos
+                      ? 'bg-rose-500/20 hover:bg-rose-500/35 border-rose-500/40 text-rose-400 hover:text-rose-200 shadow-rose-950/40'
+                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                </button>
+              );
+            })()}
+          </div>
+
+          {/* Coluna 11: Ações (Apenas 3 Pontinhos com Cores e Retorno do Item) */}
+          <div className="w-10 shrink-0 flex items-center justify-center relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsActionsOpen(!isActionsOpen);
+              }}
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Mais opções"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </button>
+
+            {isActionsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40 bg-transparent" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsActionsOpen(false);
+                    setIsHoveringColor(false);
+                    setIsColorSubmenuOpen(false);
+                    setShowReturnDtinConfirm(false);
+                  }} 
+                />
+                <div 
+                  onMouseLeave={() => {
+                    setIsActionsOpen(false);
+                    setIsHoveringColor(false);
+                    setIsColorSubmenuOpen(false);
+                    setShowReturnDtinConfirm(false);
+                  }}
+                  className={`absolute right-0 ${
+                    actionsPlacement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
+                  } w-52 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-right-2 duration-150 flex flex-col gap-1`}
+                >
+                  {/* Opção Destacar Cor com submenu */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => {
+                      setIsHoveringColor(true);
+                      setIsColorSubmenuOpen(true);
+                    }}
+                    onMouseLeave={() => {
+                      setIsHoveringColor(false);
+                      setIsColorSubmenuOpen(false);
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsColorSubmenuOpen(!isColorSubmenuOpen);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
+                        isHoveringColor || isColorSubmenuOpen
+                          ? 'bg-slate-800 text-white'
+                          : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Palette className={`w-3.5 h-3.5 ${
+                          asset.cardColor === 'emerald' ? 'text-emerald-400' :
+                          asset.cardColor === 'blue' ? 'text-sky-400' :
+                          asset.cardColor === 'amber' ? 'text-amber-400' :
+                          asset.cardColor === 'rose' ? 'text-rose-400' :
+                          asset.cardColor === 'purple' ? 'text-purple-400' :
+                          asset.cardColor === 'cyan' ? 'text-cyan-400' :
+                          asset.cardColor === 'orange' ? 'text-orange-400' : 'text-indigo-400'
+                        }`} />
+                        <span>Destacar Cor</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {asset.cardColor && (
+                          <span className={`w-2.5 h-2.5 rounded-full ${
+                            COLOR_OPTIONS.find(c => c.id === asset.cardColor)?.bg || 'bg-slate-600'
+                          }`} />
+                        )}
+                        <ChevronLeft className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
+                    </button>
+
+                    {(isHoveringColor || isColorSubmenuOpen) && (
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-full top-0 mr-0 w-44 bg-slate-900/98 backdrop-blur-xl border border-r-0 border-slate-700/80 rounded-l-2xl rounded-r-none shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-right-2 duration-150 flex flex-col gap-1.5"
+                      >
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
+                          <span>Cores do Card</span>
+                          {asset.cardColor && (
+                            <button 
+                              onClick={() => {
+                                onUpdateCardColor?.(asset.id, 'default');
+                                setIsActionsOpen(false);
+                                setIsHoveringColor(false);
+                                setIsColorSubmenuOpen(false);
+                              }}
+                              className="text-[9.5px] text-rose-400 hover:underline cursor-pointer font-semibold"
+                            >
+                              Limpar
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5 p-1">
+                          {COLOR_OPTIONS.map((opt) => {
+                            const isSelected = (asset.cardColor || 'default') === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                  onUpdateCardColor?.(asset.id, opt.id);
+                                  setIsActionsOpen(false);
+                                  setIsHoveringColor(false);
+                                  setIsColorSubmenuOpen(false);
+                                }}
+                                title={opt.label}
+                                className={`w-6 h-6 rounded-full ${opt.bg} border-2 ${
+                                  isSelected ? 'border-white scale-110 shadow-lg ring-2 ring-indigo-400' : 'border-slate-800 hover:scale-110 hover:border-slate-400'
+                                } flex items-center justify-center transition-all cursor-pointer`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 text-white drop-shadow" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Retorno do Item */}
+                  {showReturnDtinConfirm ? (
+                    <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                      <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsActionsOpen(false);
+                            setShowReturnDtinConfirm(false);
+                            onReturnDtin && onReturnDtin(asset.id);
+                          }}
+                          className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          Retornar
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowReturnDtinConfirm(false);
+                          }}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowReturnDtinConfirm(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Retorno do Item</span>
+                    </button>
+                  )}
+
+                  <div className="h-px bg-slate-800 my-0.5" />
+
+                  {/* Ver Detalhes DTIN */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsActionsOpen(false);
+                      setIsDtinResumoOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                  >
+                    <Server className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Ver Detalhes DTIN</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      ) : (
+        <div className="hidden md:flex pl-4 sm:pl-5 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
         
         {/* Checkbox de Seleção em Lote */}
         {onToggleSelect && (
@@ -1657,6 +1989,7 @@ export const AssetTableRowCard = ({
         </div>
 
       </div>
+      )}
 
       {/* VISUALIZAÇÃO MOBILE: Card Compacto Otimizado para Celular / Conferência Rápida Touch */}
       <div 
@@ -2778,6 +3111,116 @@ export const AssetTableRowCard = ({
                   setIsDtinResumoOpen(false);
                 }}
                 className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Suspenso: Motivo Completo do Recolhimento / DTIN */}
+      {isMotivoModalOpen && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMotivoModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-cyan-500/30 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 space-y-4 text-left"
+          >
+            {/* Cabeçalho */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/30">
+                  <Server className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm sm:text-base">Motivo do Recolhimento / DTIN</h3>
+                  <span className="text-[10px] text-slate-400">Equipamento em processo de suporte/TI</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMotivoModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Identificação do Bem */}
+            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] text-slate-400 block font-medium">Patrimônio</span>
+                <span className="text-xl font-black font-mono text-cyan-400">{formattedXX}</span>
+              </div>
+              <div className="text-right min-w-0 flex-1">
+                <span className="text-[10px] text-slate-400 block font-medium">Setor de Origem</span>
+                <span className="text-xs font-bold text-slate-200 truncate block">{asset.dadosDtin?.setorOrigemNome || asset.setorNome || '---'}</span>
+              </div>
+            </div>
+
+            {/* Descrição do Bem */}
+            <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <span className="text-[10px] text-slate-400 block font-medium mb-1">Item</span>
+              <p className="text-xs text-slate-200 leading-snug font-medium">{asset.descricao}</p>
+            </div>
+
+            {/* Motivo Completo em Destaque */}
+            <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 space-y-1.5">
+              <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider block">
+                Motivo / Finalidade
+              </span>
+              <p className="text-sm font-semibold text-cyan-200 leading-relaxed whitespace-pre-wrap">
+                {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
+              </p>
+            </div>
+
+            {/* Observações / Procedimentos Adicionais se houver */}
+            {asset.dadosDtin?.observacoes && (
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase font-medium tracking-wider block">
+                  Observações Técnicas
+                </span>
+                <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                  {asset.dadosDtin.observacoes}
+                </p>
+              </div>
+            )}
+
+            {/* Dados do Envio */}
+            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+              <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Quem enviou</span>
+                <span className="text-xs font-semibold text-slate-200">{asset.dadosDtin?.responsavel || 'Santana'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Data do Envio</span>
+                <span className="text-xs font-mono font-medium text-slate-200">{asset.dadosDtin?.data || '---'}</span>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMotivoModalOpen(false);
+                  setIsDtinResumoOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Ver Resumo Completo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsMotivoModalOpen(false)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
               </button>
