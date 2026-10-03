@@ -349,12 +349,12 @@ export const Navbar = ({
           {/* GRUPO DIREITA: Ações Desktop */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
-            {/* Botão Informática (TI) com Ícone de Computador */}
+            {/* Botão Informática (TI) com Ícone de Computador - Exclusivo para Desktop (PC) */}
             <button
               type="button"
               onClick={onToggleTiCard}
               title={`Gestão Inteligente de Bens de Informática (TI) - ${tiAssetsCount || 0} equipamentos detectados`}
-              className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+              className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 hidden md:flex items-center gap-1.5 ${
                 isTiCardOpen
                   ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/40 ring-2 ring-cyan-400 font-bold'
                   : (tiAssetsCount || 0) > 0

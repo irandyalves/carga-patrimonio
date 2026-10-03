@@ -70,9 +70,6 @@ import {
 import { 
   BulkActionBar 
 } from './components/BulkActionBar';
-import { 
-  TiManagementModal 
-} from './components/TiManagementModal';
 
 import { 
   analyzeDuplicateAssets, 
@@ -145,7 +142,10 @@ import {
   Plus,
   Copy,
   Server,
-  Laptop
+  Laptop,
+  Monitor,
+  Cpu,
+  ChevronDown
 } from 'lucide-react';
 
 export function App() {
@@ -460,6 +460,24 @@ export function App() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isColumnDropdownOpen]);
+
+  // Dropdown de Setor dentro da Cortina de TI
+  const [isCurtainSectorDropdownOpen, setIsCurtainSectorDropdownOpen] = useState(false);
+  const curtainSectorDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (curtainSectorDropdownRef.current && !curtainSectorDropdownRef.current.contains(e.target)) {
+        setIsCurtainSectorDropdownOpen(false);
+      }
+    };
+    if (isCurtainSectorDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCurtainSectorDropdownOpen]);
 
   // Modal States
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -1002,6 +1020,13 @@ export function App() {
     return analyzeDuplicateAssets(assets, sectors);
   }, [assets, sectors]);
 
+  // Se não houver duplicidades e o modo DUPLICATES estiver selecionado, reverte automaticamente para TODOS
+  useEffect(() => {
+    if (duplicateCount === 0 && filterMode === 'DUPLICATES') {
+      setFilterMode('ALL_SECTORS');
+    }
+  }, [duplicateCount, filterMode]);
+
   // Modal de Gestão e Seleção de Bens de Informática (TI)
   const [isTiModalOpen, setIsTiModalOpen] = useState(false);
 
@@ -1009,6 +1034,24 @@ export function App() {
   const allTiAssets = useMemo(() => {
     return assets.filter(a => isTiAsset(a));
   }, [assets]);
+
+  // Contagem por categorias de TI para a cortina no cabeçalho
+  const tiCategoryCounts = useMemo(() => {
+    const monitors = allTiAssets.filter(a => {
+      const text = `${a.descricao || ''} ${a.modelo || ''}`.toLowerCase();
+      return text.includes('monitor') || text.includes('display');
+    }).length;
+    const notebooks = allTiAssets.filter(a => {
+      const text = `${a.descricao || ''} ${a.modelo || ''}`.toLowerCase();
+      return text.includes('notebook') || text.includes('laptop') || text.includes('macbook');
+    }).length;
+    const desktops = allTiAssets.filter(a => {
+      const text = `${a.descricao || ''} ${a.modelo || ''}`.toLowerCase();
+      return text.includes('computador') || text.includes('desktop') || text.includes('cpu');
+    }).length;
+    const others = Math.max(0, allTiAssets.length - (monitors + notebooks + desktops));
+    return { monitors, notebooks, desktops, others };
+  }, [allTiAssets]);
 
   // Estado de Seleção em Lote (Bulk Select)
   const [selectedAssetIds, setSelectedAssetIds] = useState(() => new Set());
@@ -2516,9 +2559,11 @@ export function App() {
         >
           <div style={{ minWidth: isMobile ? '100%' : tableMinWidth }} className="w-full flex flex-col min-h-full transition-all duration-200">
 
-            {/* Cabeçalho Fixo da Tabela Desktop (Permanentemente Visível e Sticky) */}
-            <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center">
-              <div className="w-full">
+            {/* Cabeçalho Fixo da Tabela Desktop (Permanentemente Visível e Sticky - Altura h-[58px]) */}
+            <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center relative">
+              
+              {/* TÍTULOS PADRÃO DAS COLUNAS (Permanecem na base do cabeçalho, atenuados/esmagados quando há seleção) */}
+              <div className={`w-full transition-all duration-300 ${selectedAssetIds.size > 0 ? 'opacity-20 pointer-events-none scale-x-[0.98] blur-[0.5px]' : 'opacity-100'}`}>
                 <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Master Checkbox: Seleção em Lote */}
@@ -3018,6 +3063,206 @@ export function App() {
 
                 </div>
               </div>
+
+              {/* BARRA DE AÇÕES EM LOTE: Brota no centro do cabeçalho quando itens são selecionados */}
+              {selectedAssetIds.size > 0 && !isTiModalOpen && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none animate-in zoom-in-95 duration-300">
+                  <div className="pointer-events-auto">
+                    <BulkActionBar
+                      selectedCount={selectedAssetIds.size}
+                      onClearSelection={handleClearSelection}
+                      onAssignTi={handleBulkAssignTi}
+                      onAssignSector={handleBulkAssignSector}
+                      sectors={sectors}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CORTINA DE TI: Desce SUAVE SUAVE em 1 segundo (duration-1000) SOBRE os títulos */}
+              <div className={`absolute inset-0 pointer-events-none z-40 rounded-none transition-all ${isTiModalOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
+                <div 
+                  className={`w-full h-full px-3 sm:px-5 flex items-center justify-between gap-2.5 bg-gradient-to-r from-cyan-950/98 via-slate-900/98 to-indigo-950/95 border-b border-cyan-500/60 shadow-xl shadow-cyan-950/40 transform transition-all duration-1000 ease-in-out ${
+                    isTiModalOpen
+                      ? 'translate-y-0 opacity-100 pointer-events-auto'
+                      : '-translate-y-full opacity-0 pointer-events-none'
+                  }`}
+                >
+                  {/* Esquerda: Ícone + Título "Bens de Informática (TI)" + Selo que sobe para cima */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shadow-md shadow-cyan-500/20 shrink-0">
+                      <Laptop className="w-4 h-4 animate-pulse" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-white text-xs sm:text-sm tracking-wide whitespace-nowrap">
+                        Bens de Informática (TI)
+                      </span>
+                      {/* Selo 'possíveis xx itens' - empurrado para cima suavemente na seleção */}
+                      <div className="overflow-hidden h-7 flex items-center">
+                        <span 
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/30 text-cyan-300 font-black border border-cyan-400/40 whitespace-nowrap transform transition-all duration-700 ease-in-out ${
+                            selectedAssetIds.size > 0 
+                              ? '-translate-y-8 opacity-0 pointer-events-none' 
+                              : 'translate-y-0 opacity-100'
+                          }`}
+                        >
+                          possíveis {allTiAssets.length} {allTiAssets.length === 1 ? 'item' : 'itens'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Centro: Transição Vertical - Botão Inicial Sobe e o Dock de Ações Desce Suavemente */}
+                  <div className="flex-1 flex items-center justify-center px-1 overflow-hidden h-full relative min-h-[50px]">
+                    {/* Botão Inicial: Sobe para cima ao selecionar */}
+                    <div 
+                      className={`absolute inset-0 flex items-center justify-center transform transition-all duration-700 ease-in-out ${
+                        selectedAssetIds.size > 0 
+                          ? '-translate-y-full opacity-0 pointer-events-none' 
+                          : 'translate-y-0 opacity-100 pointer-events-auto'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleSelectTiItems(true)}
+                        disabled={allTiAssets.length === 0}
+                        className="px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 via-indigo-600 to-indigo-700 hover:from-cyan-400 hover:to-indigo-600 text-white font-black text-xs shadow-md shadow-cyan-500/30 flex items-center gap-1.5 transition-all cursor-pointer hover:scale-102 active:scale-95 border border-cyan-300/40 disabled:opacity-50 whitespace-nowrap"
+                      >
+                        <Check className="w-3.5 h-3.5 text-cyan-200 stroke-[3]" />
+                        <span>Selecionar Todos os {allTiAssets.length} Itens de TI ⚡</span>
+                      </button>
+                    </div>
+
+                    {/* DOCK DE AÇÕES (Print 2): Desce suavemente de cima para baixo */}
+                    <div 
+                      className={`absolute inset-0 flex items-center justify-center transform transition-all duration-700 ease-in-out ${
+                        selectedAssetIds.size > 0 
+                          ? 'translate-y-0 opacity-100 pointer-events-auto' 
+                          : '-translate-y-full opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Contador de Itens Selecionados */}
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/80 border border-indigo-500/60 shadow-sm shrink-0">
+                          <div className="w-5 h-5 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs shadow-md shadow-indigo-500/40">
+                            <CheckCheck className="w-3.5 h-3.5 text-white stroke-[3]" />
+                          </div>
+                          <span className="text-xs font-black text-indigo-200 whitespace-nowrap">
+                            {selectedAssetIds.size} {selectedAssetIds.size === 1 ? 'item selecionado' : 'itens selecionados'}
+                          </span>
+                        </div>
+
+                        {/* Botão Desmarcar */}
+                        <button
+                          type="button"
+                          onClick={handleClearSelection}
+                          title="Desmarcar itens selecionados"
+                          className="p-1 px-2.5 py-1.5 rounded-xl text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer text-xs flex items-center gap-1 active:scale-95 shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Desmarcar</span>
+                        </button>
+
+                        <div className="w-px h-5 bg-cyan-500/30 mx-0.5 shrink-0" />
+
+                        {/* Botão Atribuir TI */}
+                        <button
+                          type="button"
+                          onClick={handleBulkAssignTi}
+                          title="Transferir todos os itens selecionados para o setor de TI"
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-indigo-700 hover:from-cyan-400 hover:to-indigo-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer hover:scale-102 active:scale-95 border border-cyan-300/40 group whitespace-nowrap"
+                        >
+                          <Laptop className="w-3.5 h-3.5 text-cyan-200 group-hover:animate-pulse" />
+                          <span>Atribuir TI ⚡</span>
+                        </button>
+
+                        {/* Dropdown Mudar Setor */}
+                        <div className="relative" ref={curtainSectorDropdownRef}>
+                          <button
+                            type="button"
+                            onClick={() => setIsCurtainSectorDropdownOpen(!isCurtainSectorDropdownOpen)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Mudar Setor</span>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCurtainSectorDropdownOpen ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {isCurtainSectorDropdownOpen && (
+                            <div className="absolute right-0 top-full mt-2 z-50 w-64 max-h-72 overflow-y-auto bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 scrollbar-thin scrollbar-thumb-slate-700 text-left">
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800">
+                                Transferir para o Setor:
+                              </div>
+                              {sectors.map(sec => (
+                                <button
+                                  key={sec.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setIsCurtainSectorDropdownOpen(false);
+                                    handleBulkAssignSector(sec.id);
+                                  }}
+                                  className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-indigo-600/30 hover:text-white text-slate-300 transition-colors cursor-pointer group"
+                                >
+                                  <span className="font-semibold truncate">{sec.name}</span>
+                                  {sec.responsavel && (
+                                    <span className="text-[10px] text-slate-500 group-hover:text-indigo-200">
+                                      {sec.responsavel}
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Direita: Cards de Categorias (Permanecem intactos com legendas) + Botão X que fecha tudo */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden lg:flex items-center gap-1.5">
+                      <div className="px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-1.5 text-xs">
+                        <Monitor className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-[10px] text-slate-400">Monitores:</span>
+                        <strong className="text-white font-mono text-[11px]">{tiCategoryCounts.monitors}</strong>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-1.5 text-xs">
+                        <Laptop className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-[10px] text-slate-400">Notebooks:</span>
+                        <strong className="text-white font-mono text-[11px]">{tiCategoryCounts.notebooks}</strong>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-1.5 text-xs">
+                        <Cpu className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="text-[10px] text-slate-400">Desktops/CPUs:</span>
+                        <strong className="text-white font-mono text-[11px]">{tiCategoryCounts.desktops}</strong>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-1.5 text-xs">
+                        <Server className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-[10px] text-slate-400">Outros / Rede:</span>
+                        <strong className="text-white font-mono text-[11px]">{tiCategoryCounts.others}</strong>
+                      </div>
+                    </div>
+
+                    {/* Botão X: some com tudo (fecha cortina e limpa seleções) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsTiModalOpen(false);
+                        setSelectedAssetIds(new Set());
+                      }}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer shrink-0"
+                      title="Fechar cortina e desmarcar tudo"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
 
             {/* Banner Informativo Exclusivo do Modo Patrimônio Duplicado */}
@@ -3728,30 +3973,16 @@ export function App() {
         onSaveSettings={handleSaveDisplaySettings}
       />
 
-      {/* Modal / Card Inteligente de Gestão de Bens de TI */}
-      <TiManagementModal
-        isOpen={isTiModalOpen}
-        onClose={() => setIsTiModalOpen(false)}
-        tiAssets={allTiAssets}
-        onSelectAllTi={() => handleSelectTiItems(true)}
-        onDirectAssignTi={() => {
-          handleSelectTiItems(true);
-          handleBulkAssignTi();
-        }}
-        selectedCount={selectedAssetIds.size}
-      />
-
-      {/* Barra Flutuante de Ações em Lote (Posicionada à Direita) */}
-      <BulkActionBar
-        selectedCount={selectedAssetIds.size}
-        onClearSelection={handleClearSelection}
-        onAssignTi={handleBulkAssignTi}
-        onAssignSector={handleBulkAssignSector}
-        onMarkConferidos={handleBulkMarkConferidos}
-        onMarkPendentes={handleBulkMarkPendentes}
-        onDeleteSelected={handleBulkDeleteSelected}
-        sectors={sectors}
-      />
+      {/* Barra Flutuante de Ações em Lote Apenas para Mobile (no Desktop ela brota no centro do cabeçalho) */}
+      <div className="md:hidden">
+        <BulkActionBar
+          selectedCount={selectedAssetIds.size}
+          onClearSelection={handleClearSelection}
+          onAssignTi={handleBulkAssignTi}
+          onAssignSector={handleBulkAssignSector}
+          sectors={sectors}
+        />
+      </div>
 
     </div>
   );

@@ -277,41 +277,31 @@ export const SectorSidebar = ({
             </div>
           </div>
 
-          {/* Aba Especial: Patrimônio Duplicado (Análise Detalhada & Ação Humana) */}
-          <div className="pt-0.5">
-            <button
-              onClick={() => {
-                onSelectFilterMode('DUPLICATES');
-                onSelectStatusFilter('ALL');
-              }}
-              className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
-                filterMode === 'DUPLICATES'
-                  ? 'bg-gradient-to-r from-amber-600/40 via-amber-600/15 to-transparent text-white font-bold border-l-4 border-l-amber-400 shadow-md shadow-amber-500/10'
-                  : duplicateCount > 0
-                    ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border-l-4 border-l-amber-500/60'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
-              }`}
-              title={duplicateCount > 0 ? `${duplicateCount} bens com número de patrimônio duplicado detectados` : "Nenhum patrimônio duplicado detectado"}
-            >
-              <div className="flex items-center gap-2 truncate">
-                {duplicateCount > 0 ? (
+          {/* Aba Especial: Patrimônio Duplicado - Aparece de forma inteligente APENAS se houver casos a analisar */}
+          {duplicateCount > 0 && (
+            <div className="pt-0.5 animate-in fade-in duration-200">
+              <button
+                onClick={() => {
+                  onSelectFilterMode('DUPLICATES');
+                  onSelectStatusFilter('ALL');
+                }}
+                className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
+                  filterMode === 'DUPLICATES'
+                    ? 'bg-gradient-to-r from-amber-600/40 via-amber-600/15 to-transparent text-white font-bold border-l-4 border-l-amber-400 shadow-md shadow-amber-500/10'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border-l-4 border-l-amber-500/60'
+                }`}
+                title={`${duplicateCount} bens com número de patrimônio duplicado detectados para análise`}
+              >
+                <div className="flex items-center gap-2 truncate">
                   <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" />
-                ) : (
-                  <Copy className="w-4 h-4 shrink-0 text-slate-400" />
-                )}
-                <span className="truncate font-semibold">Patrimônio Duplicado</span>
-              </div>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
-                filterMode === 'DUPLICATES'
-                  ? 'bg-amber-500/30 text-amber-300 border border-amber-400/50 shadow-sm'
-                  : duplicateCount > 0
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : 'bg-black/30 text-slate-500'
-              }`}>
-                {duplicateCount}
-              </span>
-            </button>
-          </div>
+                  <span className="truncate font-semibold">Patrimônio Duplicado</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 bg-amber-500/25 text-amber-300 border border-amber-400/40 shadow-sm animate-pulse">
+                  {duplicateCount}
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
           {sortedSectors.map((sec) => {
