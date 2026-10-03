@@ -82,6 +82,24 @@ export const SmartImportModal = ({
   const [parsedRows, setParsedRows] = useState([]);
   const [columnMapping, setColumnMapping] = useState({}); // { [sourceHeader]: { targetField, isAccepted, confidence } }
 
+  // Histórico de Arquivos Importados (persistente no localStorage)
+  const [importHistory, setImportHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('CARGA_PATRIMONIO_IMPORT_HISTORY');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const handleClearHistory = (e) => {
+    e?.stopPropagation?.();
+    setImportHistory([]);
+    try {
+      localStorage.removeItem('CARGA_PATRIMONIO_IMPORT_HISTORY');
+    } catch (e) {}
+  };
+
   const fileInputRef = useRef(null);
 
   // Setores ordenados
@@ -203,6 +221,26 @@ export const SmartImportModal = ({
       }
 
       onImportSuccess(finalAssets);
+
+      // Registra no histórico de arquivos importados
+      const historyEntry = {
+        id: `imp_${Date.now()}`,
+        fileName: selectedFile?.name || 'Arquivo_Importado',
+        fileSize: selectedFile?.size ? (selectedFile.size > 1024 * 1024 ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(selectedFile.size / 1024)} KB`) : '',
+        format: selectedFormat?.toUpperCase() || 'EXCEL',
+        sectorName: targetSectorMode === 'SPECIFIC' ? (currentTargetSector?.name || 'Setor Específico') : 'Detectado por Coluna',
+        importedCount: finalAssets.length,
+        date: new Date().toISOString()
+      };
+
+      setImportHistory(prev => {
+        const updated = [historyEntry, ...prev.filter(h => h.id !== historyEntry.id)].slice(0, 30);
+        try {
+          localStorage.setItem('CARGA_PATRIMONIO_IMPORT_HISTORY', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+
       setStep('SUCCESS');
     } catch (err) {
       console.error(err);
@@ -409,6 +447,71 @@ export const SmartImportModal = ({
                 <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Histórico de Arquivos Importados */}
+              {importHistory.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-indigo-400" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                        Histórico de Arquivos Importados ({importHistory.length})
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearHistory}
+                      className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 font-medium px-2 py-0.5 rounded-md hover:bg-rose-500/10"
+                      title="Limpar histórico de importações"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Limpar Histórico</span>
+                    </button>
+                  </div>
+
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 scrollbar-thin pr-1">
+                    {importHistory.map(item => (
+                      <div
+                        key={item.id}
+                        className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/30 transition-all flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <strong className="text-slate-200 font-semibold truncate block max-w-[260px]" title={item.fileName}>
+                                {item.fileName}
+                              </strong>
+                              {item.fileSize && (
+                                <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                                  ({item.fileSize})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                              <span className="text-amber-400/90 font-medium truncate max-w-[150px]">
+                                Setor: {item.sectorName}
+                              </span>
+                              <span className="text-slate-600">•</span>
+                              <span className="font-mono text-[10.5px] text-slate-400 shrink-0">
+                                {new Date(item.date).toLocaleString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md font-bold text-[10.5px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
+                            +{item.importedCount} {item.importedCount === 1 ? 'item' : 'itens'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
