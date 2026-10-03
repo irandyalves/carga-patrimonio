@@ -565,17 +565,20 @@ export const SmartImportModal = ({
                             return (
                               <div
                                 key={item.id}
-                                className="p-1.5 px-2 rounded-md bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 flex flex-col justify-between gap-1 transition-all"
+                                className="p-1.5 px-2 rounded-md bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 flex flex-col justify-between gap-1 transition-all min-w-0 overflow-hidden"
                               >
-                                {/* Linha Superior: Nome do Arquivo + Data/Hora */}
-                                <div className="flex items-center justify-between gap-1.5 min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                {/* Linha Superior: Nome do Arquivo (com reticências ...) + Data/Hora */}
+                                <div className="flex items-center justify-between gap-1.5 min-w-0 w-full overflow-hidden">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                                     <HistoryIcon className="w-3 h-3 text-indigo-400 shrink-0" />
-                                    <span className="text-slate-200 font-semibold text-[11px] truncate block" title={item.fileName}>
+                                    <span 
+                                      className="text-slate-200 font-semibold text-[10.5px] truncate block min-w-0 flex-1" 
+                                      title={item.fileName}
+                                    >
                                       {item.fileName}
                                     </span>
                                   </div>
-                                  <span className="font-mono text-[9px] text-slate-400 whitespace-nowrap shrink-0">
+                                  <span className="font-mono text-[9px] text-slate-400 whitespace-nowrap shrink-0 ml-1">
                                     {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}{' '}
                                     {new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
