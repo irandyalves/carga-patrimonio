@@ -432,32 +432,32 @@ export const SmartImportModal = ({
                 </div>
               </div>
 
-              {/* 3. SELEÇÃO DE ARQUIVO (ESQUERDA) E HISTÓRICO (DIREITA) */}
+              {/* 3. SELEÇÃO DE ARQUIVO (ESQUERDA REDUZIDA) E HISTÓRICO (DIREITA EM 2 COLUNAS) */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
                   3. Selecionar Arquivo & Histórico
                 </label>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Coluna Esquerda: Dropzone / Enviar Arquivo com Ícone na Esquerda */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                  {/* Coluna Esquerda: Dropzone Compacta / Esmagada */}
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed ${
+                    className={`md:col-span-4 border-2 border-dashed ${
                       isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
-                    } rounded-2xl p-4 flex items-center gap-3.5 cursor-pointer transition-all group min-h-[110px]`}
+                    } rounded-2xl p-2.5 px-3 flex items-center gap-2.5 cursor-pointer transition-all group min-h-[105px]`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
-                      <UploadCloud className="w-5 h-5" />
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
+                      <UploadCloud className="w-4 h-4" />
                     </div>
                     <div className="text-left flex-1 min-w-0">
-                      <span className="text-xs font-bold text-slate-200 group-hover:text-white block leading-snug">
-                        {isLoading ? 'Lendo e analisando arquivo...' : 'Clique para enviar o arquivo ou arraste e solte aqui'}
+                      <span className="text-[11.5px] font-bold text-slate-200 group-hover:text-white block leading-snug">
+                        {isLoading ? 'Lendo arquivo...' : 'Clique para enviar ou arraste o arquivo aqui'}
                       </span>
-                      <span className="text-[10.5px] text-slate-400 font-mono mt-0.5 block">
-                        Formatos: .xlsx, .xls, .docx, .csv, .txt
+                      <span className="text-[9.5px] text-slate-400 font-mono mt-0.5 block">
+                        .xlsx, .docx, .csv, .txt
                       </span>
                     </div>
 
@@ -471,8 +471,8 @@ export const SmartImportModal = ({
                     />
                   </div>
 
-                  {/* Coluna Direita: Histórico de Arquivos Importados (Data e Hora à Direita) */}
-                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-3 flex flex-col min-h-[110px]">
+                  {/* Coluna Direita: Histórico de Arquivos em 2 Colunas (Compacto, exibe 6+ itens) */}
+                  <div className="md:col-span-8 rounded-2xl bg-slate-850/60 border border-slate-800 p-2.5 flex flex-col min-h-[105px]">
                     <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0">
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-indigo-400" />
@@ -498,34 +498,41 @@ export const SmartImportModal = ({
                       )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin max-h-[85px] pt-1.5 pr-0.5">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[90px] pt-1.5 pr-0.5">
                       {importHistory.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-center text-slate-500 text-[11px] py-4">
+                        <div className="h-full flex items-center justify-center text-center text-slate-500 text-[11px] py-3">
                           <span>Nenhum arquivo importado recentemente</span>
                         </div>
                       ) : (
-                        importHistory.map(item => (
-                          <div
-                            key={item.id}
-                            className="p-1.5 px-2 rounded-lg bg-slate-900/80 border border-slate-800/80 flex items-center justify-between gap-2 text-xs"
-                          >
-                            {/* Nome e Extensão do Arquivo */}
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                              <span className="text-slate-200 font-semibold truncate block max-w-[170px]" title={item.fileName}>
-                                {item.fileName}
-                              </span>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {importHistory.map(item => {
+                            const ext = item.fileName?.split('.').pop()?.toLowerCase();
+                            const HistoryIcon = ext === 'docx' ? FileText : (ext === 'csv' ? FileCode : (ext === 'txt' ? File : FileSpreadsheet));
 
-                            {/* Data e Hora à Direita */}
-                            <div className="shrink-0 text-right">
-                              <span className="font-mono text-[10px] text-slate-400 block whitespace-nowrap">
-                                {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}{' '}
-                                {new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          </div>
-                        ))
+                            return (
+                              <div
+                                key={item.id}
+                                className="p-1 px-2 rounded-lg bg-slate-900/85 hover:bg-slate-900 border border-slate-800/80 flex items-center justify-between gap-1.5 text-xs transition-colors"
+                              >
+                                {/* Nome e Extensão do Arquivo */}
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  <HistoryIcon className="w-3 h-3 text-indigo-400 shrink-0" />
+                                  <span className="text-slate-200 font-medium text-[10.5px] truncate block" title={item.fileName}>
+                                    {item.fileName}
+                                  </span>
+                                </div>
+
+                                {/* Data e Hora à Direita */}
+                                <div className="shrink-0 text-right">
+                                  <span className="font-mono text-[9px] text-slate-400 block whitespace-nowrap">
+                                    {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}{' '}
+                                    {new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>
