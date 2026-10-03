@@ -90,7 +90,7 @@ export const PedidosCargaModal = ({
                   {pendingPedidos.map((ped) => (
                     <div 
                       key={ped.id}
-                      className="p-3.5 rounded-2xl bg-slate-850/80 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
+                      className="p-3.5 rounded-l-2xl rounded-r-none bg-slate-850/80 hover:bg-slate-850 border-l border-t border-b border-r-0 border-slate-800 hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
                     >
                       {/* Coluna 1: Informações do Bem e Solicitante */}
                       <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
@@ -161,7 +161,7 @@ export const PedidosCargaModal = ({
                   {pastPedidos.map(ped => (
                     <div 
                       key={ped.id}
-                      className="p-3 rounded-xl bg-slate-850/50 border border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400"
+                      className="p-3 rounded-l-xl rounded-r-none bg-slate-850/50 border-l border-t border-b border-r-0 border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400"
                     >
                       <div>
                         <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
