@@ -2555,6 +2555,8 @@ export function App() {
           userRole={effectiveUserRole}
           userSectorId={effectiveUserSectorId}
           userSectorIds={effectiveUserSectorIds}
+          userLinkedSectorIds={userLinkedSectorIds}
+          currentUser={effectiveUser || currentUser}
           statusFilter={statusFilter}
           onSelectStatusFilter={setStatusFilter}
           onExportReportPDF={handleExportReportPDF}

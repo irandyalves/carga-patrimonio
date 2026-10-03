@@ -45,6 +45,8 @@ export const SectorSidebar = ({
   userRole = 'admin',
   userSectorId = null,
   userSectorIds = [],
+  userLinkedSectorIds = [],
+  currentUser = null,
   statusFilter = 'ALL',
   onSelectStatusFilter = () => {},
   onExportReportPDF = () => {},
@@ -123,10 +125,42 @@ export const SectorSidebar = ({
     return variant === 'sector' ? 'text-rose-400' : 'text-red-400';
   };
 
-  // Setores ordenados em ordem alfabética (A-Z)
-  const sortedSectors = useMemo(() => {
-    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [sectors]);
+  // Checar se o setor pertence ao usuário logado (por id, perfil, e-mail ou responsável)
+  const isUserOwnedSector = (sec) => {
+    if (userSectorIds && userSectorIds.length > 0 && userSectorIds.includes(sec.id)) return true;
+    if (userSectorId && userSectorId === sec.id) return true;
+    if (userLinkedSectorIds && userLinkedSectorIds.length > 0 && userLinkedSectorIds.includes(sec.id)) return true;
+    if (currentUser) {
+      const userEmail = (currentUser.email || '').toLowerCase().trim();
+      const userName = (currentUser.displayName || currentUser.name || '').toLowerCase().trim();
+      const sEmail = (sec.email || '').toLowerCase().trim();
+      const sResp = (sec.responsavel || '').toLowerCase().trim();
+
+      if (userEmail && sEmail && sEmail === userEmail) return true;
+      if (userName && sResp && (sResp === userName || userName.includes(sResp) || sResp.includes(userName))) return true;
+    }
+    return false;
+  };
+
+  // Separação dos setores: Setores do Usuário Logado (primeiro) e Demais Setores (depois)
+  const { userSectors, otherSectors } = useMemo(() => {
+    const my = [];
+    const others = [];
+
+    sectors.forEach(sec => {
+      if (isUserOwnedSector(sec)) {
+        my.push(sec);
+      } else {
+        others.push(sec);
+      }
+    });
+
+    const sortFn = (a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    my.sort(sortFn);
+    others.sort(sortFn);
+
+    return { userSectors: my, otherSectors: others };
+  }, [sectors, userSectorIds, userSectorId, userLinkedSectorIds, currentUser]);
 
   return (
     <>
@@ -303,273 +337,294 @@ export const SectorSidebar = ({
             </div>
           )}
 
-          {/* Abas dos Setores com Sub-Opções de Status Indentadas */}
-          {sortedSectors.map((sec) => {
-            const stats = getSectorStats(sec.id);
-            const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
-            const isMySector = userRole === 'operador' && (
-              (userSectorIds && userSectorIds.length > 0)
-                ? userSectorIds.includes(sec.id)
-                : (userSectorId === sec.id)
-            );
-            const isOtherSector = userRole === 'operador' && !isMySector;
-            const canManageSector = userRole === 'admin' || isMySector;
+          {/* Função auxiliar para renderizar cada setor */}
+          {(() => {
+            const renderSectorItem = (sec, isUserOwned) => {
+              const stats = getSectorStats(sec.id);
+              const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
+              const isMySector = isUserOwned;
+              const isOtherSector = userRole === 'operador' && !isMySector;
+              const canManageSector = userRole === 'admin' || isMySector;
 
-            return (
-              <div key={sec.id} className="space-y-0.5">
-                <button
-                  onClick={() => {
-                    onSelectFilterMode('MY_SECTOR');
-                    onSelectSector(sec.id);
-                    onSelectStatusFilter('ALL');
-                  }}
-                  className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
-                  }`}
-                >
-                  {/* Nome do Setor */}
-                  <div className="flex items-center gap-2 truncate">
-                    {isSelected ? (
-                      stats.isCompleted ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-                      ) : (
-                        getSectorIcon(sec.id)
-                      )
-                    ) : null}
+              return (
+                <div key={sec.id} className="space-y-0.5">
+                  <button
+                    onClick={() => {
+                      onSelectFilterMode('MY_SECTOR');
+                      onSelectSector(sec.id);
+                      onSelectStatusFilter('ALL');
+                    }}
+                    className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
+                    }`}
+                  >
+                    {/* Nome do Setor */}
+                    <div className="flex items-center gap-2 truncate">
+                      {isSelected ? (
+                        stats.isCompleted ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                        ) : (
+                          getSectorIcon(sec.id)
+                        )
+                      ) : null}
 
-                    <div className="truncate min-w-0">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className={isSelected ? 'font-bold text-white' : 'font-medium'}>
-                          {sec.name}
-                        </span>
-                        {sec.responsavel && (
-                          <span className={`flex items-center gap-1.5 ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold text-[11px] truncate shrink-0`}>
-                            <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
-                            <span>{sec.responsavel}</span>
+                      <div className="truncate min-w-0">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className={isSelected ? 'font-bold text-white' : 'font-medium'}>
+                            {sec.name}
                           </span>
-                        )}
-                        {isOtherSector && (
-                          <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
-                            <Lock className="w-3 h-3 inline" />
-                          </span>
-                        )}
+                          {sec.responsavel && (
+                            <span className={`flex items-center gap-1.5 ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold text-[11px] truncate shrink-0`}>
+                              <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                              <span>{sec.responsavel}</span>
+                            </span>
+                          )}
+                          {isOtherSector && (
+                            <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
+                              <Lock className="w-3 h-3 inline" />
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Badge de quantidade e status de conclusão */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {stats.isCompleted && !isSelected && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    )}
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                      isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800 text-slate-300'
-                    }`}>
-                      {stats.total}
-                    </span>
-                  </div>
-                </button>
-
-                {/* Sub-opções de status indentadas abaixo do setor clicado (Animação Cortina 400ms) */}
-                <div className={`curtain-menu ${isSelected ? 'is-open' : ''}`}>
-                  <div className="curtain-content">
-                    <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
-                      {[
-                        { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
-                        { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
-                        { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
-                        { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400', dot: 'bg-rose-400' },
-                      ].filter(tab => tab.count > 0).map(tab => {
-                        const isSubActive = statusFilter === tab.id;
-                        return (
-                          <button
-                            key={tab.id}
-                            onClick={() => onSelectStatusFilter(tab.id)}
-                            className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
-                              isSubActive
-                                ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
-                              <span className="truncate">{tab.label}</span>
-                            </div>
-                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                              isSubActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800/80 text-slate-400'
-                            }`}>
-                              {tab.count}
-                            </span>
-                          </button>
-                        );
-                      })}
-
-                      {/* Botão Emitir Relatório logo abaixo de Baixados */}
-                      {canManageSector && onExportReportPDF && (
-                        <button
-                          type="button"
-                          onClick={onExportReportPDF}
-                          title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
-                          className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
-                            <span className="truncate">Emitir Relatório</span>
-                          </div>
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
-                        </button>
+                    {/* Badge de quantidade e status de conclusão */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {stats.isCompleted && !isSelected && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                       )}
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                        isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800 text-slate-300'
+                      }`}>
+                        {stats.total}
+                      </span>
+                    </div>
+                  </button>
 
-                      {/* Botão Importar diretamente para este Setor */}
-                      {canManageSector && onOpenImport && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenImport(sec.id);
-                          }}
-                          title={`Importar carga de bens (Excel, Word, CSV, TXT) diretamente para o setor ${sec.name}`}
-                          className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <UploadCloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 shrink-0" />
-                            <span className="truncate">Importar</span>
-                          </div>
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0">Carga</span>
-                        </button>
-                      )}
+                  {/* Sub-opções de status indentadas abaixo do setor clicado (Animação Cortina 400ms) */}
+                  <div className={`curtain-menu ${isSelected ? 'is-open' : ''}`}>
+                    <div className="curtain-content">
+                      <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
+                        {[
+                          { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
+                          { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
+                          { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
+                          { id: 'BAIXADOS', label: 'Baixados', count: stats.baixados, color: 'text-rose-400', dot: 'bg-rose-400' },
+                        ].filter(tab => tab.count > 0).map(tab => {
+                          const isSubActive = statusFilter === tab.id;
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => onSelectStatusFilter(tab.id)}
+                              className={`w-full px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left rounded-lg ${
+                                isSubActive
+                                  ? 'bg-gradient-to-r from-indigo-600/40 via-indigo-600/15 to-transparent text-white font-bold border-l-[3px] border-l-indigo-400 shadow-sm'
+                                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot} shrink-0`} />}
+                                <span className="truncate">{tab.label}</span>
+                              </div>
+                              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                                isSubActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800/80 text-slate-400'
+                              }`}>
+                                {tab.count}
+                              </span>
+                            </button>
+                          );
+                        })}
 
-                      {/* Menu de Enviados para a DTIN: Oculta se tiver 0 */}
-                      {(() => {
-                        const isTiSector = sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia');
-                        const dtinCount = isTiSector
-                          ? assets.filter(a => a.status === 'ENVIADO_DTIN' || a.enviadoDtin).length
-                          : assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length;
-
-                        if (dtinCount === 0) return null;
-
-                        return (
+                        {/* Botão Emitir Relatório logo abaixo de Baixados */}
+                        {canManageSector && onExportReportPDF && (
                           <button
                             type="button"
-                            onClick={() => onSelectStatusFilter('ENVIADOS_DTIN')}
-                            title="Filtrar equipamentos enviados para a DTIN"
-                            className={`w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left group ${
-                              statusFilter === 'ENVIADOS_DTIN'
-                                ? 'bg-gradient-to-r from-cyan-600/40 via-cyan-600/15 to-transparent text-white font-bold border-l-[3px] border-l-cyan-400 shadow-sm'
-                                : 'text-cyan-400 hover:text-cyan-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
-                            }`}
+                            onClick={onExportReportPDF}
+                            title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
+                            className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                           >
                             <div className="flex items-center gap-1.5 truncate">
-                              <Server className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 shrink-0" />
-                              <span className="truncate">Enviados para a DTIN</span>
+                              <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 shrink-0" />
+                              <span className="truncate">Emitir Relatório</span>
                             </div>
-                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
-                              statusFilter === 'ENVIADOS_DTIN'
-                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold'
-                                : 'bg-slate-800/80 text-cyan-400'
-                            }`}>
-                              {dtinCount}
-                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-slate-300 font-bold shrink-0">PDF</span>
                           </button>
-                        );
-                      })()}
+                        )}
 
-                      {/* Botão Limpar Dados do Setor: Oculta se tiver 0 | Ícone Borracha Vermelhinha */}
-                      {(() => {
-                        const sectorAssetsCount = assets.filter(a => a.setorId === sec.id).length;
-                        if (!canManageSector || !onClearSectorAssets || sectorAssetsCount === 0) return null;
-
-                        return (
+                        {/* Botão Importar diretamente para este Setor */}
+                        {canManageSector && onOpenImport && (
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onClearSectorAssets(sec.id);
+                              onOpenImport(sec.id);
                             }}
-                            title={`Limpar todos os bens vinculados ao setor ${sec.name}`}
-                            className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-rose-500/20"
+                            title={`Importar carga de bens (Excel, Word, CSV, TXT) diretamente para o setor ${sec.name}`}
+                            className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
                           >
                             <div className="flex items-center gap-1.5 truncate">
-                              <Eraser className="w-3.5 h-3.5 text-rose-400 group-hover:text-rose-300 shrink-0" />
-                              <span className="truncate">Limpar Dados do Setor</span>
+                              <UploadCloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                              <span className="truncate">Importar</span>
                             </div>
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-rose-300 font-bold shrink-0">
-                              {sectorAssetsCount}
-                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold shrink-0">Carga</span>
                           </button>
-                        );
-                      })()}
+                        )}
 
-                      {/* Ações em Lote para este Setor: Só exibe se houver itens para alterar */}
-                      {(() => {
-                        if (!canManageSector || !onOpenBatchStatusChange) return null;
-                        const conferidosCount = assets.filter(a => a.setorId === sec.id && a.status === 'CONFERIDO').length;
-                        const pendentesCount = assets.filter(a => a.setorId === sec.id && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO').length;
+                        {/* Menu de Enviados para a DTIN: Oculta se tiver 0 */}
+                        {(() => {
+                          const isTiSector = sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia');
+                          const dtinCount = isTiSector
+                            ? assets.filter(a => a.status === 'ENVIADO_DTIN' || a.enviadoDtin).length
+                            : assets.filter(a => a.setorId === sec.id && (a.status === 'ENVIADO_DTIN' || a.enviadoDtin)).length;
 
-                        if (conferidosCount === 0 && pendentesCount === 0) return null;
+                          if (dtinCount === 0) return null;
 
-                        return (
-                          <div className="pt-1 mt-1 border-t border-slate-800/80 space-y-0.5">
-                            {conferidosCount > 0 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenBatchStatusChange({ 
-                                    targetType: 'SECTOR', 
-                                    sectorId: sec.id, 
-                                    sectorName: sec.name, 
-                                    newStatus: 'PENDENTE' 
-                                  });
-                                }}
-                                title={`Tornar todos os bens do setor ${sec.name} como PENDENTES`}
-                                className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-amber-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20"
-                              >
-                                <div className="flex items-center gap-1.5 truncate">
-                                  <RotateCcw className="w-3.5 h-3.5 text-amber-400/80 group-hover:text-amber-300 shrink-0" />
-                                  <span className="truncate font-medium text-slate-300 group-hover:text-amber-200">Tornar TUDO pendente</span>
-                                </div>
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-amber-300/80 border border-slate-700/80 group-hover:border-amber-500/30 group-hover:text-amber-300 font-bold shrink-0">
-                                  {conferidosCount}
-                                </span>
-                              </button>
-                            )}
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => onSelectStatusFilter('ENVIADOS_DTIN')}
+                              title="Filtrar equipamentos enviados para a DTIN"
+                              className={`w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left group ${
+                                statusFilter === 'ENVIADOS_DTIN'
+                                  ? 'bg-gradient-to-r from-cyan-600/40 via-cyan-600/15 to-transparent text-white font-bold border-l-[3px] border-l-cyan-400 shadow-sm'
+                                  : 'text-cyan-400 hover:text-cyan-200 hover:bg-slate-800/70 border-l-[3px] border-l-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Server className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 shrink-0" />
+                                <span className="truncate">Enviados para a DTIN</span>
+                              </div>
+                              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
+                                statusFilter === 'ENVIADOS_DTIN'
+                                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold'
+                                  : 'bg-slate-800/80 text-cyan-400'
+                              }`}>
+                                {dtinCount}
+                              </span>
+                            </button>
+                          );
+                        })()}
 
-                            {pendentesCount > 0 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenBatchStatusChange({ 
-                                    targetType: 'SECTOR', 
-                                    sectorId: sec.id, 
-                                    sectorName: sec.name, 
-                                    newStatus: 'CONFERIDO' 
-                                  });
-                                }}
-                                title={`Tornar todos os bens do setor ${sec.name} como CONFERIDOS`}
-                                className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-emerald-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
-                              >
-                                <div className="flex items-center gap-1.5 truncate">
-                                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400/80 group-hover:text-emerald-300 shrink-0" />
-                                  <span className="truncate font-medium text-slate-300 group-hover:text-emerald-200">Tornar TUDO conferido</span>
-                                </div>
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-emerald-300/80 border border-slate-700/80 group-hover:border-emerald-500/30 group-hover:text-emerald-300 font-bold shrink-0">
-                                  {pendentesCount}
-                                </span>
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })()}
+                        {/* Botão Limpar Dados do Setor: Oculta se tiver 0 | Ícone Borracha Vermelhinha */}
+                        {(() => {
+                          const sectorAssetsCount = assets.filter(a => a.setorId === sec.id).length;
+                          if (!canManageSector || !onClearSectorAssets || sectorAssetsCount === 0) return null;
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onClearSectorAssets(sec.id);
+                              }}
+                              title={`Limpar todos os bens vinculados ao setor ${sec.name}`}
+                              className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-rose-500/20"
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Eraser className="w-3.5 h-3.5 text-rose-400 group-hover:text-rose-300 shrink-0" />
+                                <span className="truncate">Limpar Dados do Setor</span>
+                              </div>
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800/80 text-slate-400 group-hover:text-rose-300 font-bold shrink-0">
+                                {sectorAssetsCount}
+                              </span>
+                            </button>
+                          );
+                        })()}
+
+                        {/* Ações em Lote para este Setor: Só exibe se houver itens para alterar */}
+                        {(() => {
+                          if (!canManageSector || !onOpenBatchStatusChange) return null;
+                          const conferidosCount = assets.filter(a => a.setorId === sec.id && a.status === 'CONFERIDO').length;
+                          const pendentesCount = assets.filter(a => a.setorId === sec.id && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO').length;
+
+                          if (conferidosCount === 0 && pendentesCount === 0) return null;
+
+                          return (
+                            <div className="pt-1 mt-1 border-t border-slate-800/80 space-y-0.5">
+                              {conferidosCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenBatchStatusChange({ 
+                                      targetType: 'SECTOR', 
+                                      sectorId: sec.id, 
+                                      sectorName: sec.name, 
+                                      newStatus: 'PENDENTE' 
+                                    });
+                                  }}
+                                  title={`Tornar todos os bens do setor ${sec.name} como PENDENTES`}
+                                  className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-amber-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20"
+                                >
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <RotateCcw className="w-3.5 h-3.5 text-amber-400/80 group-hover:text-amber-300 shrink-0" />
+                                    <span className="truncate font-medium text-slate-300 group-hover:text-amber-200">Tornar TUDO pendente</span>
+                                  </div>
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-amber-300/80 border border-slate-700/80 group-hover:border-amber-500/30 group-hover:text-amber-300 font-bold shrink-0">
+                                    {conferidosCount}
+                                  </span>
+                                </button>
+                              )}
+
+                              {pendentesCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenBatchStatusChange({ 
+                                      targetType: 'SECTOR', 
+                                      sectorId: sec.id, 
+                                      sectorName: sec.name, 
+                                      newStatus: 'CONFERIDO' 
+                                    });
+                                  }}
+                                  title={`Tornar todos os bens do setor ${sec.name} como CONFERIDOS`}
+                                  className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-emerald-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
+                                >
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <CheckCheck className="w-3.5 h-3.5 text-emerald-400/80 group-hover:text-emerald-300 shrink-0" />
+                                    <span className="truncate font-medium text-slate-300 group-hover:text-emerald-200">Tornar TUDO conferido</span>
+                                  </div>
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-emerald-300/80 border border-slate-700/80 group-hover:border-emerald-500/30 group-hover:text-emerald-300 font-bold shrink-0">
+                                    {pendentesCount}
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              );
+            };
+
+            return (
+              <>
+                {/* 1. Setores do Usuário Logado (Primeiro) */}
+                {userSectors.map((sec) => renderSectorItem(sec, true))}
+
+                {/* 2. Linha Divisória para os Demais Setores */}
+                {userSectors.length > 0 && otherSectors.length > 0 && (
+                  <div className="py-2 px-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-px bg-slate-800 flex-1" />
+                      <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+                        Demais Setores
+                      </span>
+                      <div className="h-px bg-slate-800 flex-1" />
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Demais Setores */}
+                {otherSectors.map((sec) => renderSectorItem(sec, false))}
+              </>
             );
-          })}
+          })()}
 
         </div>
 
