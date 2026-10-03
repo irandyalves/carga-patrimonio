@@ -155,12 +155,13 @@ export const formatCurrency = (val, showCurrencyPrefix = false) => {
  * Formata valor de depreciação (se porcentagem mantém %, se número formata com ou sem prefixo R$)
  */
 export const formatDepreciacao = (val, showCurrencyPrefix = false) => {
-  if (val === null || val === undefined || val === '' || val === 0 || val === '0') return '---';
+  if (val === null || val === undefined || val === '' || val === 0 || val === '0') {
+    return showCurrencyPrefix ? 'R$ 0,00' : '0,00';
+  }
   const str = String(val).trim();
   if (str.endsWith('%')) return str;
 
   const num = parseCleanNumber(val);
-  if (num === 0) return str || '---';
   const formatted = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return showCurrencyPrefix ? `R$ ${formatted}` : formatted;
 };
@@ -169,7 +170,7 @@ export const formatDepreciacao = (val, showCurrencyPrefix = false) => {
  * Retorna o valor de depreciação formatado para exibição conforme o modo ('currency' ou 'percent')
  */
 export const getAssetDepreciationDisplay = (asset, mode = 'currency', showCurrencyPrefix = false) => {
-  if (!asset) return '---';
+  if (!asset) return showCurrencyPrefix ? 'R$ 0,00' : '0,00';
   const rawDepr = asset.depreciacao;
   const orig = parseCleanNumber(asset.valorOriginal);
   const atual = parseCleanNumber(asset.valorAtual);
@@ -199,7 +200,7 @@ export const getAssetDepreciationDisplay = (asset, mode = 'currency', showCurren
     if (isPctString) return rawDepr.trim();
     if (pctVal > 0) return `${pctVal}%`;
     if (deprAmount > 0 && orig > 0) return `${Math.round((deprAmount / orig) * 100)}%`;
-    return '---';
+    return '0%';
   } else {
     // Modo moeda (R$)
     if (deprAmount > 0) {
@@ -208,7 +209,7 @@ export const getAssetDepreciationDisplay = (asset, mode = 'currency', showCurren
     if (isPctString && orig > 0 && pctVal > 0) {
       return formatCurrency((orig * pctVal) / 100, showCurrencyPrefix);
     }
-    return '---';
+    return showCurrencyPrefix ? 'R$ 0,00' : '0,00';
   }
 };
 

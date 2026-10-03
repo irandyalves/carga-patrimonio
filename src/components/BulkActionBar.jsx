@@ -3,14 +3,12 @@ import {
   CheckCheck, 
   Building2, 
   X, 
-  ChevronDown, 
-  Laptop
+  ChevronDown
 } from 'lucide-react';
 
 export const BulkActionBar = ({
   selectedCount = 0,
   onClearSelection,
-  onAssignTi,
   onAssignSector,
   sectors = []
 }) => {
@@ -31,7 +29,7 @@ export const BulkActionBar = ({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white animate-in zoom-in-95 duration-300">
+    <div className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white">
       
       {/* Contador de Itens Selecionados */}
       <div className="flex items-center gap-2 shrink-0">
@@ -56,60 +54,49 @@ export const BulkActionBar = ({
 
       <div className="w-px h-5 bg-slate-700 mx-0.5 shrink-0 hidden sm:block" />
 
-      {/* Ações: Atribuir TI e Mudar Setor */}
+      {/* Ação: Mudar Setor do Item */}
       <div className="flex items-center gap-2 shrink-0">
-        
-        {/* BOTÃO PRINCIPAL: ATRIBUIR TI EM 1 CLIQUE */}
-        <button
-          type="button"
-          onClick={onAssignTi}
-          title="Mudar setor de todos os itens selecionados para TI com 1 clique"
-          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-indigo-700 hover:from-cyan-400 hover:to-indigo-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer hover:scale-102 active:scale-95 border border-cyan-300/40 group whitespace-nowrap"
-        >
-          <Laptop className="w-3.5 h-3.5 text-cyan-200 group-hover:animate-pulse" />
-          <span>Atribuir TI ⚡</span>
-        </button>
-
-        {/* DROPDOWN: ATRIBUIR A OUTRO SETOR */}
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsSectorDropdownOpen(!isSectorDropdownOpen)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center gap-1.5 border border-indigo-400/40 transition-all cursor-pointer shadow-lg shadow-indigo-600/30 active:scale-95 whitespace-nowrap"
           >
-            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Mudar Setor</span>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSectorDropdownOpen ? 'rotate-180' : ''}`} />
+            <Building2 className="w-3.5 h-3.5 text-indigo-200" />
+            <span>Mudar Setor do Item</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isSectorDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Menu Suspenso de Setores */}
+          {/* Menu Suspenso de Setores (Limite de 12 itens visíveis antes do scroll) */}
           {isSectorDropdownOpen && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 max-h-72 overflow-y-auto bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 scrollbar-thin scrollbar-thumb-slate-700">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800">
-                Transferir para o Setor:
+            <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 z-50 w-72 max-h-[384px] overflow-y-auto bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150 custom-scroll-auto-hide">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2.5 py-1 border-b border-slate-800 flex items-center justify-between">
+                <span>Transferir para o Setor:</span>
+                <span className="text-[9px] font-mono text-slate-500">{sectors.length} setores</span>
               </div>
-              {sectors.map(sec => (
-                <button
-                  key={sec.id}
-                  type="button"
-                  onClick={() => {
-                    setIsSectorDropdownOpen(false);
-                    onAssignSector(sec.id);
-                  }}
-                  className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-indigo-600/30 hover:text-white text-slate-300 transition-colors cursor-pointer group"
-                >
-                  <span className="font-semibold truncate">{sec.name}</span>
-                  {sec.responsavel && (
-                    <span className="text-[10px] text-slate-500 group-hover:text-indigo-200">
-                      {sec.responsavel}
-                    </span>
-                  )}
-                </button>
-              ))}
+              <div className="space-y-0.5 pt-1">
+                {sectors.map(sec => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => {
+                      setIsSectorDropdownOpen(false);
+                      onAssignSector(sec.id);
+                    }}
+                    className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-indigo-600/30 hover:text-white text-slate-300 transition-colors cursor-pointer group"
+                  >
+                    <span className="font-semibold truncate">{sec.name}</span>
+                    {sec.responsavel && (
+                      <span className="text-[10px] text-slate-400 group-hover:text-indigo-200 truncate ml-2">
+                        {sec.responsavel}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
-
       </div>
 
     </div>

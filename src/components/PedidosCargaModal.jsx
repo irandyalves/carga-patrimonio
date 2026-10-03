@@ -25,6 +25,13 @@ export const PedidosCargaModal = ({
 }) => {
   if (!isOpen) return null;
 
+  const formatDate = (val) => {
+    if (!val) return '';
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return d.toLocaleString('pt-BR');
+  };
+
   const pendingPedidos = pedidos.filter(p => p.status === 'PENDENTE');
   const pastPedidos = pedidos.filter(p => p.status !== 'PENDENTE');
 
@@ -100,50 +107,36 @@ export const PedidosCargaModal = ({
                           <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
                             <span>Solicitado por: <strong className="text-slate-300">{ped.solicitanteNome}</strong></span>
                             <span>•</span>
-                            <span>{ped.dataSolicitacao}</span>
+                            <span>{formatDate(ped.dataSolicitacao)}</span>
                           </div>
                         </div>
 
                         {/* Rota de Transferência Solicitada */}
                         <div className="flex items-center gap-2 text-xs bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-750 shrink-0">
-                          <span className="text-slate-400">{ped.setorOrigemNome}</span>
+                          <span className="text-slate-400 font-medium">De: {ped.setorOrigemNome}</span>
                           <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                           <span className="font-bold text-amber-300">{ped.setorDestinoNome}</span>
                         </div>
                       </div>
 
-                      {/* Motivo e Localização */}
-                      <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
-                        <p className="text-slate-200 italic">
-                          "{ped.motivo}"
-                        </p>
-                        {ped.localizacaoFisica && (
-                          <div className="flex items-center gap-1.5 text-[11px] text-cyan-300 font-medium">
-                            <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                            <span>Local informado: {ped.localizacaoFisica}</span>
-                          </div>
-                        )}
+                      {/* Ações (AUTORIZAR / REJEITAR) */}
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          onClick={() => onRecusarPedido(ped.id)}
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-md shadow-rose-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>REJEITAR</span>
+                        </button>
+
+                        <button
+                          onClick={() => onAprovarPedido(ped)}
+                          className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>AUTORIZAR</span>
+                        </button>
                       </div>
-
-                      {/* Ações (Aprovar / Recusar) */}
-                      {isAdmin && (
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <button
-                            onClick={() => onRecusarPedido(ped.id)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-300 bg-slate-800 hover:bg-rose-950/40 border border-slate-700/60 transition-colors cursor-pointer"
-                          >
-                            Recusar
-                          </button>
-
-                          <button
-                            onClick={() => onAprovarPedido(ped)}
-                            className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Aprovar Transferência</span>
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -164,7 +157,7 @@ export const PedidosCargaModal = ({
                       <div>
                         <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
                         <div className="text-[11px] text-slate-500">
-                          De {ped.setorOrigemNome} para {ped.setorDestinoNome} • {ped.dataSolicitacao}
+                          De: {ped.setorOrigemNome} ➔ {ped.setorDestinoNome} • {formatDate(ped.dataSolicitacao)}
                         </div>
                       </div>
 
