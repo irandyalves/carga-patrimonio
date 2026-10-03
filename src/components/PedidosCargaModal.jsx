@@ -110,8 +110,8 @@ export const PedidosCargaModal = ({
                         </div>
                       </div>
 
-                      {/* Coluna 2: Origem e Destino (Reduzida em 15%: 190px) */}
-                      <div className="w-[190px] min-w-[190px] max-w-[190px] shrink-0 flex items-center justify-center gap-1.5 text-xs md:px-2 md:border-r md:border-slate-800/80 overflow-hidden">
+                      {/* Coluna 2: Origem e Destino (Reduzida em 15%: 190px - Sem borda direita) */}
+                      <div className="w-[190px] min-w-[190px] max-w-[190px] shrink-0 flex items-center justify-center gap-1.5 text-xs md:px-2 overflow-hidden">
                         <span className="text-slate-400 font-medium shrink-0">De:</span>
                         <span className="text-slate-200 font-semibold truncate max-w-[70px] text-center" title={ped.setorOrigemNome}>
                           {ped.setorOrigemNome}
