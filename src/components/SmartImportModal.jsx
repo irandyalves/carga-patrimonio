@@ -335,72 +335,55 @@ export const SmartImportModal = ({
           {step === 'SETUP_AND_UPLOAD' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               
-              {/* O MAIS IMPORTANTE: QUAL SETOR IRÁ JOGAR OS DADOS */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 border border-indigo-500/40 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-indigo-400" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
-                      1. Setor de Destino da Carga
+              {/* 1. SETOR DE DESTINO DA CARGA (COMPACTO, 35% MENOR, TUDO EM UMA LINHA) */}
+              <div className="p-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 border border-indigo-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                
+                {/* Título e Modo: Setor Específico vs Detectar Setor */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
+                      1. Setor:
                     </span>
                   </div>
-                  <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30">
-                    Obrigatório
-                  </span>
+
+                  <div className="flex items-center bg-slate-900/90 p-0.5 rounded-xl border border-slate-700/70 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setTargetSectorMode('SPECIFIC')}
+                      className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        targetSectorMode === 'SPECIFIC'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full ${targetSectorMode === 'SPECIFIC' ? 'bg-white' : 'bg-slate-500'}`} />
+                      <span>SETOR ESPECÍFICO</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setTargetSectorMode('AUTO_DETECT')}
+                      className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        targetSectorMode === 'AUTO_DETECT'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full ${targetSectorMode === 'AUTO_DETECT' ? 'bg-white' : 'bg-slate-500'}`} />
+                      <span>DETECTAR SETOR</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTargetSectorMode('SPECIFIC')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
-                      targetSectorMode === 'SPECIFIC'
-                        ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
-                        : 'bg-slate-800/60 border-slate-700/70 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                      targetSectorMode === 'SPECIFIC' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-500'
-                    }`}>
-                      {targetSectorMode === 'SPECIFIC' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-100">Importar para um Setor Específico</div>
-                      <div className="text-[11px] text-slate-400">Todos os itens serão cadastrados neste setor</div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setTargetSectorMode('AUTO_DETECT')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
-                      targetSectorMode === 'AUTO_DETECT'
-                        ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
-                        : 'bg-slate-800/60 border-slate-700/70 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                      targetSectorMode === 'AUTO_DETECT' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-500'
-                    }`}>
-                      {targetSectorMode === 'AUTO_DETECT' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-100">Detectar Setor pelo Arquivo</div>
-                      <div className="text-[11px] text-slate-400">Usa a coluna "Setor" existente na planilha</div>
-                    </div>
-                  </button>
-                </div>
-
-                {targetSectorMode === 'SPECIFIC' && (
-                  <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <div className="flex-1">
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                        Selecione o Setor:
-                      </label>
+                {/* Seleção de Setor e Botão Novo Setor na mesma linha */}
+                <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+                  {targetSectorMode === 'SPECIFIC' ? (
+                    <>
                       <select
                         value={selectedSectorId}
                         onChange={(e) => setSelectedSectorId(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer font-medium"
+                        className="flex-1 max-w-[280px] bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer font-medium truncate"
                       >
                         {sortedSectors.map(s => (
                           <option key={s.id} value={s.id}>
@@ -408,20 +391,25 @@ export const SmartImportModal = ({
                           </option>
                         ))}
                       </select>
-                    </div>
 
-                    {onOpenManageSectors && (
-                      <button
-                        type="button"
-                        onClick={onOpenManageSectors}
-                        className="sm:mt-5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-indigo-500/30 transition-colors cursor-pointer shrink-0"
-                      >
-                        <FolderPlus className="w-3.5 h-3.5" />
-                        <span>Novo Setor</span>
-                      </button>
-                    )}
-                  </div>
-                )}
+                      {onOpenManageSectors && (
+                        <button
+                          type="button"
+                          onClick={onOpenManageSectors}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 border border-indigo-500/30 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                          title="Cadastrar Novo Setor"
+                        >
+                          <FolderPlus className="w-3.5 h-3.5" />
+                          <span>Novo Setor</span>
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 italic px-2.5 py-1 rounded-xl bg-slate-900/60 border border-slate-800 truncate">
+                      Usa a coluna "Setor" da planilha
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* SEÇÃO LADO A LADO: FORMATOS & ENVIO (ESQUERDA REDUZIDA) + HISTÓRICO (DIREITA) */}
