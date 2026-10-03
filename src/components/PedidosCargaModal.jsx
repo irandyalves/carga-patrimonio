@@ -110,33 +110,37 @@ export const PedidosCargaModal = ({
                         </div>
                       </div>
 
-                      {/* Direita: Rota De/Para + Botões de Ação alinhados */}
-                      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                        {/* Rota */}
-                        <div className="flex items-center gap-2 text-xs bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-750 shadow-inner">
-                          <span className="text-slate-400 font-medium">De: <span className="text-slate-200">{ped.setorOrigemNome}</span></span>
-                          <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          <span className="text-slate-400 font-medium">Para: <strong className="text-amber-300 font-bold">{ped.setorDestinoNome}</strong></span>
+                      {/* Direita: Coluna Rota Origem/Destino (sem borda) + Botões sem ícones */}
+                      <div className="flex items-center gap-4 shrink-0 self-end md:self-center">
+                        {/* Coluna Origem e Destino (Sem borda) */}
+                        <div className="flex items-center gap-1.5 text-xs shrink-0">
+                          <span className="text-slate-400 font-medium">De:</span>
+                          <span className="text-slate-200 font-semibold truncate max-w-[90px]" title={ped.setorOrigemNome}>
+                            {ped.setorOrigemNome}
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mx-0.5" />
+                          <span className="text-slate-400 font-medium">Para:</span>
+                          <strong className="text-amber-300 font-bold truncate max-w-[90px]" title={ped.setorDestinoNome}>
+                            {ped.setorDestinoNome}
+                          </strong>
                         </div>
 
-                        {/* Botões de Ação */}
+                        {/* Botões de Ação (Sem ícones) */}
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => onRecusarPedido(ped.id)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all flex items-center gap-1 cursor-pointer shadow-sm active:scale-95"
+                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95"
                             title="Rejeitar pedido"
                           >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Rejeitar</span>
+                            Rejeitar
                           </button>
 
                           <button
                             onClick={() => onAprovarPedido(ped)}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95"
                             title="Autorizar pedido"
                           >
-                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Autorizar</span>
+                            Autorizar
                           </button>
                         </div>
                       </div>
