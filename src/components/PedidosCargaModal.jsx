@@ -110,23 +110,23 @@ export const PedidosCargaModal = ({
                         </div>
                       </div>
 
-                      {/* Coluna 2: Origem e Destino (com separadores verticais) */}
-                      <div className="flex items-center gap-1.5 text-xs shrink-0 md:px-4 md:border-r md:border-slate-800/80">
-                        <span className="text-slate-400 font-medium">De:</span>
-                        <span className="text-slate-200 font-semibold truncate max-w-[105px]" title={ped.setorOrigemNome}>
+                      {/* Coluna 2: Origem e Destino (Largura fixa e uniforme para todos) */}
+                      <div className="w-56 min-w-[224px] max-w-[224px] shrink-0 flex items-center justify-center gap-1.5 text-xs md:px-3 md:border-r md:border-slate-800/80 overflow-hidden">
+                        <span className="text-slate-400 font-medium shrink-0">De:</span>
+                        <span className="text-slate-200 font-semibold truncate max-w-[85px] text-center" title={ped.setorOrigemNome}>
                           {ped.setorOrigemNome}
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mx-0.5" />
-                        <strong className="text-amber-300 font-bold truncate max-w-[105px]" title={ped.setorDestinoNome}>
+                        <strong className="text-amber-300 font-bold truncate max-w-[85px] text-center" title={ped.setorDestinoNome}>
                           {ped.setorDestinoNome}
                         </strong>
                       </div>
 
-                      {/* Coluna 3: Botões de Ação (Sem ícones) */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Coluna 3: Botões de Ação (Largura fixa e alinhada) */}
+                      <div className="w-44 min-w-[176px] shrink-0 flex items-center justify-end gap-2">
                         <button
                           onClick={() => onRecusarPedido(ped.id)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95"
+                          className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
                           title="Rejeitar pedido"
                         >
                           Rejeitar
@@ -134,7 +134,7 @@ export const PedidosCargaModal = ({
 
                         <button
                           onClick={() => onAprovarPedido(ped)}
-                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95"
+                          className="flex-1 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
                           title="Autorizar pedido"
                         >
                           Autorizar
