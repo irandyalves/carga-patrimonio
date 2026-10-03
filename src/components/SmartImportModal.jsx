@@ -335,7 +335,7 @@ export const SmartImportModal = ({
             <div className="space-y-4 animate-in fade-in duration-150">
               
               {/* 1. SETOR DE DESTINO DA CARGA (COMPACTO, 35% MENOR, TUDO EM UMA LINHA) */}
-              <div className="p-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 border border-indigo-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+              <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 border border-indigo-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                 
                 {/* Título e Modo: Setor Específico vs Detectar Setor */}
                 <div className="flex items-center gap-2 shrink-0">
@@ -346,11 +346,11 @@ export const SmartImportModal = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center bg-slate-900/90 p-0.5 rounded-xl border border-slate-700/70 shrink-0">
+                  <div className="flex items-center bg-slate-900/90 p-0.5 rounded-lg border border-slate-700/70 shrink-0">
                     <button
                       type="button"
                       onClick={() => setTargetSectorMode('SPECIFIC')}
-                      className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         targetSectorMode === 'SPECIFIC'
                           ? 'bg-indigo-600 text-white shadow-xs'
                           : 'text-slate-400 hover:text-slate-200'
@@ -363,7 +363,7 @@ export const SmartImportModal = ({
                     <button
                       type="button"
                       onClick={() => setTargetSectorMode('AUTO_DETECT')}
-                      className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         targetSectorMode === 'AUTO_DETECT'
                           ? 'bg-indigo-600 text-white shadow-xs'
                           : 'text-slate-400 hover:text-slate-200'
@@ -382,7 +382,7 @@ export const SmartImportModal = ({
                       <select
                         value={selectedSectorId}
                         onChange={(e) => setSelectedSectorId(e.target.value)}
-                        className="flex-1 max-w-[280px] bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer font-medium truncate"
+                        className="flex-1 max-w-[280px] bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer font-medium truncate"
                       >
                         {sortedSectors.map(s => (
                           <option key={s.id} value={s.id}>
@@ -395,7 +395,7 @@ export const SmartImportModal = ({
                         <button
                           type="button"
                           onClick={onOpenManageSectors}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 border border-indigo-500/30 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 border border-indigo-500/30 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                           title="Cadastrar Novo Setor"
                         >
                           <FolderPlus className="w-3.5 h-3.5" />
@@ -404,7 +404,7 @@ export const SmartImportModal = ({
                       )}
                     </>
                   ) : (
-                    <span className="text-[10px] text-slate-400 italic px-2.5 py-1 rounded-xl bg-slate-900/60 border border-slate-800 truncate">
+                    <span className="text-[10px] text-slate-400 italic px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800 truncate">
                       Usa a coluna "Setor" da planilha
                     </span>
                   )}
@@ -430,7 +430,7 @@ export const SmartImportModal = ({
                             key={fmt.id}
                             type="button"
                             onClick={() => setSelectedFormat(fmt.id)}
-                            className={`py-1 px-2 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            className={`py-1 px-2 rounded-md border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                               isSelected
                                 ? `${fmt.activeColor} font-bold shadow-xs`
                                 : 'bg-slate-850/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
@@ -456,9 +456,9 @@ export const SmartImportModal = ({
                       onDrop={handleDrop}
                       className={`border-2 border-dashed ${
                         isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
-                      } rounded-xl p-2 px-2.5 flex items-center gap-2 cursor-pointer transition-all group min-h-[64px]`}
+                      } rounded-lg p-2 px-2.5 flex items-center gap-2 cursor-pointer transition-all group min-h-[64px]`}
                     >
-                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
+                      <div className="w-7 h-7 rounded-md bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
                         <UploadCloud className="w-3.5 h-3.5" />
                       </div>
                       <div className="text-left flex-1 min-w-0">
@@ -498,7 +498,7 @@ export const SmartImportModal = ({
                           <button
                             type="button"
                             onClick={() => setHistoryFilterMode('ALL')}
-                            className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer ${
+                            className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-semibold transition-all cursor-pointer ${
                               historyFilterMode === 'ALL'
                                 ? 'bg-indigo-600 text-white shadow-xs'
                                 : 'bg-slate-800 text-slate-400 hover:text-slate-200'
@@ -510,7 +510,7 @@ export const SmartImportModal = ({
                             <button
                               type="button"
                               onClick={() => setHistoryFilterMode('SECTOR')}
-                              className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer truncate max-w-[130px] ${
+                              className={`px-1.5 py-0.5 rounded-md text-[9.5px] font-semibold transition-all cursor-pointer truncate max-w-[130px] ${
                                 historyFilterMode === 'SECTOR'
                                   ? 'bg-indigo-600 text-white shadow-xs'
                                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
@@ -537,7 +537,7 @@ export const SmartImportModal = ({
                   </div>
 
                   {/* Card do Histórico com +15% de Altura e Setor Reduzido em 30% */}
-                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-2 flex-1 flex flex-col min-h-[175px]">
+                  <div className="rounded-xl bg-slate-850/60 border border-slate-800 p-2 flex-1 flex flex-col min-h-[175px]">
                     <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[195px] pr-0.5">
                       {displayedHistory.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-[11px] py-6 gap-1">
@@ -565,7 +565,7 @@ export const SmartImportModal = ({
                             return (
                               <div
                                 key={item.id}
-                                className="p-1.5 px-2 rounded-lg bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 flex flex-col justify-between gap-1 transition-all"
+                                className="p-1.5 px-2 rounded-md bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 flex flex-col justify-between gap-1 transition-all"
                               >
                                 {/* Linha Superior: Nome do Arquivo + Data/Hora */}
                                 <div className="flex items-center justify-between gap-1.5 min-w-0">
@@ -608,7 +608,7 @@ export const SmartImportModal = ({
 
               {/* Erro se houver */}
               {errorMessage && (
-                <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
+                <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMessage}</span>
                 </div>
@@ -621,7 +621,7 @@ export const SmartImportModal = ({
                   <button
                     type="button"
                     onClick={() => exportAssetsToExcel(assets, `Inventario_Patrimonio_${new Date().toISOString().slice(0, 10)}.xlsx`)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
                   >
                     <Download className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Exportar {assets.length} Itens (Excel)</span>
