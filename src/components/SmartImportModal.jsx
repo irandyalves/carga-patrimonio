@@ -101,6 +101,26 @@ export const SmartImportModal = ({
   };
 
   const fileInputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleProcessFile(file);
+    }
+  };
 
   // Setores ordenados
   const sortedSectors = useMemo(() => {
@@ -381,13 +401,13 @@ export const SmartImportModal = ({
                 )}
               </div>
 
-              {/* ESCOLHA DO FORMATO DE ARQUIVO */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+              {/* ESCOLHA DO FORMATO DE ARQUIVO (REDUZIDO PARA 1/3) */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
                   2. Tipo de Arquivo a Importar
                 </label>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {FORMAT_OPTIONS.map(fmt => {
                     const Icon = fmt.icon;
                     const isSelected = selectedFormat === fmt.id;
@@ -396,49 +416,118 @@ export const SmartImportModal = ({
                         key={fmt.id}
                         type="button"
                         onClick={() => setSelectedFormat(fmt.id)}
-                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[72px] ${
+                        className={`py-1.5 px-3 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
                           isSelected
-                            ? `${fmt.activeColor} font-bold shadow-lg`
+                            ? `${fmt.activeColor} font-bold shadow-md`
                             : 'bg-slate-850/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
                         }`}
                       >
-                        <Icon className="w-5 h-5" />
-                        <span className="text-xs font-semibold leading-tight">{fmt.title}</span>
-                        <span className="text-[10px] text-slate-400 font-normal leading-none">{fmt.desc}</span>
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="text-xs font-semibold">{fmt.title}</span>
+                        <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">{fmt.desc}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* ÁREA DE DRAG & DROP / SELEÇÃO DE ARQUIVO */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
-                  3. Selecionar Arquivo
+              {/* 3. SELEÇÃO DE ARQUIVO (ESQUERDA) E HISTÓRICO (DIREITA) */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                  3. Selecionar Arquivo & Histórico
                 </label>
 
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center group"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all mb-2">
-                    <UploadCloud className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-200 group-hover:text-white">
-                    {isLoading ? 'Lendo e analisando colunas do arquivo...' : `Clique para enviar o arquivo (${FORMAT_OPTIONS.find(f => f.id === selectedFormat)?.label})`}
-                  </span>
-                  <span className="text-[11px] text-slate-400 mt-1">
-                    O sistema fará o reconhecimento inteligente de todas as colunas automaticamente
-                  </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Coluna Esquerda: Dropzone / Enviar Arquivo com Ícone na Esquerda */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed ${
+                      isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
+                    } rounded-2xl p-4 flex items-center gap-3.5 cursor-pointer transition-all group min-h-[110px]`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+                    <div className="text-left flex-1 min-w-0">
+                      <span className="text-xs font-bold text-slate-200 group-hover:text-white block leading-snug">
+                        {isLoading ? 'Lendo e analisando arquivo...' : 'Clique para enviar o arquivo ou arraste e solte aqui'}
+                      </span>
+                      <span className="text-[10.5px] text-slate-400 font-mono mt-0.5 block">
+                        Formatos: .xlsx, .xls, .docx, .csv, .txt
+                      </span>
+                    </div>
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.docx,.csv,.txt"
-                    onChange={handleFileInputChange}
-                    disabled={isLoading}
-                    className="hidden"
-                  />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.docx,.csv,.txt"
+                      onChange={handleFileInputChange}
+                      disabled={isLoading}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Coluna Direita: Histórico de Arquivos Importados (Data e Hora à Direita) */}
+                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-3 flex flex-col min-h-[110px]">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                          Histórico de Arquivos
+                        </span>
+                        {importHistory.length > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-slate-800 text-slate-400 font-mono">
+                            {importHistory.length}
+                          </span>
+                        )}
+                      </div>
+                      {importHistory.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearHistory}
+                          className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1"
+                          title="Limpar histórico"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Limpar</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin max-h-[85px] pt-1.5 pr-0.5">
+                      {importHistory.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-center text-slate-500 text-[11px] py-4">
+                          <span>Nenhum arquivo importado recentemente</span>
+                        </div>
+                      ) : (
+                        importHistory.map(item => (
+                          <div
+                            key={item.id}
+                            className="p-1.5 px-2 rounded-lg bg-slate-900/80 border border-slate-800/80 flex items-center justify-between gap-2 text-xs"
+                          >
+                            {/* Nome e Extensão do Arquivo */}
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                              <span className="text-slate-200 font-semibold truncate block max-w-[170px]" title={item.fileName}>
+                                {item.fileName}
+                              </span>
+                            </div>
+
+                            {/* Data e Hora à Direita */}
+                            <div className="shrink-0 text-right">
+                              <span className="font-mono text-[10px] text-slate-400 block whitespace-nowrap">
+                                {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}{' '}
+                                {new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -447,71 +536,6 @@ export const SmartImportModal = ({
                 <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{errorMessage}</span>
-                </div>
-              )}
-
-              {/* Histórico de Arquivos Importados */}
-              {importHistory.length > 0 && (
-                <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-indigo-400" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                        Histórico de Arquivos Importados ({importHistory.length})
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleClearHistory}
-                      className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 font-medium px-2 py-0.5 rounded-md hover:bg-rose-500/10"
-                      title="Limpar histórico de importações"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Limpar Histórico</span>
-                    </button>
-                  </div>
-
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 scrollbar-thin pr-1">
-                    {importHistory.map(item => (
-                      <div
-                        key={item.id}
-                        className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/80 hover:border-indigo-500/30 transition-all flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center shrink-0">
-                            <FileSpreadsheet className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <strong className="text-slate-200 font-semibold truncate block max-w-[260px]" title={item.fileName}>
-                                {item.fileName}
-                              </strong>
-                              {item.fileSize && (
-                                <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                                  ({item.fileSize})
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                              <span className="text-amber-400/90 font-medium truncate max-w-[150px]">
-                                Setor: {item.sectorName}
-                              </span>
-                              <span className="text-slate-600">•</span>
-                              <span className="font-mono text-[10.5px] text-slate-400 shrink-0">
-                                {new Date(item.date).toLocaleString('pt-BR')}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-md font-bold text-[10.5px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
-                            +{item.importedCount} {item.importedCount === 1 ? 'item' : 'itens'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
 
