@@ -1104,7 +1104,7 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 1: Patrimônio */}
-        <div className="w-20 shrink-0 flex items-center gap-1.5 border-r border-slate-800/80 pr-1.5">
+        <div className="w-20 max-w-[80px] shrink-0 flex items-center gap-1 border-r border-slate-800/80 pr-1 overflow-hidden">
           {/* Ícone de Baixa ou Indicador Visual de Conferido em TODOS */}
           {isBaixado ? (
             <button
@@ -1129,8 +1129,8 @@ export const AssetTableRowCard = ({
             </div>
           ) : null}
 
-          <div className="flex items-center">
-            <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none ${
+          <div className="flex items-center truncate">
+            <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none truncate ${
               FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
@@ -1140,7 +1140,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 2: Quantidade */}
         {visibleColumns?.quantidade !== false && (
-          <div className="w-12 shrink-0 flex items-center justify-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1">
+          <div className="w-12 max-w-[48px] shrink-0 flex items-center justify-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1 overflow-hidden">
             <div className="flex items-baseline gap-0.5">
               <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
               <span className={`font-black text-sm sm:text-[15px] leading-none ${
@@ -1154,7 +1154,7 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 3: Item / Descrição (Largura reduzida com flex-1 min-w-[165px]) */}
-        <div className="flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 overflow-visible whitespace-nowrap transition-all border-r border-slate-800/80 pr-2">
+        <div className="flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all border-r border-slate-800/80 pr-2">
           {/* Sinalizador de Patrimônio Duplicado */}
           {duplicateInfo?.isDuplicate && (
             <span 
@@ -1301,7 +1301,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 4: Marca (Fonte 15% menor que Itens - Centralizado) */}
         {visibleColumns?.marca !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center truncate animate-in fade-in duration-150 border-r border-slate-800/80 pr-1.5">
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center truncate animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
             <span className="text-[8.5px] sm:text-[9px] font-semibold text-slate-300 truncate block text-center w-full" title={asset.marca || '---'}>
               <HighlightText text={asset.marca || '---'} query={searchTerm} />
             </span>
@@ -1310,7 +1310,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 5: Modelo (Fonte 15% menor que Itens - Centralizado) */}
         {visibleColumns?.modelo !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center truncate animate-in fade-in duration-150 border-r border-slate-800/80 pr-1.5">
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center truncate animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
             <span className="text-[8.5px] sm:text-[9px] font-medium text-slate-400 truncate block text-center w-full" title={asset.modelo || '---'}>
               <HighlightText text={asset.modelo || '---'} query={searchTerm} />
             </span>
@@ -1319,15 +1319,15 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 6: Localização (Centralizado) */}
         {visibleColumns?.localizacao !== false && (
-          <div className="w-40 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1.5">
+          <div className="w-40 max-w-[160px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
             {isEditingLocation ? (
               <div 
                 ref={locContainerRef}
                 onClick={(e) => e.stopPropagation()} 
-                className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100"
+                className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-hidden"
               >
                 {/* Campo de Entrada e Botão Dropdown */}
-                <div className="relative inline-flex items-center">
+                <div className="relative inline-flex items-center max-w-full">
                   <input
                     type="text"
                     value={locationValue}
@@ -1346,7 +1346,7 @@ export const AssetTableRowCard = ({
                       if (e.key === 'Escape') closeLocEdit();
                     }}
                     placeholder="Selecione ou digite o setor..."
-                    className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[140px] pr-6 shadow-xl text-center"
+                    className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[120px] max-w-[140px] pr-6 shadow-xl text-center truncate"
                     autoFocus
                   />
                   <button
@@ -1400,7 +1400,7 @@ export const AssetTableRowCard = ({
                 </div>
               </div>
             ) : (
-              <div className="inline-flex items-center justify-center gap-0.5 group/loc">
+              <div className="inline-flex items-center justify-center gap-0.5 group/loc max-w-full overflow-hidden">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1411,12 +1411,12 @@ export const AssetTableRowCard = ({
                     }
                   }}
                   title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
-                  className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer text-center"
+                  className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer text-center max-w-full overflow-hidden"
                 >
-                  <span className="truncate max-w-[175px] text-center">
+                  <span className="truncate max-w-[130px] text-center">
                     <HighlightText text={displayLocation} query={searchTerm} />
                   </span>
-                  <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5" />
+                  <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/loc:opacity-100 ml-0.5 shrink-0" />
                 </button>
               </div>
             )}
@@ -1424,15 +1424,15 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 7: Observação (Aumentada para w-[186px] - Centralizado) */}
-        <div className="w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 pr-1.5">
+        <div className="w-[186px] max-w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 px-1 overflow-hidden">
           {isEditingObs ? (
             <div 
               ref={obsContainerRef}
               onClick={(e) => e.stopPropagation()} 
-              className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100"
+              className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-hidden"
             >
               {/* Campo de Entrada e Botão Dropdown */}
-              <div className="relative inline-flex items-center">
+              <div className="relative inline-flex items-center max-w-full">
                 <input
                   type="text"
                   value={obsValue}
@@ -1451,7 +1451,7 @@ export const AssetTableRowCard = ({
                     if (e.key === 'Escape') closeObsEdit();
                   }}
                   placeholder="Ex: Está no Studio..."
-                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[135px] pr-6 shadow-xl"
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 w-[145px] max-w-[145px] pr-6 shadow-xl"
                   autoFocus
                 />
                 <button
@@ -1517,12 +1517,12 @@ export const AssetTableRowCard = ({
               </div>
 
               {/* Botão de Voz */}
-              <div className="inline-flex items-center ml-1.5">
+              <div className="inline-flex items-center ml-1 shrink-0">
                 <button
                   type="button"
                   onClick={startObservationVoice}
                   title="Ditar observação por voz"
-                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
+                  className={`p-1 rounded-lg border transition-all cursor-pointer shadow-sm ${
                     isListeningObs 
                       ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
                       : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
@@ -1534,7 +1534,7 @@ export const AssetTableRowCard = ({
             </div>
           ) : isEmCautela ? (
             <div 
-              className="relative group/cautela inline-block"
+              className="relative group/cautela inline-block max-w-full overflow-hidden"
               onMouseEnter={handleCautelaMouseEnter}
             >
               <button
@@ -1543,11 +1543,11 @@ export const AssetTableRowCard = ({
                   e.stopPropagation();
                   setIsCautelaModalViewOpen(true);
                 }}
-                title="Clique para abrir os detalhes da cautela em um modal"
-                className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer transition-colors"
+                title={`Está com: ${cautelaDestino} (${cautelaPessoa})`}
+                className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-amber-300 hover:text-amber-200 cursor-pointer transition-colors max-w-full overflow-hidden"
               >
                 <Handshake className="w-3 h-3 text-amber-400 shrink-0" />
-                <span className="truncate max-w-[240px]">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
+                <span className="truncate flex-1 min-w-0">Está com: <strong className="text-white">{cautelaDestino}</strong> ({cautelaPessoa})</span>
               </button>
 
               {/* Floating Document Popover on Hover (Posicionamento inteligente: abre para baixo no limite do cabeçalho) */}
@@ -1609,12 +1609,12 @@ export const AssetTableRowCard = ({
             (() => {
               const detected = detectSectorInText(asset.observacao);
               return (
-                <div className="inline-flex items-center gap-1 group/obs">
+                <div className="inline-flex items-center gap-1 group/obs max-w-full overflow-hidden">
                   <button
                     type="button"
                     onClick={(e) => openObsEdit(e)}
-                    title="Clique para editar a observação"
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer ${
+                    title={asset.observacao}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[150px] min-w-0 overflow-hidden ${
                       detected 
                         ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-500/30' 
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white'
@@ -1623,10 +1623,10 @@ export const AssetTableRowCard = ({
                     {detected && (
                       <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
                     )}
-                    <span className="truncate max-w-[160px]" title={asset.observacao}>
+                    <span className="truncate flex-1 min-w-0" title={asset.observacao}>
                       <HighlightText text={asset.observacao} query={searchTerm} />
                     </span>
-                    <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5" />
+                    <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5 shrink-0" />
                   </button>
 
                   <button
@@ -1636,7 +1636,7 @@ export const AssetTableRowCard = ({
                       startObservationVoice(e);
                     }}
                     title="Ditar observação por voz"
-                    className={`p-1 rounded transition-all cursor-pointer ${
+                    className={`p-1 rounded transition-all cursor-pointer shrink-0 ${
                       isListeningObs 
                         ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
@@ -1648,7 +1648,7 @@ export const AssetTableRowCard = ({
               );
             })()
           ) : (
-            <div className="inline-flex items-center justify-center gap-1 group/obs text-center">
+            <div className="inline-flex items-center justify-center gap-1 group/obs text-center max-w-full">
               <button
                 type="button"
                 onClick={(e) => openObsEdit(e)}
@@ -1680,7 +1680,7 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 8: Responsável */}
         {visibleColumns?.responsavel !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1.5">
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
             <div className="truncate w-full text-center">
               <span className="font-semibold text-slate-200 truncate block text-[10px] text-center" title={asset.responsavel}>
                 <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
@@ -1691,8 +1691,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 9: Data de Aquisição */}
         {visibleColumns?.dataAquisicao !== false && (
-          <div className="w-20 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1">
-            <span className="font-medium text-[10px] text-slate-300 text-center block w-full">
+          <div className="w-20 max-w-[80px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
+            <span className="font-medium text-[10px] text-slate-300 text-center block w-full truncate">
               {formatDisplayDate(asset.dataAquisicao || asset.anoAquisicao) || '---'}
             </span>
           </div>
@@ -1700,8 +1700,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 10: Valor Original */}
         {visibleColumns?.valorOriginal !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80">
-            <span className="font-semibold text-slate-400 text-[10px] whitespace-nowrap">
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
+            <span className="font-semibold text-slate-400 text-[10px] whitespace-nowrap truncate">
               {formatCurrency(asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
@@ -1709,8 +1709,8 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 11: Valor Atual */}
         {visibleColumns?.valorAtual !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80">
-            <span className="font-bold text-emerald-400 text-[10.5px] whitespace-nowrap">
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
+            <span className="font-bold text-emerald-400 text-[10.5px] whitespace-nowrap truncate">
               {formatCurrency(asset.valorAtual || asset.valorOriginal, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
@@ -1718,15 +1718,15 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 12: Depreciação */}
         {visibleColumns?.depreciacao !== false && (
-          <div className="w-24 shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80">
-            <span className="font-semibold text-amber-400 text-[10px] whitespace-nowrap" title={String(asset.depreciacao || '')}>
+          <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
+            <span className="font-semibold text-amber-400 text-[10px] whitespace-nowrap truncate" title={String(asset.depreciacao || '')}>
               {getAssetDepreciationDisplay(asset, depreciationMode, appSettings?.showCurrencyPrefix)}
             </span>
           </div>
         )}
 
         {/* Coluna 13: Ações & Conferência movidos para o limite da borda direita */}
-        <div className="w-28 shrink-0 flex items-center justify-center gap-1.5">
+        <div className="w-28 max-w-[112px] shrink-0 flex items-center justify-center gap-1.5 overflow-hidden">
           
           {/* Bloqueado / Conferência / Pedido */}
           {!canManageAsset ? (
