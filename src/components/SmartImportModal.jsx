@@ -316,7 +316,6 @@ export const SmartImportModal = ({
                   Excel • Word • CSV • TXT
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Detecção automática de colunas e importação direta para o setor</p>
             </div>
           </div>
 
@@ -490,7 +489,7 @@ export const SmartImportModal = ({
                     <div className="flex items-center gap-1.5 min-w-0">
                       <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 shrink-0">
-                        Histórico de Arquivos
+                        Histórico
                       </span>
 
                       {/* Filtro Todos vs Deste Setor */}
