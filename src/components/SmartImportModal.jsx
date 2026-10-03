@@ -52,11 +52,22 @@ export const SmartImportModal = ({
   const [selectedSectorId, setSelectedSectorId] = useState(() => activeSectorId || (sectors[0]?.id || ''));
 
   useEffect(() => {
-    if (isOpen && activeSectorId) {
-      setSelectedSectorId(activeSectorId);
-      setTargetSectorMode('SPECIFIC');
+    if (isOpen) {
+      setStep('SETUP_AND_UPLOAD');
+      setSelectedFile(null);
+      setParsedHeaders([]);
+      setParsedRows([]);
+      setColumnMapping({});
+      setErrorMessage('');
+      setIsLoading(false);
+      if (activeSectorId) {
+        setSelectedSectorId(activeSectorId);
+        setTargetSectorMode('SPECIFIC');
+      } else if (sectors.length > 0) {
+        setSelectedSectorId(sectors[0]?.id || '');
+      }
     }
-  }, [isOpen, activeSectorId]);
+  }, [isOpen, activeSectorId, sectors]);
 
   // Formato selecionado no listbox
   const [selectedFormat, setSelectedFormat] = useState('excel');
@@ -202,8 +213,14 @@ export const SmartImportModal = ({
   const acceptedCount = Object.values(columnMapping).filter(c => c.isAccepted && c.targetField).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl lg:max-w-3xl rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] flex flex-col">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-slate-900 border border-slate-800 w-full max-w-2xl lg:max-w-3xl rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4 shrink-0">
