@@ -18,7 +18,8 @@ import {
   Sparkles,
   ChevronDown,
   HelpCircle,
-  FolderPlus
+  FolderPlus,
+  Clock
 } from 'lucide-react';
 import { 
   DB_FIELDS, 
