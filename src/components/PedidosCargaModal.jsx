@@ -37,7 +37,7 @@ export const PedidosCargaModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
@@ -83,59 +83,54 @@ export const PedidosCargaModal = ({
             <>
               {/* Pendentes */}
               {pendingPedidos.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Aguardando Avaliação ({pendingPedidos.length})</span>
-                  </h4>
-
+                <div className="space-y-2.5">
                   {pendingPedidos.map((ped) => (
                     <div 
                       key={ped.id}
-                      className="p-4 rounded-2xl bg-slate-850 border border-amber-500/30 hover:border-amber-500/50 transition-all space-y-3"
+                      className="p-3.5 rounded-2xl bg-slate-850 border border-amber-500/30 hover:border-amber-500/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-750 pb-2.5">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-base font-black text-indigo-400">
-                              {formatLast5Patrimonio(ped.numeroPatrimonio)}
-                            </span>
-                            <span className="text-sm font-semibold text-white">
-                              {ped.descricao}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-                            <span>Solicitado por: <strong className="text-slate-300">{ped.solicitanteNome}</strong></span>
-                            <span>•</span>
-                            <span>{formatDate(ped.dataSolicitacao)}</span>
-                          </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-base font-black text-indigo-400 shrink-0">
+                            {formatLast5Patrimonio(ped.numeroPatrimonio)}
+                          </span>
+                          <span className="text-sm font-semibold text-white truncate" title={ped.descricao}>
+                            {ped.descricao}
+                          </span>
                         </div>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
+                          <span>Solicitado por: <strong className="text-slate-300">{ped.solicitanteNome}</strong></span>
+                          <span>•</span>
+                          <span>{formatDate(ped.dataSolicitacao)}</span>
+                        </div>
+                      </div>
 
-                        {/* Rota de Transferência Solicitada */}
-                        <div className="flex items-center gap-2 text-xs bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-750 shrink-0">
+                      {/* Rota de Transferência Solicitada e Botões de Ação logo abaixo */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 text-xs bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-750 shrink-0">
                           <span className="text-slate-400 font-medium">De: {ped.setorOrigemNome}</span>
                           <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                           <span className="font-bold text-amber-300">{ped.setorDestinoNome}</span>
                         </div>
-                      </div>
 
-                      {/* Ações (AUTORIZAR / REJEITAR) */}
-                      <div className="flex items-center justify-end gap-2 pt-1">
-                        <button
-                          onClick={() => onRecusarPedido(ped.id)}
-                          className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-md shadow-rose-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          <span>REJEITAR</span>
-                        </button>
+                        {/* Ações (REJEITAR / AUTORIZAR) compactas */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onRecusarPedido(ped.id)}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/30 flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                            <span>REJEITAR</span>
+                          </button>
 
-                        <button
-                          onClick={() => onAprovarPedido(ped)}
-                          className="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>AUTORIZAR</span>
-                        </button>
+                          <button
+                            onClick={() => onAprovarPedido(ped)}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-600/30 flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>AUTORIZAR</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
