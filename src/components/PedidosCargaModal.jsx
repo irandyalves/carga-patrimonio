@@ -40,7 +40,7 @@ export const PedidosCargaModal = ({
       <div className="bg-slate-900 border border-slate-800 w-full max-w-4xl rounded-3xl p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
+        <div className="flex items-center justify-between pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center">
               <Inbox className="w-5 h-5" />
@@ -67,6 +67,9 @@ export const PedidosCargaModal = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Linha Divisória Superior: Encosta na borda do modal com gradiente (lado direito 100%) */}
+        <div className="h-[1px] -mx-6 bg-gradient-to-r from-transparent via-slate-800/60 to-slate-700 shrink-0" />
 
         {/* Content List */}
         <div className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-thin">
@@ -147,7 +150,10 @@ export const PedidosCargaModal = ({
 
               {/* Histórico de Pedidos Anteriores */}
               {pastPedidos.length > 0 && (
-                <div className="space-y-2 pt-4 border-t border-slate-800">
+                <div className="space-y-2 pt-3">
+                  {/* Linha Divisória Inferior: Encosta na borda do modal com gradiente (lado direito 100%) */}
+                  <div className="h-[1px] -mx-6 mb-3 bg-gradient-to-r from-transparent via-slate-800/60 to-slate-700 shrink-0" />
+
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Histórico ({pastPedidos.length})
                   </h4>
