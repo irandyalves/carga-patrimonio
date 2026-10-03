@@ -334,17 +334,12 @@ export const SmartImportModal = ({
           {step === 'SETUP_AND_UPLOAD' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               
-              {/* 1. SETOR DE DESTINO DA CARGA (COMPACTO, 35% MENOR, TUDO EM UMA LINHA) */}
+              {/* SETOR DE DESTINO DA CARGA (COMPACTO, TUDO EM UMA LINHA) */}
               <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 border border-indigo-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                 
-                {/* Título e Modo: Setor Específico vs Detectar Setor */}
+                {/* Modo: Setor Específico vs Detectar Setor */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
-                      1. Setor:
-                    </span>
-                  </div>
+                  <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
 
                   <div className="flex items-center bg-slate-900/90 p-0.5 rounded-lg border border-slate-700/70 shrink-0">
                     <button
@@ -416,10 +411,10 @@ export const SmartImportModal = ({
                 
                 {/* LADO ESQUERDO: Botões de Formato (compactos) + Dropzone Esmagada */}
                 <div className="md:col-span-4 flex flex-col gap-2">
-                  {/* 2. Tipo de Arquivo */}
+                  {/* Tipo de Arquivo */}
                   <div className="space-y-1">
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                      2. Tipo de Arquivo
+                      Tipo de Arquivo
                     </label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {FORMAT_OPTIONS.map(fmt => {
@@ -444,10 +439,10 @@ export const SmartImportModal = ({
                     </div>
                   </div>
 
-                  {/* 3. Selecionar Arquivo (Esmagado / Reduzido pela metade) */}
+                  {/* Enviar Arquivo */}
                   <div className="space-y-1">
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                      3. Enviar Arquivo
+                      Enviar Arquivo
                     </label>
                     <div
                       onClick={() => fileInputRef.current?.click()}
