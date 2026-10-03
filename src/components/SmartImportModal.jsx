@@ -299,7 +299,7 @@ export const SmartImportModal = ({
       onClick={handleClose}
     >
       <div 
-        className="bg-slate-900 border border-slate-800 w-full max-w-2xl lg:max-w-3xl rounded-3xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] flex flex-col"
+        className="bg-slate-900 border border-slate-800 w-full max-w-2xl lg:max-w-3xl rounded-3xl p-5 sm:p-6 shadow-2xl relative min-h-[500px] max-h-[94vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         
@@ -412,7 +412,7 @@ export const SmartImportModal = ({
                 </div>
               </div>
 
-              {/* SEÇÃO LADO A LADO: FORMATOS & ENVIO (ESQUERDA REDUZIDA) + HISTÓRICO (DIREITA) */}
+              {/* SEÇÃO LADO A LADO: FORMATOS & ENVIO (ESQUERDA REDUZIDA) + HISTÓRICO (DIREITA EXPANDIDO) */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                 
                 {/* LADO ESQUERDO: Botões de Formato (compactos) + Dropzone Esmagada */}
@@ -457,7 +457,7 @@ export const SmartImportModal = ({
                       onDrop={handleDrop}
                       className={`border-2 border-dashed ${
                         isDragging ? 'border-indigo-400 bg-indigo-500/15' : 'border-slate-700 hover:border-indigo-500/80 bg-slate-850/50 hover:bg-slate-850'
-                      } rounded-xl p-2 px-2.5 flex items-center gap-2 cursor-pointer transition-all group min-h-[58px]`}
+                      } rounded-xl p-2 px-2.5 flex items-center gap-2 cursor-pointer transition-all group min-h-[64px]`}
                     >
                       <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500/20 transition-all shrink-0">
                         <UploadCloud className="w-3.5 h-3.5" />
@@ -483,7 +483,7 @@ export const SmartImportModal = ({
                   </div>
                 </div>
 
-                {/* LADO DIREITO: Histórico de Arquivos começando junto com o topo dos formatos */}
+                {/* LADO DIREITO: Histórico de Arquivos expandido (+15% altura) */}
                 <div className="md:col-span-8 flex flex-col gap-1">
                   {/* Cabeçalho FORA e EM CIMA do Card */}
                   <div className="flex items-center justify-between px-0.5 shrink-0 gap-2 min-h-[18px]">
@@ -538,11 +538,11 @@ export const SmartImportModal = ({
                     )}
                   </div>
 
-                  {/* Card do Histórico com 100% do espaço dedicado à lista */}
-                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-2 flex-1 flex flex-col min-h-[125px]">
-                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[125px] pr-0.5">
+                  {/* Card do Histórico com +15% de Altura e Setor Reduzido em 30% */}
+                  <div className="rounded-2xl bg-slate-850/60 border border-slate-800 p-2 flex-1 flex flex-col min-h-[175px]">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[195px] pr-0.5">
                       {displayedHistory.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-[11px] py-4 gap-1">
+                        <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-[11px] py-6 gap-1">
                           <span>
                             {historyFilterMode === 'SECTOR'
                               ? `Nenhum arquivo importado para "${currentTargetSector?.name || 'este setor'}"`
@@ -583,17 +583,17 @@ export const SmartImportModal = ({
                                   </span>
                                 </div>
 
-                                {/* Linha Inferior: Setor de Destino e Quantidade */}
-                                <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-slate-800/50 text-[9.5px]">
+                                {/* Linha Inferior: Setor de Destino Reduzido em 30% e Quantidade */}
+                                <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-slate-800/50 text-[9px]">
                                   <span 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-indigo-950/70 border border-indigo-800/40 text-indigo-300 font-medium truncate max-w-[140px]" 
+                                    className="inline-flex items-center gap-1 px-1.5 py-[1px] rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium text-[8px] uppercase tracking-wider truncate max-w-[125px]" 
                                     title={`Destino da Carga: ${item.sectorName || 'Setor Geral'}`}
                                   >
-                                    <Building2 className="w-2.5 h-2.5 shrink-0 text-indigo-400" />
+                                    <Building2 className="w-2 h-2 shrink-0 text-indigo-400" />
                                     <span className="truncate">{item.sectorName || 'Setor Geral'}</span>
                                   </span>
                                   {item.importedCount ? (
-                                    <span className="text-slate-400 font-mono text-[9px] shrink-0">
+                                    <span className="text-slate-400 font-mono text-[8.5px] shrink-0">
                                       {item.importedCount} {item.importedCount === 1 ? 'bem' : 'bens'}
                                     </span>
                                   ) : null}
