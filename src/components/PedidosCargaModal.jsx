@@ -113,12 +113,11 @@ export const PedidosCargaModal = ({
                       {/* Coluna 2: Origem e Destino (com separadores verticais) */}
                       <div className="flex items-center gap-1.5 text-xs shrink-0 md:px-4 md:border-r md:border-slate-800/80">
                         <span className="text-slate-400 font-medium">De:</span>
-                        <span className="text-slate-200 font-semibold truncate max-w-[95px]" title={ped.setorOrigemNome}>
+                        <span className="text-slate-200 font-semibold truncate max-w-[105px]" title={ped.setorOrigemNome}>
                           {ped.setorOrigemNome}
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mx-0.5" />
-                        <span className="text-slate-400 font-medium">Para:</span>
-                        <strong className="text-amber-300 font-bold truncate max-w-[95px]" title={ped.setorDestinoNome}>
+                        <strong className="text-amber-300 font-bold truncate max-w-[105px]" title={ped.setorDestinoNome}>
                           {ped.setorDestinoNome}
                         </strong>
                       </div>
