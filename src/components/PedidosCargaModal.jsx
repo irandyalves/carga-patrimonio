@@ -86,12 +86,18 @@ export const PedidosCargaModal = ({
             <>
               {/* Pendentes */}
               {pendingPedidos.length > 0 && (
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 overflow-x-hidden">
                   {pendingPedidos.map((ped) => (
                     <div 
                       key={ped.id}
-                      className="p-3.5 rounded-l-2xl rounded-r-none bg-slate-850/80 hover:bg-slate-850 border-l border-t border-b border-r-0 border-slate-800 hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md"
+                      className="relative p-3.5 pr-6 -mr-6 rounded-l-2xl bg-slate-850/80 hover:bg-slate-850 border-l border-slate-800 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md group overflow-hidden"
                     >
+                      {/* Linha superior com gradiente encostando na borda direita (100%) */}
+                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+
+                      {/* Linha inferior com gradiente encostando na borda direita (100%) */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+
                       {/* Coluna 1: Informações do Bem e Solicitante */}
                       <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
                         <div className="flex items-center gap-2 mb-1">
@@ -150,7 +156,7 @@ export const PedidosCargaModal = ({
 
               {/* Histórico de Pedidos Anteriores */}
               {pastPedidos.length > 0 && (
-                <div className="space-y-2 pt-3">
+                <div className="space-y-2 pt-3 overflow-x-hidden">
                   {/* Linha Divisória Inferior: Encosta na borda do modal com gradiente (lado direito 100%) */}
                   <div className="h-[1px] -mx-6 mb-3 bg-gradient-to-r from-transparent via-slate-800/60 to-slate-700 shrink-0" />
 
@@ -161,8 +167,10 @@ export const PedidosCargaModal = ({
                   {pastPedidos.map(ped => (
                     <div 
                       key={ped.id}
-                      className="p-3 rounded-l-xl rounded-r-none bg-slate-850/50 border-l border-t border-b border-r-0 border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400"
+                      className="relative p-3 pr-6 -mr-6 rounded-l-xl bg-slate-850/50 border-l border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400 overflow-hidden"
                     >
+                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
+                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-slate-800/70 to-slate-700" />
                       <div>
                         <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
                         <div className="text-[11px] text-slate-500">
