@@ -525,13 +525,13 @@ export const SectorSidebar = ({
                                   });
                                 }}
                                 title={`Tornar todos os bens do setor ${sec.name} como PENDENTES`}
-                                className="w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-amber-400 hover:text-amber-200 hover:bg-amber-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20"
+                                className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-amber-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-amber-500/20"
                               >
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <RotateCcw className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-300 shrink-0" />
-                                  <span className="truncate font-semibold">Tornar TUDO pendente</span>
+                                  <RotateCcw className="w-3.5 h-3.5 text-amber-400/80 group-hover:text-amber-300 shrink-0" />
+                                  <span className="truncate font-medium text-slate-300 group-hover:text-amber-200">Tornar TUDO pendente</span>
                                 </div>
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold shrink-0">
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-amber-300/80 border border-slate-700/80 group-hover:border-amber-500/30 group-hover:text-amber-300 font-bold shrink-0">
                                   {conferidosCount}
                                 </span>
                               </button>
@@ -550,13 +550,13 @@ export const SectorSidebar = ({
                                   });
                                 }}
                                 title={`Tornar todos os bens do setor ${sec.name} como CONFERIDOS`}
-                                className="w-full px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/30 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
+                                className="w-full px-2 py-1 rounded-md text-[11px] font-medium flex items-center justify-between text-slate-300 hover:text-emerald-200 hover:bg-slate-800/60 transition-colors cursor-pointer text-left group border border-transparent hover:border-emerald-500/20"
                               >
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 shrink-0" />
-                                  <span className="truncate font-semibold">Tornar TUDO conferido</span>
+                                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400/80 group-hover:text-emerald-300 shrink-0" />
+                                  <span className="truncate font-medium text-slate-300 group-hover:text-emerald-200">Tornar TUDO conferido</span>
                                 </div>
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-emerald-300/80 border border-slate-700/80 group-hover:border-emerald-500/30 group-hover:text-emerald-300 font-bold shrink-0">
                                   {pendentesCount}
                                 </span>
                               </button>
