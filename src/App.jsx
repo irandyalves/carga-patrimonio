@@ -2643,7 +2643,7 @@ export function App() {
                     </div>
 
                     {/* Coluna 7: Motivo do Recolhimento */}
-                    <div className="w-60 shrink-0 flex items-center justify-start">
+                    <div className="w-60 shrink-0 flex items-center justify-center text-center">
                       <span>Motivo (Recolhimento)</span>
                     </div>
 

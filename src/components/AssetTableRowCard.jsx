@@ -98,6 +98,100 @@ const FONT_COLOR_MAP = {
   }
 };
 
+// Componente Inteligente de Descrição: Só exibe o (i) se o texto estiver realmente truncado (...) e revela de cima para baixo
+const DescriptionWithReveal = ({ text, colorClass, searchTerm, isDtin = false }) => {
+  const textRef = useRef(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const checkOverflow = () => {
+      setIsOverflowing(el.scrollWidth > el.clientWidth + 1);
+    };
+    checkOverflow();
+    const t = setTimeout(checkOverflow, 80);
+    window.addEventListener('resize', checkOverflow);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [text]);
+
+  return (
+    <div className="flex items-center gap-1.5 flex-1 min-w-0 relative">
+      <h4
+        ref={textRef}
+        onClick={(e) => {
+          if (isOverflowing) {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }
+        }}
+        className={`text-[10px] sm:text-[10.5px] font-semibold transition-colors truncate whitespace-nowrap ${
+          isOverflowing ? 'cursor-pointer hover:underline' : 'cursor-default'
+        } ${colorClass}`}
+        title={isOverflowing ? "Clique para ver a descrição completa" : text}
+      >
+        <HighlightText text={text} query={searchTerm} />
+      </h4>
+
+      {/* Ícone de informações: Só aparece se houver reticências (...) / overflow real */}
+      {isOverflowing && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className={`p-1 rounded-md border transition-all cursor-pointer shadow-sm shrink-0 flex items-center justify-center ${
+            isDtin
+              ? 'text-cyan-400 hover:text-cyan-200 hover:bg-cyan-500/20 bg-cyan-500/10 border-cyan-500/30'
+              : 'text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 bg-indigo-500/10 border-indigo-500/30'
+          }`}
+          title="Clique para ver a descrição completa"
+        >
+          <Info className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Revelação suave de cima para baixo sobre tudo */}
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute left-0 top-0 z-50 min-w-[340px] max-w-2xl bg-slate-900/98 backdrop-blur-xl border border-cyan-500/50 shadow-2xl rounded-lg p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150"
+          >
+            <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-800 mb-2">
+              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+                <Info className="w-3 h-3" /> Descrição Completa do Item
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p className="text-xs sm:text-sm font-semibold text-slate-100 leading-relaxed break-words select-all">
+              <HighlightText text={text} query={searchTerm} />
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 export const AssetTableRowCard = ({
   asset,
   activeSector,
@@ -147,7 +241,7 @@ export const AssetTableRowCard = ({
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
   const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
-  const [isMotivoModalOpen, setIsMotivoModalOpen] = useState(false);
+  const [isMotivoOpen, setIsMotivoOpen] = useState(false);
   const [showModalReturnConfirm, setShowModalReturnConfirm] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
@@ -299,7 +393,7 @@ export const AssetTableRowCard = ({
       if (e.key === 'Escape') {
         setIsBaixaResumoOpen(false);
         setIsDtinResumoOpen(false);
-        setIsMotivoModalOpen(false);
+        setIsMotivoOpen(false);
         setIsDescModalOpen(false);
         setIsCautelaModalViewOpen(false);
         setIsColorPickerOpen(false);
@@ -657,34 +751,14 @@ export const AssetTableRowCard = ({
             </span>
           </div>
 
-          {/* Coluna 2: Item / Descrição (+20% largura) */}
-          <div className="flex-1 min-w-[270px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-            <h4 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDescModalOpen(true);
-              }}
-              className={`text-[10px] sm:text-[10.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
-                FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-cyan-300'
-              }`}
-              title="Clique para ver a descrição completa no modal"
-            >
-              <HighlightText text={asset.descricao} query={searchTerm} />
-            </h4>
-
-            {isDescLong && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsDescModalOpen(true);
-                }}
-                className="p-1 rounded-lg text-cyan-400 hover:text-cyan-200 hover:bg-cyan-500/20 bg-cyan-500/10 border border-cyan-500/30 transition-all cursor-pointer shadow-sm shrink-0"
-                title="Clique para ver a descrição completa no modal"
-              >
-                <Info className="w-3 h-3" />
-              </button>
-            )}
+          {/* Coluna 2: Item / Descrição (+20% largura com revelação suave e detecção real de reticências) */}
+          <div className="flex-1 min-w-[270px] shrink-0 flex items-center overflow-visible">
+            <DescriptionWithReveal 
+              text={asset.descricao} 
+              colorClass={FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-cyan-300'}
+              searchTerm={searchTerm}
+              isDtin={true}
+            />
           </div>
 
           {/* Coluna 3: Marca */}
@@ -715,20 +789,63 @@ export const AssetTableRowCard = ({
             </span>
           </div>
 
-          {/* Coluna 7: Motivo do Recolhimento (+20% largura, Clicável para abrir modal com motivo completo) */}
-          <div className="w-60 shrink-0 flex items-center justify-start text-left truncate">
-            <div 
+          {/* Coluna 7: Motivo do Recolhimento (Centralizado e com Revelação Suave de Cima para Baixo) */}
+          <div className="w-60 shrink-0 flex items-center justify-center text-center relative overflow-visible">
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsMotivoModalOpen(true);
+                setIsMotivoOpen(!isMotivoOpen);
               }}
-              className="w-full flex items-center justify-start truncate cursor-pointer group/motivo"
-              title="Clique para ver o motivo completo do envio/recolhimento"
+              className="max-w-full flex items-center justify-center truncate cursor-pointer group/motivo focus:outline-none"
+              title="Clique para ver o motivo completo"
             >
               <span className="text-xs font-medium text-cyan-300/90 truncate bg-cyan-950/40 group-hover/motivo:bg-cyan-900/60 group-hover/motivo:text-cyan-200 px-2 py-0.5 rounded border border-cyan-500/30 group-hover/motivo:border-cyan-400 transition-all max-w-full">
                 <HighlightText text={asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'} query={searchTerm} />
               </span>
-            </div>
+            </button>
+
+            {/* Cortina / Dropdown revelado suavemente de cima para baixo a partir do limite superior do card */}
+            {isMotivoOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMotivoOpen(false);
+                  }} 
+                />
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-0 left-1/2 -translate-x-1/2 z-50 min-w-[280px] max-w-sm bg-slate-900/98 backdrop-blur-xl border border-cyan-500/50 shadow-2xl rounded-lg p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+                    <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                      <Server className="w-3.5 h-3.5" />
+                      <span>Motivo do Recolhimento</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsMotivoOpen(false)}
+                      className="p-1 rounded text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <p className="text-xs sm:text-sm font-semibold text-cyan-200 leading-relaxed whitespace-pre-wrap select-all bg-cyan-950/40 p-2.5 rounded-md border border-cyan-500/30">
+                    {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
+                  </p>
+
+                  {asset.dadosDtin?.observacoes && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-800/80">
+                      <span className="text-[10px] text-slate-400 block font-medium mb-0.5">Observações:</span>
+                      <p className="text-xs text-slate-300 leading-snug">{asset.dadosDtin.observacoes}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Coluna 8: Quem Mandou (Centralizado) */}
@@ -745,11 +862,24 @@ export const AssetTableRowCard = ({
             </span>
           </div>
 
-          {/* Coluna 10: Doc (Ícone de documento/PDF) */}
+          {/* Coluna 10: Doc (Cinza/desabilitado se não tiver doc, Colorido/ativo se tiver doc) */}
           <div className="w-14 shrink-0 flex items-center justify-center">
             {(() => {
               const hasAnexos = asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0;
-              const firstUrl = hasAnexos ? asset.dadosDtin.anexos[0].url : (asset.dadosDtin?.documentoUrl || null);
+              const directUrl = asset.dadosDtin?.documentoUrl || asset.documentoUrl || null;
+              const hasDoc = hasAnexos || (!!directUrl && (typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('data:'))));
+              const firstUrl = hasAnexos ? asset.dadosDtin.anexos[0].url : directUrl;
+
+              if (!hasDoc) {
+                return (
+                  <div
+                    title="Nenhum documento anexado"
+                    className="p-1.5 rounded-lg border border-slate-800/60 bg-slate-900/30 text-slate-600 cursor-not-allowed opacity-40 shadow-none flex items-center justify-center select-none"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-600" />
+                  </div>
+                );
+              }
 
               return (
                 <button
@@ -762,14 +892,10 @@ export const AssetTableRowCard = ({
                       setIsDtinResumoOpen(true);
                     }
                   }}
-                  title={hasAnexos ? `Abrir documento/PDF (${asset.dadosDtin.anexos[0].nome || 'Anexo'})` : "Ver detalhes / anexos do envio DTIN"}
-                  className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 ${
-                    hasAnexos
-                      ? 'bg-rose-500/20 hover:bg-rose-500/35 border-rose-500/40 text-rose-400 hover:text-rose-200 shadow-rose-950/40'
-                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400 hover:text-slate-200'
-                  }`}
+                  title={hasAnexos ? `Abrir documento/PDF (${asset.dadosDtin.anexos[0].nome || 'Anexo'})` : "Abrir documento anexado"}
+                  className="p-1.5 rounded-lg border border-rose-500/50 bg-gradient-to-br from-rose-500/20 via-orange-500/20 to-amber-500/20 text-rose-300 hover:text-white hover:border-rose-400 hover:from-rose-500/35 hover:to-orange-500/35 transition-all cursor-pointer shadow-md shadow-rose-950/40 flex items-center justify-center hover:scale-110 active:scale-95"
                 >
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-3.5 h-3.5 text-rose-400 drop-shadow" />
                 </button>
               );
             })()}
@@ -1040,19 +1166,6 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 3: Item / Descrição (Largura reduzida em 30% e fonte reduzida em 20%) */}
         <div className="flex-1 min-w-[240px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all">
-          <h4 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDescModalOpen(true);
-            }}
-            className={`text-[10px] sm:text-[10.5px] font-semibold transition-colors truncate whitespace-nowrap cursor-pointer ${
-              FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'
-            }`}
-            title="Clique para ver a descrição completa no modal"
-          >
-            <HighlightText text={asset.descricao} query={searchTerm} />
-          </h4>
-
           {/* Sinalizador de Patrimônio Duplicado */}
           {duplicateInfo?.isDuplicate && (
             <span 
@@ -1089,19 +1202,12 @@ export const AssetTableRowCard = ({
             </div>
           )}
 
-          {isDescLong && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDescModalOpen(true);
-              }}
-              className="p-1 rounded-lg text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shadow-sm shrink-0"
-              title="Clique para ver a descrição completa no modal"
-            >
-              <Info className="w-3 h-3" />
-            </button>
-          )}
+          <DescriptionWithReveal 
+            text={asset.descricao} 
+            colorClass={FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'}
+            searchTerm={searchTerm}
+            isDtin={false}
+          />
         </div>
 
         {/* Coluna 4: Marca (Fonte 15% menor que Itens) */}
@@ -2193,14 +2299,8 @@ export const AssetTableRowCard = ({
           </div>
         </div>
 
-        {/* Linha 2: Descrição com Reticências + Ícone de Informação (i) para Abrir Modal Completo */}
-        <div 
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsDescModalOpen(true);
-          }}
-          className="flex items-center justify-between gap-1.5 cursor-pointer active:opacity-80 group/mdesc py-0.5"
-        >
+        {/* Linha 2: Descrição com Detecção Real de Truncamento e Revelação */}
+        <div className="flex items-center justify-between gap-1.5 py-0.5 min-w-0">
           {duplicateInfo?.isDuplicate && (
             <span 
               title={`⚠️ Duplicado: ${duplicateInfo.itemSector} vs ${duplicateInfo.otherSectors.join(', ')}`}
@@ -2211,23 +2311,12 @@ export const AssetTableRowCard = ({
             </span>
           )}
 
-          <p className={`text-[11.5px] font-medium leading-tight truncate whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0 ${
-            FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'
-          }`} title={asset.descricao}>
-            <HighlightText text={asset.descricao} query={searchTerm} />
-          </p>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDescModalOpen(true);
-            }}
-            className="p-1 rounded-md text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 bg-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer shrink-0 shadow-sm flex items-center gap-0.5"
-            title="Ver detalhes completos (descrição, marca e modelo)"
-          >
-            <Info className="w-3 h-3" />
-          </button>
+          <DescriptionWithReveal 
+            text={asset.descricao} 
+            colorClass={FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'}
+            searchTerm={searchTerm}
+            isDtin={false}
+          />
         </div>
 
         {/* Avisos Compactos de Cautela / DTIN quando houver */}
@@ -3111,116 +3200,6 @@ export const AssetTableRowCard = ({
                   setIsDtinResumoOpen(false);
                 }}
                 className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Suspenso: Motivo Completo do Recolhimento / DTIN */}
-      {isMotivoModalOpen && (
-        <div 
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsMotivoModalOpen(false);
-          }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="bg-slate-900 border border-cyan-500/30 w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 space-y-4 text-left"
-          >
-            {/* Cabeçalho */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/30">
-                  <Server className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm sm:text-base">Motivo do Recolhimento / DTIN</h3>
-                  <span className="text-[10px] text-slate-400">Equipamento em processo de suporte/TI</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMotivoModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Identificação do Bem */}
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] text-slate-400 block font-medium">Patrimônio</span>
-                <span className="text-xl font-black font-mono text-cyan-400">{formattedXX}</span>
-              </div>
-              <div className="text-right min-w-0 flex-1">
-                <span className="text-[10px] text-slate-400 block font-medium">Setor de Origem</span>
-                <span className="text-xs font-bold text-slate-200 truncate block">{asset.dadosDtin?.setorOrigemNome || asset.setorNome || '---'}</span>
-              </div>
-            </div>
-
-            {/* Descrição do Bem */}
-            <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-              <span className="text-[10px] text-slate-400 block font-medium mb-1">Item</span>
-              <p className="text-xs text-slate-200 leading-snug font-medium">{asset.descricao}</p>
-            </div>
-
-            {/* Motivo Completo em Destaque */}
-            <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 space-y-1.5">
-              <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider block">
-                Motivo / Finalidade
-              </span>
-              <p className="text-sm font-semibold text-cyan-200 leading-relaxed whitespace-pre-wrap">
-                {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
-              </p>
-            </div>
-
-            {/* Observações / Procedimentos Adicionais se houver */}
-            {asset.dadosDtin?.observacoes && (
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 uppercase font-medium tracking-wider block">
-                  Observações Técnicas
-                </span>
-                <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
-                  {asset.dadosDtin.observacoes}
-                </p>
-              </div>
-            )}
-
-            {/* Dados do Envio */}
-            <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-              <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Quem enviou</span>
-                <span className="text-xs font-semibold text-slate-200">{asset.dadosDtin?.responsavel || 'Santana'}</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Data do Envio</span>
-                <span className="text-xs font-mono font-medium text-slate-200">{asset.dadosDtin?.data || '---'}</span>
-              </div>
-            </div>
-
-            {/* Rodapé */}
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMotivoModalOpen(false);
-                  setIsDtinResumoOpen(true);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Ver Resumo Completo
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsMotivoModalOpen(false)}
-                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Fechar
               </button>
