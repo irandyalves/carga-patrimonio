@@ -93,6 +93,8 @@ export const SmartImportModal = ({
     }
   });
 
+  const [historyFilterMode, setHistoryFilterMode] = useState('ALL'); // 'ALL' | 'SECTOR'
+
   const handleClearHistory = (e) => {
     e?.stopPropagation?.();
     setImportHistory([]);
@@ -131,6 +133,25 @@ export const SmartImportModal = ({
   const currentTargetSector = useMemo(() => {
     return sectors.find(s => s.id === selectedSectorId) || sectors[0] || null;
   }, [sectors, selectedSectorId]);
+
+  // Histórico por setor atual vs todos
+  const sectorHistoryCount = useMemo(() => {
+    if (!currentTargetSector) return 0;
+    return importHistory.filter(h => 
+      h.sectorId === currentTargetSector.id ||
+      (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
+    ).length;
+  }, [importHistory, currentTargetSector]);
+
+  const displayedHistory = useMemo(() => {
+    if (historyFilterMode === 'SECTOR' && currentTargetSector) {
+      return importHistory.filter(h => 
+        h.sectorId === currentTargetSector.id ||
+        (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
+      );
+    }
+    return importHistory;
+  }, [importHistory, historyFilterMode, currentTargetSector]);
 
   if (!isOpen) return null;
 
@@ -249,6 +270,7 @@ export const SmartImportModal = ({
         fileName: selectedFile?.name || 'Arquivo_Importado',
         fileSize: selectedFile?.size ? (selectedFile.size > 1024 * 1024 ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(selectedFile.size / 1024)} KB`) : '',
         format: selectedFormat?.toUpperCase() || 'EXCEL',
+        sectorId: targetSectorMode === 'SPECIFIC' ? (currentTargetSector?.id || selectedSectorId) : 'AUTO',
         sectorName: targetSectorMode === 'SPECIFIC' ? (currentTargetSector?.name || 'Setor Específico') : 'Detectado por Coluna',
         importedCount: finalAssets.length,
         date: new Date().toISOString()
@@ -471,25 +493,52 @@ export const SmartImportModal = ({
                     />
                   </div>
 
-                  {/* Coluna Direita: Histórico de Arquivos em 2 Colunas (Compacto, exibe 6+ itens) */}
-                  <div className="md:col-span-8 rounded-2xl bg-slate-850/60 border border-slate-800 p-2.5 flex flex-col min-h-[105px]">
-                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                          Histórico de Arquivos
+                  {/* Coluna Direita: Histórico de Arquivos em 2 Colunas com Destino por Setor */}
+                  <div className="md:col-span-8 rounded-2xl bg-slate-850/60 border border-slate-800 p-2.5 flex flex-col min-h-[115px]">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0 gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 shrink-0">
+                          Histórico
                         </span>
+                        
+                        {/* Filtro Todos vs Deste Setor */}
                         {importHistory.length > 0 && (
-                          <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-slate-800 text-slate-400 font-mono">
-                            {importHistory.length}
-                          </span>
+                          <div className="flex items-center gap-1 ml-1">
+                            <button
+                              type="button"
+                              onClick={() => setHistoryFilterMode('ALL')}
+                              className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer ${
+                                historyFilterMode === 'ALL'
+                                  ? 'bg-indigo-600 text-white shadow-xs'
+                                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                              }`}
+                            >
+                              Todos ({importHistory.length})
+                            </button>
+                            {currentTargetSector && (
+                              <button
+                                type="button"
+                                onClick={() => setHistoryFilterMode('SECTOR')}
+                                className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold transition-all cursor-pointer truncate max-w-[130px] ${
+                                  historyFilterMode === 'SECTOR'
+                                    ? 'bg-indigo-600 text-white shadow-xs'
+                                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                                }`}
+                                title={`Filtrar apenas arquivos do setor ${currentTargetSector.name}`}
+                              >
+                                {currentTargetSector.name.split(' ')[0]} ({sectorHistoryCount})
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
+
                       {importHistory.length > 0 && (
                         <button
                           type="button"
                           onClick={handleClearHistory}
-                          className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1"
+                          className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                           title="Limpar histórico"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -498,36 +547,63 @@ export const SmartImportModal = ({
                       )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[90px] pt-1.5 pr-0.5">
-                      {importHistory.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-center text-slate-500 text-[11px] py-3">
-                          <span>Nenhum arquivo importado recentemente</span>
+                    <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[110px] pt-1.5 pr-0.5">
+                      {displayedHistory.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 text-[11px] py-4 gap-1">
+                          <span>
+                            {historyFilterMode === 'SECTOR'
+                              ? `Nenhum arquivo importado para "${currentTargetSector?.name || 'este setor'}"`
+                              : 'Nenhum arquivo importado recentemente'}
+                          </span>
+                          {historyFilterMode === 'SECTOR' && importHistory.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setHistoryFilterMode('ALL')}
+                              className="text-[10px] text-indigo-400 hover:underline cursor-pointer"
+                            >
+                              Ver todos os {importHistory.length} arquivos
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                          {importHistory.map(item => {
+                          {displayedHistory.map(item => {
                             const ext = item.fileName?.split('.').pop()?.toLowerCase();
                             const HistoryIcon = ext === 'docx' ? FileText : (ext === 'csv' ? FileCode : (ext === 'txt' ? File : FileSpreadsheet));
 
                             return (
                               <div
                                 key={item.id}
-                                className="p-1 px-2 rounded-lg bg-slate-900/85 hover:bg-slate-900 border border-slate-800/80 flex items-center justify-between gap-1.5 text-xs transition-colors"
+                                className="p-1.5 px-2 rounded-lg bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 flex flex-col justify-between gap-1 transition-all"
                               >
-                                {/* Nome e Extensão do Arquivo */}
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                  <HistoryIcon className="w-3 h-3 text-indigo-400 shrink-0" />
-                                  <span className="text-slate-200 font-medium text-[10.5px] truncate block" title={item.fileName}>
-                                    {item.fileName}
-                                  </span>
-                                </div>
-
-                                {/* Data e Hora à Direita */}
-                                <div className="shrink-0 text-right">
-                                  <span className="font-mono text-[9px] text-slate-400 block whitespace-nowrap">
+                                {/* Linha Superior: Nome do Arquivo + Data/Hora */}
+                                <div className="flex items-center justify-between gap-1.5 min-w-0">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <HistoryIcon className="w-3 h-3 text-indigo-400 shrink-0" />
+                                    <span className="text-slate-200 font-semibold text-[11px] truncate block" title={item.fileName}>
+                                      {item.fileName}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono text-[9px] text-slate-400 whitespace-nowrap shrink-0">
                                     {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}{' '}
                                     {new Date(item.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
+                                </div>
+
+                                {/* Linha Inferior: Setor de Destino e Quantidade */}
+                                <div className="flex items-center justify-between gap-1 pt-0.5 border-t border-slate-800/50 text-[9.5px]">
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-indigo-950/70 border border-indigo-800/40 text-indigo-300 font-medium truncate max-w-[140px]" 
+                                    title={`Destino da Carga: ${item.sectorName || 'Setor Geral'}`}
+                                  >
+                                    <Building2 className="w-2.5 h-2.5 shrink-0 text-indigo-400" />
+                                    <span className="truncate">{item.sectorName || 'Setor Geral'}</span>
+                                  </span>
+                                  {item.importedCount ? (
+                                    <span className="text-slate-400 font-mono text-[9px] shrink-0">
+                                      {item.importedCount} {item.importedCount === 1 ? 'bem' : 'bens'}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                             );
