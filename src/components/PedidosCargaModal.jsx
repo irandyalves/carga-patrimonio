@@ -90,64 +90,66 @@ export const PedidosCargaModal = ({
                   {pendingPedidos.map((ped) => (
                     <div 
                       key={ped.id}
-                      className="relative p-3.5 pr-6 -mr-6 rounded-l-2xl bg-slate-850/80 hover:bg-slate-850 border-l border-slate-800 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md group overflow-hidden"
+                      className="relative p-3.5 pr-6 -mr-6 rounded-l-2xl transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md group overflow-hidden"
                     >
-                      {/* Linha superior com gradiente (100% transparente na direita) */}
-                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
+                      {/* Borda unificada contínua (esquerda, cantos arredondados, topo e base) desvanecendo para 100% transparente na direita */}
+                      <div 
+                        className="absolute inset-0 rounded-l-2xl border-l-2 border-t border-b border-r-0 border-slate-700 bg-slate-850/90 pointer-events-none [mask-image:linear-gradient(to_right,black_0%,black_35%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_0%,black_35%,transparent_100%)]" 
+                      />
 
-                      {/* Linha inferior com gradiente (100% transparente na direita) */}
-                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
-
-                      {/* Coluna 1: Informações do Bem e Solicitante */}
-                      <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-xs font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md shrink-0">
-                            {formatLast5Patrimonio(ped.numeroPatrimonio)}
-                          </span>
-                          <span className="text-sm font-bold text-slate-100 truncate block" title={ped.descricao}>
-                            {ped.descricao}
-                          </span>
+                      {/* Conteúdo do Card */}
+                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
+                        {/* Coluna 1: Informações do Bem e Solicitante */}
+                        <div className="flex-1 min-w-0 md:pr-4 md:border-r md:border-slate-800/80">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs font-black text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md shrink-0">
+                              {formatLast5Patrimonio(ped.numeroPatrimonio)}
+                            </span>
+                            <span className="text-sm font-bold text-slate-100 truncate block" title={ped.descricao}>
+                              {ped.descricao}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <span className="flex items-center gap-1 truncate">
+                              <User className="w-3 h-3 text-slate-500 shrink-0" />
+                              <span>Solicitado por:</span>
+                              <strong className="text-slate-300 font-medium">{ped.solicitanteNome}</strong>
+                            </span>
+                            <span className="text-slate-600">•</span>
+                            <span className="text-slate-400 font-mono text-[11px] shrink-0">{formatDate(ped.dataSolicitacao)}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400">
-                          <span className="flex items-center gap-1 truncate">
-                            <User className="w-3 h-3 text-slate-500 shrink-0" />
-                            <span>Solicitado por:</span>
-                            <strong className="text-slate-300 font-medium">{ped.solicitanteNome}</strong>
+
+                        {/* Coluna 2: Origem e Destino (Reduzida em 15%: 190px - Sem borda direita) */}
+                        <div className="w-[190px] min-w-[190px] max-w-[190px] shrink-0 flex items-center justify-center gap-1.5 text-xs md:px-2 overflow-hidden">
+                          <span className="text-slate-400 font-medium shrink-0">De:</span>
+                          <span className="text-slate-200 font-semibold truncate max-w-[70px] text-center" title={ped.setorOrigemNome}>
+                            {ped.setorOrigemNome}
                           </span>
-                          <span className="text-slate-600">•</span>
-                          <span className="text-slate-400 font-mono text-[11px] shrink-0">{formatDate(ped.dataSolicitacao)}</span>
+                          <ArrowRight className="w-3 h-3 text-amber-400 shrink-0 mx-0.5" />
+                          <strong className="text-amber-300 font-bold truncate max-w-[70px] text-center" title={ped.setorDestinoNome}>
+                            {ped.setorDestinoNome}
+                          </strong>
                         </div>
-                      </div>
 
-                      {/* Coluna 2: Origem e Destino (Reduzida em 15%: 190px - Sem borda direita) */}
-                      <div className="w-[190px] min-w-[190px] max-w-[190px] shrink-0 flex items-center justify-center gap-1.5 text-xs md:px-2 overflow-hidden">
-                        <span className="text-slate-400 font-medium shrink-0">De:</span>
-                        <span className="text-slate-200 font-semibold truncate max-w-[70px] text-center" title={ped.setorOrigemNome}>
-                          {ped.setorOrigemNome}
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-amber-400 shrink-0 mx-0.5" />
-                        <strong className="text-amber-300 font-bold truncate max-w-[70px] text-center" title={ped.setorDestinoNome}>
-                          {ped.setorDestinoNome}
-                        </strong>
-                      </div>
+                        {/* Coluna 3: Botões de Ação (Largura fixa e alinhada) */}
+                        <div className="w-44 min-w-[176px] shrink-0 flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => onRecusarPedido(ped.id)}
+                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
+                            title="Rejeitar pedido"
+                          >
+                            Rejeitar
+                          </button>
 
-                      {/* Coluna 3: Botões de Ação (Largura fixa e alinhada) */}
-                      <div className="w-44 min-w-[176px] shrink-0 flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onRecusarPedido(ped.id)}
-                          className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-600 border border-rose-500/30 hover:border-rose-600 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
-                          title="Rejeitar pedido"
-                        >
-                          Rejeitar
-                        </button>
-
-                        <button
-                          onClick={() => onAprovarPedido(ped)}
-                          className="flex-1 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
-                          title="Autorizar pedido"
-                        >
-                          Autorizar
-                        </button>
+                          <button
+                            onClick={() => onAprovarPedido(ped)}
+                            className="flex-1 py-1.5 rounded-xl text-xs font-bold text-emerald-300 hover:text-slate-950 bg-emerald-500/20 hover:bg-emerald-400 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer shadow-sm active:scale-95 text-center"
+                            title="Autorizar pedido"
+                          >
+                            Autorizar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -167,24 +169,27 @@ export const PedidosCargaModal = ({
                   {pastPedidos.map(ped => (
                     <div 
                       key={ped.id}
-                      className="relative p-3 pr-6 -mr-6 rounded-l-xl bg-slate-850/50 border-l border-slate-800 text-xs flex items-center justify-between gap-3 text-slate-400 overflow-hidden"
+                      className="relative p-3 pr-6 -mr-6 rounded-l-xl transition-all flex items-center justify-between gap-3 text-xs text-slate-400 overflow-hidden shadow-sm"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-slate-700 via-slate-800/60 to-transparent" />
-                      <div>
-                        <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
-                        <div className="text-[11px] text-slate-500">
-                          De: {ped.setorOrigemNome} ➔ {ped.setorDestinoNome} • {formatDate(ped.dataSolicitacao)}
+                      <div 
+                        className="absolute inset-0 rounded-l-xl border-l-2 border-t border-b border-r-0 border-slate-700 bg-slate-850/60 pointer-events-none [mask-image:linear-gradient(to_right,black_0%,black_35%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_0%,black_35%,transparent_100%)]" 
+                      />
+                      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+                        <div>
+                          <strong className="text-slate-300 font-mono">{formatLast5Patrimonio(ped.numeroPatrimonio)}</strong> - {ped.descricao}
+                          <div className="text-[11px] text-slate-500">
+                            De: {ped.setorOrigemNome} ➔ {ped.setorDestinoNome} • {formatDate(ped.dataSolicitacao)}
+                          </div>
                         </div>
-                      </div>
 
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                        ped.status === 'APROVADO' 
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
-                          : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                      }`}>
-                        {ped.status}
-                      </span>
+                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                          ped.status === 'APROVADO' 
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                            : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        }`}>
+                          {ped.status}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
