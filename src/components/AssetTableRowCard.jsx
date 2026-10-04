@@ -306,7 +306,13 @@ const AssetTableRowCardComponent = ({
   const filteredServidores = React.useMemo(() => {
     if (!effectiveServidores || effectiveServidores.length === 0) return [];
     if (!obsValue || !obsValue.trim()) return effectiveServidores;
-    const q = obsValue.toLowerCase().trim();
+
+    // Se estiver digitando uma menção com @ (ex: "@jean" ou "Material entregue a @je")
+    const atMatch = obsValue.match(/@([a-zA-Z0-9À-ÿ]*)$/);
+    const q = atMatch ? atMatch[1].toLowerCase().trim() : obsValue.toLowerCase().trim();
+
+    if (!q) return effectiveServidores;
+
     const matches = effectiveServidores.filter(s => 
       s.nome?.toLowerCase().includes(q) || 
       s.mesa?.toLowerCase().includes(q) || 
@@ -634,26 +640,50 @@ const AssetTableRowCardComponent = ({
     closeLocEdit();
   };
 
-  // Detecção Inteligente de Setor na Observação (ex: "está no studio" -> reconhece o setor Studio)
+  // Detecção Inteligente de Setor na Observação (ex: "ASCOM", "Studio", "TI", etc.)
   const detectSectorInText = (text) => {
     if (!text || typeof text !== 'string') return null;
     const clean = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     if (!clean) return null;
 
+    // 1. Setores cadastrados no sistema
     for (const sec of sectors) {
       const secClean = (sec.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       if (!secClean) continue;
 
       if (clean.includes(secClean)) {
-        return sec;
+        return { name: sec.name, isInternal: true, data: sec };
       }
 
       const words = secClean.split(/\s+/).filter(w => w.length > 2 && !['de', 'da', 'do', 'das', 'dos', 'para', 'com', 'esta', 'no', 'na', 'sala'].includes(w));
       for (const w of words) {
         const regex = new RegExp(`\\b${w}\\b`, 'i');
         if (regex.test(clean)) {
-          return sec;
+          return { name: sec.name, isInternal: true, data: sec };
         }
+      }
+    }
+
+    // 2. Siglas / Órgãos externos comuns ou em caixa alta (ex: ASCOM, DTIN, SEFAZ, DTI, PM, etc.)
+    const acronymMatch = text.match(/\b([A-Z]{3,7})\b/);
+    if (acronymMatch && !['MATERIAL', 'RECOLHIDO', 'BEM', 'SETOR'].includes(acronymMatch[1].toUpperCase())) {
+      return { name: acronymMatch[1], isInternal: false };
+    }
+
+    return null;
+  };
+
+  // Detecção de nome de pessoa em texto livre (ex: "Jean pegou", "Carlos levou")
+  // Retorna apenas o nome para exibição em LARANJA, SEM vincular ao servidor oficial
+  const detectPessoaLivreInText = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    // Padrões comuns como: "Nome pegou", "entregue a Nome", "com Nome", etc.
+    const match = text.match(/\b([A-ZÀ-ÿ][a-zà-ÿ]+)\s+(pegou|levou|recebeu|ficou|guardou)\b/i) 
+      || text.match(/\b(com|para|entregue a|recolhido por)\s+([A-ZÀ-ÿ][a-zà-ÿ]+)\b/i);
+    if (match) {
+      const name = match[1] && !['com', 'para', 'entregue a', 'recolhido por'].includes(match[1].toLowerCase()) ? match[1] : match[2];
+      if (name && name.length >= 3 && !['Material', 'Setor', 'Item', 'Carga'].includes(name)) {
+        return name;
       }
     }
     return null;
@@ -661,9 +691,28 @@ const AssetTableRowCardComponent = ({
 
   const handleSaveObservation = (e, directVal = null, servidorObj = null) => {
     e?.stopPropagation();
-    const val = (directVal !== null ? directVal : obsValue).trim();
+    const rawVal = (directVal !== null ? directVal : obsValue).trim();
+    
+    // Verifica se o usuário digitou uma menção explícita com @ (ex: "@Jean pegou")
+    const atMatch = rawVal.match(/@([a-zA-Z0-9À-ÿ]+)/);
+    let finalServidor = servidorObj;
+
+    if (!finalServidor && atMatch) {
+      const mentionedName = atMatch[1].toLowerCase().trim();
+      finalServidor = effectiveServidores.find(s => 
+        (s.nome || '').toLowerCase().trim() === mentionedName ||
+        (s.nome || '').toLowerCase().trim().startsWith(mentionedName)
+      );
+    }
+
+    // Limpa o caractere '@' do texto final gravado (ex: "@Jean pegou" -> "Jean pegou")
+    const cleanVal = rawVal.replace(/@([a-zA-Z0-9À-ÿ]+)/g, '$1').trim();
+
+    // IMPORTANTE: Se NÃO foi selecionado do rol nem usado com '@', finalServidor é null!
+    // Isso garante que texto livre como "Jean da ASCOM pegou" NUNCA seja contabilizado
+    // na conta do servidor do nosso sistema!
     if (onUpdateObservation) {
-      onUpdateObservation(asset.id, val, servidorObj);
+      onUpdateObservation(asset.id, cleanVal, finalServidor || null);
     }
     closeObsEdit();
   };
@@ -1551,6 +1600,9 @@ const AssetTableRowCardComponent = ({
                         <Users className="w-3.5 h-3.5 text-cyan-400" />
                         <span>Servidores ({effectiveServidores?.length || 0})</span>
                       </span>
+                      {obsValue.includes('@') && (
+                        <span className="text-[9px] text-amber-300 font-normal">Menção com @</span>
+                      )}
                     </div>
 
                     <div className="max-h-[460px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
@@ -1563,7 +1615,7 @@ const AssetTableRowCardComponent = ({
                         >
                           <div className="flex items-center gap-1.5 truncate">
                             <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                            <span className="truncate">Usar: <strong>"{obsValue}"</strong></span>
+                            <span className="truncate">Usar: <strong>"{obsValue.replace(/@([a-zA-Z0-9À-ÿ]+)/g, '$1')}"</strong></span>
                           </div>
                           <span className="text-[9px] text-cyan-400 bg-cyan-500/20 px-1 py-0.5 rounded font-mono shrink-0 ml-1">Enter ↵</span>
                         </button>
@@ -1576,8 +1628,13 @@ const AssetTableRowCardComponent = ({
                             key={`obs-serv-${serv.id}`}
                             type="button"
                             onClick={(e) => {
-                              setObsValue(serv.nome);
-                              handleSaveObservation(e, serv.nome, serv);
+                              // Se estiver usando @ (ex: "Material recolhido por @je"), substitui "@je" por "Jean" sem o @
+                              let newValue = serv.nome;
+                              if (obsValue.includes('@')) {
+                                newValue = obsValue.replace(/@[a-zA-Z0-9À-ÿ]*$/, serv.nome);
+                              }
+                              setObsValue(newValue);
+                              handleSaveObservation(e, newValue, serv);
                             }}
                             className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
                           >
@@ -1588,8 +1645,13 @@ const AssetTableRowCardComponent = ({
                               <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
                                 {serv.nome}
                               </span>
-                              {serv.mesa && (
+                              {serv.setorNome && (
                                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
+                                  {serv.setorNome}
+                                </span>
+                              )}
+                              {serv.mesa && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
                                   {serv.mesa}
                                 </span>
                               )}
@@ -1603,8 +1665,12 @@ const AssetTableRowCardComponent = ({
                             key={`obs-serv-${serv.id}`}
                             type="button"
                             onClick={(e) => {
-                              setObsValue(serv.nome);
-                              handleSaveObservation(e, serv.nome, serv);
+                              let newValue = serv.nome;
+                              if (obsValue.includes('@')) {
+                                newValue = obsValue.replace(/@[a-zA-Z0-9À-ÿ]*$/, serv.nome);
+                              }
+                              setObsValue(newValue);
+                              handleSaveObservation(e, newValue, serv);
                             }}
                             className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
                           >
@@ -1615,8 +1681,13 @@ const AssetTableRowCardComponent = ({
                               <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
                                 {serv.nome}
                               </span>
-                              {serv.mesa && (
+                              {serv.setorNome && (
                                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
+                                  {serv.setorNome}
+                                </span>
+                              )}
+                              {serv.mesa && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
                                   {serv.mesa}
                                 </span>
                               )}
@@ -1770,25 +1841,56 @@ const AssetTableRowCardComponent = ({
             </div>
           ) : asset.observacao ? (
             (() => {
-              const detected = detectSectorInText(asset.observacao);
+              const detectedSector = detectSectorInText(asset.observacao);
+              // Servidor oficial nosso: apenas se estiver vinculado com servidorId ou servidorNome
+              const officialServidor = (asset.servidorId || asset.servidorNome) ? { nome: asset.servidorNome } : null;
+              // Pessoa em texto livre (ex: "Jean da ASCOM pegou"): SEM vínculo oficial
+              const pessoaLivre = !officialServidor ? detectPessoaLivreInText(asset.observacao) : null;
+              const hasBadges = detectedSector || officialServidor || pessoaLivre;
+
               return (
                 <div className="inline-flex items-center gap-1 group/obs max-w-full overflow-hidden">
                   <button
                     type="button"
                     onClick={(e) => openObsEdit(e)}
                     title={asset.observacao}
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[150px] min-w-0 overflow-hidden ${
-                      detected 
-                        ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-500/30' 
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[175px] min-w-0 overflow-hidden ${
+                      hasBadges
+                        ? 'bg-slate-900 border border-slate-750 hover:border-slate-600'
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white'
                     }`}
                   >
-                    {detected && (
-                      <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
+                    {/* Badge do Setor Detectado */}
+                    {detectedSector && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[9.5px] font-bold shrink-0" title={`Setor/Órgão: ${detectedSector.name}`}>
+                        <Building2 className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
+                        <span className="truncate max-w-[55px]">{detectedSector.name}</span>
+                      </span>
                     )}
-                    <span className="truncate flex-1 min-w-0" title={asset.observacao}>
-                      <HighlightText text={asset.observacao} query={searchTerm} />
-                    </span>
+
+                    {/* 1. NOSSO SERVIDOR OFICIAL (@Jean / Selecionado no Rol): COR AZUL */}
+                    {officialServidor && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9.5px] font-bold shrink-0 shadow-sm" title={`Nosso Servidor Vinculado: ${officialServidor.nome}`}>
+                        <User className="w-2.5 h-2.5 text-cyan-300 shrink-0" />
+                        <span className="truncate max-w-[65px]">{officialServidor.nome}</span>
+                      </span>
+                    )}
+
+                    {/* 2. PESSOA EXTERNA / TEXTO LIVRE ("Jean pegou", "Jean da ASCOM"): COR LARANJA (SEM VÍNCULO) */}
+                    {pessoaLivre && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9.5px] font-bold shrink-0" title={`Pessoa citada no texto (não vinculada ao órgão): ${pessoaLivre}`}>
+                        <User className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                        <span className="truncate max-w-[65px]">{pessoaLivre}</span>
+                      </span>
+                    )}
+
+                    {/* Texto restante da Observação */}
+                    {(!detectedSector || (!officialServidor && !pessoaLivre)) && (
+                      <span className="truncate flex-1 min-w-0 text-slate-200" title={asset.observacao}>
+                        <HighlightText text={asset.observacao} query={searchTerm} />
+                      </span>
+                    )}
+
                     <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5 shrink-0" />
                   </button>
 

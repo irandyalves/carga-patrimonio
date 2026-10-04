@@ -360,15 +360,19 @@ export const ServidoresModal = ({
     }
   };
 
-  // Mapear quais patrimônios pertencem a cada servidor
+  // Mapear quais patrimônios pertencem a cada servidor (estritamente vinculado via ID ou nome exato de servidor oficial)
   const getAssetsForServidor = (servidor) => {
     if (!servidor || !assets) return [];
     const servNomeNorm = (servidor.nome || '').toLowerCase().trim();
+    if (!servNomeNorm) return [];
+
     return assets.filter(a => {
+      // 1. Vinculação oficial por ID do servidor cadastrado
       if (a.servidorId && a.servidorId === servidor.id) return true;
+      // 2. Vinculação oficial por nome do servidor cadastrado
       if (a.servidorNome && a.servidorNome.toLowerCase().trim() === servNomeNorm) return true;
-      if (a.observacao && a.observacao.toLowerCase().trim() === servNomeNorm) return true;
-      if (a.localizacao && a.localizacao.toLowerCase().includes(servNomeNorm)) return true;
+      // 3. Se a observação for ESTRITAMENTE o nome do servidor (sem outras frases soltas)
+      if (a.observacao && a.observacao.toLowerCase().trim() === servNomeNorm && !a.observacao.includes(' ')) return true;
       return false;
     });
   };
