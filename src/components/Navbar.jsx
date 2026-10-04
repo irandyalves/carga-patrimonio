@@ -55,6 +55,8 @@ export const Navbar = ({
   onToggleSidebar,
   onOpenPedidos,
   pedidosCount = 0,
+  onOpenServidores,
+  servidoresCount = 0,
   onOpenDtinPendencias,
   dtinPendenciasCount = 0,
   onToggleTiCard,
@@ -441,6 +443,24 @@ export const Navbar = ({
                 </span>
               </button>
 
+              {/* Servidores & Pessoas do Setor */}
+              <button
+                type="button"
+                onClick={onOpenServidores}
+                title={`Módulo de Servidores e Detentores (${servidoresCount || 0} cadastrados)`}
+                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-cyan-300 hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              >
+                <Users className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="hidden md:inline">Servidores</span>
+                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                  servidoresCount > 0 
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' 
+                    : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
+                }`}>
+                  {servidoresCount || 0}
+                </span>
+              </button>
+
               {/* Backup Tríplice Button */}
               <button
                 onClick={onOpenBackup}
@@ -455,11 +475,11 @@ export const Navbar = ({
               {isAdmin && (
                 <button
                   onClick={onOpenUsers}
-                  title="Gerenciar Usuários e Permissões de Acesso"
+                  title="Gerenciar Operadores e Permissões de Acesso"
                   className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-indigo-300 hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Users className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span className="hidden lg:inline">Usuários</span>
+                  <span className="hidden lg:inline">Operadores</span>
                 </button>
               )}
 
@@ -545,6 +565,28 @@ export const Navbar = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* Atalho para Servidores */}
+                      {onOpenServidores && (
+                        <div className="mb-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              onOpenServidores();
+                            }}
+                            className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between bg-cyan-950/30 hover:bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 transition-all cursor-pointer font-semibold"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-cyan-400" />
+                              <span>Servidores & Pessoas</span>
+                            </div>
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              {servidoresCount || 0}
+                            </span>
+                          </button>
+                        </div>
+                      )}
 
                       {/* Alternador de Perfis / Setores */}
                       {onSelectPersona && (

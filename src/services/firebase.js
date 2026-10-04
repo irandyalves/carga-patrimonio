@@ -559,6 +559,89 @@ export const savePedidoToCloud = async (pedido) => {
   }
 };
 
+export const savePedidosBatchToCloud = async (pedidosList) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !pedidosList || pedidosList.length === 0) return;
+
+  const chunkSize = 250;
+  for (let i = 0; i < pedidosList.length; i += chunkSize) {
+    const chunk = pedidosList.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach(item => {
+      if (item && item.id) {
+        batch.set(doc(db, 'pedidos_carga', String(item.id)), item, { merge: true });
+      }
+    });
+    try {
+      await batch.commit();
+    } catch (e) {
+      console.warn('Erro ao salvar lote de pedidos no Firestore:', e);
+    }
+  }
+};
+
+export const subscribeToCloudServidores = (callback) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db) return () => {};
+
+  try {
+    const unsub = onSnapshot(collection(db, 'servidores'), (snapshot) => {
+      const cloudServidores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      callback(cloudServidores);
+      try {
+        localStorage.setItem('carga_patrimonio_servidores', JSON.stringify(cloudServidores));
+      } catch (e) {}
+    }, (error) => {
+      console.warn('Realtime servidores listener notice:', error);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Erro ao conectar listener de servidores:', e);
+    return () => {};
+  }
+};
+
+export const saveServidorToCloud = async (servidor) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !servidor || !servidor.id) return;
+  try {
+    await setDoc(doc(db, 'servidores', String(servidor.id)), servidor, { merge: true });
+  } catch (e) {
+    console.warn('Erro ao salvar servidor no Firestore:', e);
+  }
+};
+
+export const deleteServidorFromCloud = async (servidorId) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !servidorId) return;
+  try {
+    await deleteDoc(doc(db, 'servidores', String(servidorId)));
+  } catch (e) {
+    console.warn('Erro ao excluir servidor no Firestore:', e);
+  }
+};
+
+export const saveServidoresBatchToCloud = async (servidoresList) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !servidoresList || servidoresList.length === 0) return;
+
+  const chunkSize = 250;
+  for (let i = 0; i < servidoresList.length; i += chunkSize) {
+    const chunk = servidoresList.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach(item => {
+      if (item && item.id) {
+        batch.set(doc(db, 'servidores', String(item.id)), item, { merge: true });
+      }
+    });
+    try {
+      await batch.commit();
+    } catch (e) {
+      console.warn('Erro ao salvar lote de servidores no Firestore:', e);
+    }
+  }
+};
+
 export const deletePedidoFromCloud = async (pedidoId) => {
   const { isConfigured, db } = initFirebase();
   if (!isConfigured || !db || !pedidoId) return;

@@ -1,11 +1,37 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { getSearchTokens, buildTokenRegex } from '../utils/searchUtils';
+
+// Cache global de tokens por query para evitar parse redundante
+const tokensCache = new Map();
+function getCachedTokens(query) {
+  if (tokensCache.has(query)) return tokensCache.get(query);
+  const tokens = getSearchTokens(query);
+  if (tokensCache.size > 200) tokensCache.clear();
+  tokensCache.set(query, tokens);
+  return tokens;
+}
+
+// Cache global de regexes compiladas para velocidade máxima
+const regexCache = new Map();
+function getCachedRegex(token) {
+  if (regexCache.has(token)) {
+    // Retorna uma regex resetada
+    const r = regexCache.get(token);
+    if (r) r.lastIndex = 0;
+    return r;
+  }
+  const regex = buildTokenRegex(token);
+  if (regexCache.size > 300) regexCache.clear();
+  regexCache.set(token, regex);
+  return regex;
+}
 
 /**
  * Componente que destaca / marca visualmente as palavras e trechos coincidentes
  * com o termo de busca em tempo real, suportando termos flexíveis, múltiplos e sem acento.
+ * Altamente otimizado com memoização e caches globais para 60fps.
  */
-export function HighlightText({ 
+function HighlightTextComponent({ 
   text, 
   query, 
   className = '', 
@@ -19,19 +45,19 @@ export function HighlightText({
     return <Tag className={className}>{strText}</Tag>;
   }
 
-  const tokens = getSearchTokens(query);
+  const tokens = getCachedTokens(query);
   if (tokens.length === 0) {
     return <Tag className={className}>{strText}</Tag>;
   }
 
   // Coleta os intervalos [start, end] de correspondência para todos os tokens
   const ranges = [];
-  tokens.forEach(token => {
-    const regex = buildTokenRegex(token);
-    if (!regex) return;
+  for (let i = 0; i < tokens.length; i++) {
+    const regex = getCachedRegex(tokens[i]);
+    if (!regex) continue;
 
-    let match;
     regex.lastIndex = 0;
+    let match;
     while ((match = regex.exec(strText)) !== null) {
       if (match[0].length === 0) {
         regex.lastIndex++;
@@ -46,7 +72,7 @@ export function HighlightText({
         regex.lastIndex++;
       }
     }
-  });
+  }
 
   if (ranges.length === 0) {
     return <Tag className={className}>{strText}</Tag>;
@@ -96,4 +122,5 @@ export function HighlightText({
   return <Tag className={className}>{parts}</Tag>;
 }
 
+export const HighlightText = memo(HighlightTextComponent);
 export default HighlightText;

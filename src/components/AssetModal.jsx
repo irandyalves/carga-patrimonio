@@ -16,7 +16,10 @@ import {
   RefreshCw,
   HelpCircle,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Users,
+  User,
+  UserPlus
 } from 'lucide-react';
 import { formatPatrimonio } from '../utils/formatters';
 
@@ -156,7 +159,9 @@ export const AssetModal = ({
   onSave,
   assetToEdit,
   defaultSectorId,
-  sectors = []
+  sectors = [],
+  servidores = [],
+  onOpenServidoresModal
 }) => {
   // Estado estruturado com os campos solicitados pelo usuário
   const [formData, setFormData] = useState({
@@ -173,7 +178,10 @@ export const AssetModal = ({
     setorNome: '',
     responsavel: '',
     telefone: '',
-    categoria: 'Mobiliário e Equipamentos'
+    categoria: 'Mobiliário e Equipamentos',
+    servidorId: '',
+    servidorNome: '',
+    servidorTelefone: ''
   });
 
   // Estados de IA para busca de fotos na internet
@@ -202,7 +210,10 @@ export const AssetModal = ({
         setorNome: assetToEdit.setorNome || '',
         responsavel: assetToEdit.responsavel || '',
         telefone: assetToEdit.telefone || assetToEdit.ramal || '',
-        categoria: assetToEdit.categoria || 'Geral'
+        categoria: assetToEdit.categoria || 'Geral',
+        servidorId: assetToEdit.servidorId || '',
+        servidorNome: assetToEdit.servidorNome || '',
+        servidorTelefone: assetToEdit.servidorTelefone || ''
       });
       if (assetToEdit.descricao) {
         const cat = detectCategory(assetToEdit.descricao);
@@ -228,7 +239,10 @@ export const AssetModal = ({
         setorNome: selectedSec.name,
         responsavel: selectedSec.responsavel || '',
         telefone: selectedSec.telefone || selectedSec.ramal || '',
-        categoria: 'Mobiliário e Equipamentos'
+        categoria: 'Mobiliário e Equipamentos',
+        servidorId: '',
+        servidorNome: '',
+        servidorTelefone: ''
       });
       setAiSuggestions([]);
       setDetectedCat('');
@@ -472,6 +486,90 @@ export const AssetModal = ({
                 placeholder="Ramal (2450) ou (XX) 9XXXX-XXXX"
                 className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono placeholder-slate-600"
               />
+            </div>
+          </div>
+
+          {/* Servidor / Pessoa onde o item está alocado */}
+          <div className="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/30 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Servidor / Pessoa (Onde o bem está alocado)</span>
+              </label>
+              <span className="text-[9.5px] text-cyan-400 font-medium">Ex: Mesa da Tais</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="relative">
+                <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                <select
+                  value={formData.servidorId || (formData.servidorNome ? `custom-${formData.servidorNome}` : '')}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    if (!selId) {
+                      setFormData(prev => ({
+                        ...prev,
+                        servidorId: '',
+                        servidorNome: '',
+                        servidorTelefone: ''
+                      }));
+                      return;
+                    }
+                    const s = servidores.find(item => item.id === selId);
+                    if (s) {
+                      setFormData(prev => {
+                        const newLoc = s.mesa ? `Mesa da ${s.nome} (${s.mesa})` : `Mesa da ${s.nome}`;
+                        return {
+                          ...prev,
+                          servidorId: s.id,
+                          servidorNome: s.nome,
+                          servidorTelefone: s.telefone || prev.servidorTelefone,
+                          localizacao: prev.localizacao && !prev.localizacao.toLowerCase().includes('mesa') ? prev.localizacao : newLoc,
+                          telefone: prev.telefone || s.telefone || ''
+                        };
+                      });
+                    }
+                  }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+                >
+                  <option value="">Nenhum servidor selecionado (Uso geral)</option>
+                  {servidores.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome} {s.mesa ? `(${s.mesa})` : ''} {s.telefone ? `• Tel: ${s.telefone}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={formData.servidorNome || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matched = servidores.find(s => s.nome.toLowerCase() === val.toLowerCase());
+                    setFormData(prev => ({
+                      ...prev,
+                      servidorNome: val,
+                      servidorId: matched ? matched.id : '',
+                      servidorTelefone: matched ? (matched.telefone || prev.servidorTelefone) : prev.servidorTelefone
+                    }));
+                  }}
+                  placeholder="Ou digite o nome do servidor..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400 placeholder-slate-500"
+                />
+
+                {onOpenServidoresModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenServidoresModal}
+                    title="Cadastrar ou gerenciar servidores"
+                    className="p-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold shrink-0 transition cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

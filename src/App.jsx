@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Navbar 
@@ -60,6 +60,9 @@ import {
 import { 
   PendenciasDtinModal 
 } from './components/PendenciasDtinModal';
+import { 
+  ServidoresModal 
+} from './components/ServidoresModal';
 import {
   DisplaySettingsModal,
   DEFAULT_DISPLAY_SETTINGS
@@ -98,7 +101,11 @@ import {
   deleteCautelaFromCloud,
   subscribeToCloudPedidos,
   savePedidoToCloud,
+  savePedidosBatchToCloud,
   deletePedidoFromCloud,
+  subscribeToCloudServidores,
+  saveServidorToCloud,
+  deleteServidorFromCloud,
   saveAssetToCloud,
   deleteAssetFromCloud,
   saveAssetsBatchToCloud,
@@ -188,6 +195,7 @@ export function App() {
   const [filterMode, setFilterMode] = useState('MY_SECTOR'); // 'MY_SECTOR' | 'ALL_SECTORS'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
@@ -206,12 +214,12 @@ export function App() {
   const currentProfileKey = simulatedPersonaId || currentUser?.email || 'admin';
 
   // Padrões de Visibilidade de Colunas:
-  // 1. DENTRO DE SETORES: Quantidade, Localização e Responsável vêm por padrão ESCONDIDOS (false)
+  // 1. DENTRO DE SETORES: Setor visível por padrão, Responsável retirado
   const DEFAULT_SECTOR_COLUMNS = useMemo(() => ({
     quantidade: false,
     marca: true,
     modelo: true,
-    localizacao: false,
+    localizacao: true,
     responsavel: false,
     financeiro: true,
     dataAquisicao: true,
@@ -242,7 +250,7 @@ export function App() {
         return {
           ...DEFAULT_SECTOR_COLUMNS,
           ...JSON.parse(stored),
-          localizacao: false
+          responsavel: false
         };
       }
     } catch (e) {}
@@ -289,7 +297,7 @@ export function App() {
     try {
       const sCols = localStorage.getItem(`carga_patrimonio_sector_cols_${currentProfileKey}`);
       if (sCols) {
-        setSectorColumns({ ...DEFAULT_SECTOR_COLUMNS, ...JSON.parse(sCols), localizacao: false });
+        setSectorColumns({ ...DEFAULT_SECTOR_COLUMNS, ...JSON.parse(sCols), responsavel: false });
       } else {
         setSectorColumns(DEFAULT_SECTOR_COLUMNS);
       }
@@ -354,8 +362,8 @@ export function App() {
         quantidade: true,
         marca: true,
         modelo: true,
-        localizacao: false,
-        responsavel: true,
+        localizacao: true,
+        responsavel: false,
         dataAquisicao: true,
         valorOriginal: true,
         valorAtual: true,
@@ -404,13 +412,13 @@ export function App() {
     if (visibleColumns.marca === false) count++;
     if (visibleColumns.modelo === false) count++;
     if (visibleColumns.localizacao === false) count++;
-    if (visibleColumns.responsavel === false) count++;
+    if (filterMode === 'ALL_SECTORS' && visibleColumns.responsavel === false) count++;
     if (visibleColumns.dataAquisicao === false) count++;
     if (visibleColumns.valorOriginal === false) count++;
     if (visibleColumns.valorAtual === false) count++;
     if (visibleColumns.depreciacao === false) count++;
     return count;
-  }, [visibleColumns]);
+  }, [visibleColumns, filterMode]);
 
   const tableMinWidth = useMemo(() => {
     let base = 600;
@@ -418,13 +426,13 @@ export function App() {
     if (visibleColumns.marca !== false) base += 112;
     if (visibleColumns.modelo !== false) base += 112;
     if (visibleColumns.localizacao !== false) base += 192;
-    if (visibleColumns.responsavel !== false) base += 112;
+    if (filterMode === 'ALL_SECTORS' && visibleColumns.responsavel !== false) base += 112;
     if (visibleColumns.dataAquisicao !== false) base += 96;
     if (visibleColumns.valorOriginal !== false) base += 112;
     if (visibleColumns.valorAtual !== false) base += 112;
     if (visibleColumns.depreciacao !== false) base += 112;
     return `${base}px`;
-  }, [visibleColumns]);
+  }, [visibleColumns, filterMode]);
 
   // Dropdown de Gerenciamento de Colunas
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
@@ -522,6 +530,17 @@ export function App() {
   const [assetForSolicitacao, setAssetForSolicitacao] = useState(null);
   const [isPedidosModalOpen, setIsPedidosModalOpen] = useState(false);
   const [isPendenciasDtinOpen, setIsPendenciasDtinOpen] = useState(false);
+  const [isServidoresModalOpen, setIsServidoresModalOpen] = useState(false);
+
+  // Servidores & Pessoas onde os bens estão alocados
+  const [servidores, setServidores] = useState(() => {
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_servidores');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   // Modal de Exclusão Segura com Motivo Obrigatório
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -651,6 +670,7 @@ export function App() {
     let unsubCautelas = () => {};
     let unsubPedidos = () => {};
     let unsubSettings = () => {};
+    let unsubServidores = () => {};
 
     if (isConfigured) {
       unsubSectors = subscribeToCloudSectors((cloudSectors) => {
@@ -675,6 +695,12 @@ export function App() {
       unsubPedidos = subscribeToCloudPedidos((cloudPedidos) => {
         if (cloudPedidos) {
           setPedidosCarga(cloudPedidos);
+        }
+      });
+
+      unsubServidores = subscribeToCloudServidores((cloudServidores) => {
+        if (cloudServidores) {
+          setServidores(cloudServidores);
         }
       });
 
@@ -713,6 +739,7 @@ export function App() {
       unsubAssets();
       unsubCautelas();
       unsubPedidos();
+      unsubServidores();
       unsubSettings();
     };
   }, []);
@@ -1276,15 +1303,15 @@ export function App() {
       }
 
       // Text search filter (busca flexível, não exata, multi-termos, com e sem ponto, sem acentos)
-      if (searchTerm) {
-        if (!matchesAsset(item, searchTerm)) {
+      if (deferredSearchTerm) {
+        if (!matchesAsset(item, deferredSearchTerm)) {
           return false;
         }
       }
 
       return true;
     });
-  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, searchTerm, duplicateMap]);
+  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, deferredSearchTerm, duplicateMap]);
 
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
@@ -1391,6 +1418,41 @@ export function App() {
 
     return [...pendentes, ...conferidos, ...baixados];
   }, [filteredAssets, sortField, sortDirection, conferidosSortField, conferidosSortDirection, filterMode, duplicateMap]);
+
+  // Set indexado de IDs com pedidos pendentes para verificação O(1) de alta performance
+  const pendingPedidoAssetIds = useMemo(() => {
+    const set = new Set();
+    if (Array.isArray(pedidosCarga)) {
+      pedidosCarga.forEach(p => {
+        if (p.status === 'PENDENTE' && p.assetId) {
+          set.add(p.assetId);
+        }
+      });
+    }
+    return set;
+  }, [pedidosCarga]);
+
+  // Limite progressivo de itens renderizados para ultra performance (60fps mesmo com milhares de itens)
+  const [visibleCount, setVisibleCount] = useState(80);
+  const sentinelRef = useRef(null);
+
+  // Reseta a paginação ao mudar setor, filtro ou busca
+  useEffect(() => {
+    setVisibleCount(80);
+  }, [deferredSearchTerm, filterMode, statusFilter, activeSectorId]);
+
+  // Observer para rolar e carregar automaticamente mais itens sem congelar
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0] && entries[0].isIntersecting) {
+        setVisibleCount(prev => prev + 60);
+      }
+    }, { rootMargin: '300px' });
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [sortedAssets.length]);
 
   // Recarregar os dados padrões das áreas e bens fornecidos
   const handleResetOfficialData = () => {
@@ -1608,12 +1670,20 @@ export function App() {
   };
 
   // Atualizar localização rápida do bem (por digitação, escolha ou microfone)
-  const handleUpdateAssetLocation = (assetId, newLocation) => {
+  const handleUpdateAssetLocation = (assetId, newLocation, servidorData = null) => {
+    let serv = servidorData;
+    if (!serv && newLocation) {
+      serv = servidores.find(s => newLocation.toLowerCase().includes(s.nome.toLowerCase()));
+    }
+
     const updated = assets.map(item => {
       if (item.id === assetId) {
         const updatedItem = {
           ...item,
-          localizacao: newLocation
+          localizacao: newLocation,
+          servidorId: serv ? serv.id : (item.servidorId || null),
+          servidorNome: serv ? serv.nome : (item.servidorNome || null),
+          servidorTelefone: serv ? (serv.telefone || item.servidorTelefone || null) : (item.servidorTelefone || null)
         };
         saveAssetToCloud(updatedItem);
         return updatedItem;
@@ -1621,16 +1691,184 @@ export function App() {
       return item;
     });
     setAssets(updated);
-    showToast(`Localização atualizada: "${newLocation}"`);
+    showToast(`Localização atualizada: "${newLocation}"${serv ? ` • Vinculado a ${serv.nome}` : ''}`);
   };
 
-  // Atualizar observação rápida do bem (inline, por digitação ou voz inteligente com detecção de setor)
-  const handleUpdateAssetObservation = (assetId, newObservation) => {
+  // Salvar Servidor (Criar ou Editar)
+  const handleSaveServidor = (servidorData) => {
+    const existingIndex = servidores.findIndex(s => s.id === servidorData.id);
+    let updatedList;
+    if (existingIndex >= 0) {
+      updatedList = servidores.map(s => s.id === servidorData.id ? servidorData : s);
+      showToast(`Servidor "${servidorData.nome}" atualizado com sucesso!`, 'success');
+    } else {
+      updatedList = [servidorData, ...servidores];
+      showToast(`Servidor "${servidorData.nome}" cadastrado com sucesso!`, 'success');
+    }
+    setServidores(updatedList);
+    saveServidorToCloud(servidorData);
+    try {
+      localStorage.setItem('carga_patrimonio_servidores', JSON.stringify(updatedList));
+    } catch (e) {}
+
+    // Se editou o nome ou telefone de um servidor existente, propaga aos bens vinculados
+    if (existingIndex >= 0) {
+      const updatedAssetsList = [];
+      const updatedAssets = assets.map(a => {
+        if (a.servidorId === servidorData.id) {
+          const up = {
+            ...a,
+            servidorNome: servidorData.nome,
+            servidorTelefone: servidorData.telefone || a.servidorTelefone
+          };
+          updatedAssetsList.push(up);
+          return up;
+        }
+        return a;
+      });
+      if (updatedAssetsList.length > 0) {
+        setAssets(updatedAssets);
+        saveAssetsBatchToCloud(updatedAssetsList);
+      }
+    }
+  };
+
+  // Salvar Lote de Servidores (Importação)
+  const handleSaveServidoresBatch = (newServidoresList) => {
+    if (!newServidoresList || newServidoresList.length === 0) return;
+    const updatedList = [...newServidoresList, ...servidores];
+    setServidores(updatedList);
+    saveServidoresBatchToCloud(newServidoresList);
+    try {
+      localStorage.setItem('carga_patrimonio_servidores', JSON.stringify(updatedList));
+    } catch (e) {}
+    showToast(`${newServidoresList.length} servidores importados com sucesso!`, 'success');
+  };
+
+  // Excluir Servidor
+  const handleDeleteServidor = (servidorId) => {
+    const s = servidores.find(item => item.id === servidorId);
+    const updatedList = servidores.filter(item => item.id !== servidorId);
+    setServidores(updatedList);
+    deleteServidorFromCloud(servidorId);
+    try {
+      localStorage.setItem('carga_patrimonio_servidores', JSON.stringify(updatedList));
+    } catch (e) {}
+    showToast(`Servidor "${s ? s.nome : ''}" removido.`, 'info');
+  };
+
+  // Filtrar todos os bens do servidor no painel geral com garantia total de exibição
+  const handleSelectServidorToFilter = (servidorNome) => {
+    setFilterMode('ALL_SECTORS');
+    setStatusFilter('ALL');
+    setSearchTerm(servidorNome || '');
+    setIsServidoresModalOpen(false);
+  };
+
+  // Ir diretamente para o local do patrimônio (setor + pesquisa) com garantia 100% de funcionar e ver
+  const handleGoToAsset = (asset) => {
+    if (asset.setorId) {
+      setActiveSectorId(asset.setorId);
+      setFilterMode('MY_SECTOR');
+    } else {
+      setFilterMode('ALL_SECTORS');
+    }
+    setStatusFilter('ALL');
+    const term = asset.numeroPatrimonio ? formatLast5Patrimonio(asset.numeroPatrimonio) : (asset.descricao || '');
+    setSearchTerm(term);
+    setIsServidoresModalOpen(false);
+    showToast(`📍 Visualizando bem ${formatLast5Patrimonio(asset.numeroPatrimonio)} (${asset.setorNome || 'Setor'})`, 'info');
+  };
+
+  // Desvincular / Excluir bem patrimonial do servidor diretamente do modal
+  const handleUnlinkAssetFromServidor = (assetId, servidor) => {
+    const servNome = (servidor?.nome || '').toLowerCase().trim();
+    let numPatrimonio = '';
+
+    const updatedAssets = assets.map(a => {
+      if (a.id === assetId) {
+        numPatrimonio = formatLast5Patrimonio(a.numeroPatrimonio);
+        const copy = { ...a };
+        copy.servidorId = null;
+        copy.servidorNome = null;
+        copy.servidorTelefone = null;
+        copy.servidorMesa = null;
+        if (copy.observacao && copy.observacao.toLowerCase().trim() === servNome) {
+          copy.observacao = '';
+        }
+        if (copy.localizacao && copy.localizacao.toLowerCase().trim() === servNome) {
+          copy.localizacao = '';
+        }
+        copy.updatedAt = new Date().toISOString();
+        return copy;
+      }
+      return a;
+    });
+
+    setAssets(updatedAssets);
+    saveLocalAssets(updatedAssets);
+    const changedItem = updatedAssets.find(a => a.id === assetId);
+    if (changedItem && isFirebaseActive) {
+      saveAssetToCloud(changedItem).catch(err => console.warn('Erro ao sincronizar desvinculação na nuvem:', err));
+    }
+    showToast(`🗑️ Patrimônio ${numPatrimonio} desvinculado de ${servidor?.nome || ''}!`, 'success');
+  };
+
+  // Atribuir Servidor em Lote aos itens selecionados
+  const handleBulkAssignServidor = (servidor) => {
+    if (selectedAssetIds.size === 0) return;
+
+    const count = selectedAssetIds.size;
+    const updatedAssetsList = [];
+    const updatedAssets = assets.map(item => {
+      if (selectedAssetIds.has(item.id)) {
+        const newLoc = servidor
+          ? (item.localizacao && !item.localizacao.toLowerCase().includes('mesa') ? item.localizacao : (servidor.mesa ? `Mesa da ${servidor.nome} (${servidor.mesa})` : `Mesa da ${servidor.nome}`))
+          : item.localizacao;
+        const updatedItem = {
+          ...item,
+          servidorId: servidor ? servidor.id : null,
+          servidorNome: servidor ? servidor.nome : null,
+          servidorTelefone: servidor ? (servidor.telefone || null) : null,
+          localizacao: newLoc
+        };
+        updatedAssetsList.push(updatedItem);
+        return updatedItem;
+      }
+      return item;
+    });
+
+    if (updatedAssetsList.length > 0) {
+      saveAssetsBatchToCloud(updatedAssetsList);
+    }
+    setAssets(updatedAssets);
+    setSelectedAssetIds(new Set());
+    showToast(
+      servidor
+        ? `${count} ${count === 1 ? 'item atribuído' : 'itens atribuídos'} à mesa de ${servidor.nome}!`
+        : `${count} ${count === 1 ? 'item desvinculado' : 'itens desvinculados'} de servidor.`,
+      'success'
+    );
+  };
+
+  // Atualizar observação rápida do bem (inline, por digitação, voz ou seleção de servidor)
+  const handleUpdateAssetObservation = (assetId, newObservation, servidorObj = null) => {
     const updated = assets.map(item => {
       if (item.id === assetId) {
         const updatedItem = {
           ...item,
-          observacao: newObservation
+          observacao: newObservation,
+          ...(servidorObj ? {
+            servidorId: servidorObj.id || null,
+            servidorNome: servidorObj.nome || null,
+            servidorTelefone: servidorObj.telefone || null,
+            servidorMesa: servidorObj.mesa || null
+          } : (!newObservation ? {
+            servidorId: null,
+            servidorNome: null,
+            servidorTelefone: null,
+            servidorMesa: null
+          } : {}))
         };
         saveAssetToCloud(updatedItem);
         return updatedItem;
@@ -1638,7 +1876,7 @@ export function App() {
       return item;
     });
     setAssets(updated);
-    showToast(newObservation ? `Observação salva: "${newObservation}"` : 'Observação limpa');
+    showToast(newObservation ? `Com quem está: "${newObservation}"` : 'Com quem está limpo');
   };
 
   // Alterar cor de destaque da linha/card do bem
@@ -1705,6 +1943,75 @@ export function App() {
     setPedidosCarga(prev => prev.map(p => p.id === pedido.id ? updatedPedido : p));
     savePedidoToCloud(updatedPedido);
     showToast(`Pedido aprovado com sucesso! Bem ${formatLast5Patrimonio(pedido.numeroPatrimonio)} transferido para ${pedido.setorDestinoNome}.`, 'success');
+  };
+
+  // Aprovar Todos os Pedidos de Carga em Lote
+  const handleAprovarTodosPedidos = async (pedidosList) => {
+    if (!pedidosList || pedidosList.length === 0) return;
+
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const userLabel = currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador';
+    
+    // Mapear pedidos por assetId e número de patrimônio
+    const pedidoByAssetId = new Map();
+    pedidosList.forEach(p => {
+      if (p.assetId) pedidoByAssetId.set(String(p.assetId), p);
+      if (p.numeroPatrimonio) pedidoByAssetId.set(String(p.numeroPatrimonio), p);
+    });
+
+    const updatedAssetsList = [];
+    const updatedAssets = assets.map(item => {
+      const pedido = pedidoByAssetId.get(String(item.id)) || pedidoByAssetId.get(String(item.numeroPatrimonio));
+      if (pedido) {
+        const updatedItem = {
+          ...item,
+          setorId: pedido.setorDestinoId,
+          setorNome: pedido.setorDestinoNome,
+          responsavel: pedido.responsavelDestino,
+          localizacao: pedido.localizacaoFisica || pedido.setorDestinoNome,
+          historico: [
+            ...(item.historico || []),
+            {
+              data: nowStr,
+              acao: `Transferência de Carga: de ${item.setorNome} para ${pedido.setorDestinoNome}. Motivo: Aprovação de pedido de carga enviado por ${pedido.solicitanteNome}: "${pedido.motivo || ''}"`,
+              usuario: userLabel
+            }
+          ]
+        };
+        updatedAssetsList.push(updatedItem);
+        return updatedItem;
+      }
+      return item;
+    });
+
+    // Salvar bens alterados no Cloud em lote
+    if (updatedAssetsList.length > 0) {
+      await saveAssetsBatchToCloud(updatedAssetsList);
+    }
+    setAssets(updatedAssets);
+
+    // Atualizar status de todos os pedidos para APROVADO
+    const approvedIds = new Set(pedidosList.map(p => String(p.id)));
+    const updatedPedidosList = [];
+    const updatedPedidos = pedidosCarga.map(p => {
+      if (approvedIds.has(String(p.id))) {
+        const updatedP = { ...p, status: 'APROVADO' };
+        updatedPedidosList.push(updatedP);
+        return updatedP;
+      }
+      return p;
+    });
+
+    // Salvar pedidos alterados no Cloud em lote
+    await savePedidosBatchToCloud(updatedPedidosList);
+    setPedidosCarga(updatedPedidos);
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(updatedPedidos));
+    } catch (e) {
+      // quota fallback
+    }
+
+    showToast(`${pedidosList.length} ${pedidosList.length === 1 ? 'pedido aceito e transferido' : 'pedidos aceitos e transferidos'} com sucesso!`, 'success');
   };
 
   // Recusar Pedido de Carga
@@ -2519,6 +2826,8 @@ export function App() {
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
+        onOpenServidores={() => setIsServidoresModalOpen(true)}
+        servidoresCount={servidores.length}
         onOpenDtinPendencias={() => setIsPendenciasDtinOpen(true)}
         dtinPendenciasCount={userPendingDtinCount}
         onToggleTiCard={() => setIsTiModalOpen(prev => !prev)}
@@ -2826,17 +3135,17 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 6: Localização */}
+                  {/* Coluna 6: Setor */}
                   {visibleColumns.localizacao !== false && (
                     <div className="w-40 shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 pr-1.5">
                       <button
                         onClick={() => handleSort('localizacao')}
-                        title="Clique para ordenar por localização"
+                        title="Clique para ordenar por setor"
                         className={`flex items-center justify-center gap-1 transition-colors cursor-pointer group text-center ${
                           sortField === 'localizacao' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
-                        <span>Localização</span>
+                        <span>Setor</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'localizacao' ? (
                             <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
@@ -2850,22 +3159,22 @@ export function App() {
                     </div>
                   )}
 
-                  {/* Coluna 7: Observação */}
-                  <div className="w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 pr-1.5">
-                    <span>Observação</span>
+                  {/* Coluna 7: Com quem está (sem caixa alta) */}
+                  <div className="w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 pr-1.5 normal-case font-bold text-slate-300">
+                    <span>Com quem está</span>
                   </div>
 
-                  {/* Coluna 8: Responsável */}
-                  {visibleColumns.responsavel !== false && (
+                  {/* Coluna 8: Responsável (Apenas na Aba Geral como Resp. Carga) */}
+                  {filterMode === 'ALL_SECTORS' && visibleColumns.responsavel !== false && (
                     <div className="w-24 shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 pr-1.5">
                       <button
                         onClick={() => handleSort('responsavel')}
-                        title="Clique para ordenar por responsável"
+                        title="Clique para ordenar por responsável da carga"
                         className={`flex items-center justify-center gap-1 transition-colors cursor-pointer group ${
                           sortField === 'responsavel' ? 'text-indigo-300 font-bold' : 'hover:text-slate-200'
                         }`}
                       >
-                        <span>Responsável</span>
+                        <span>Resp. Carga</span>
                         <span className="shrink-0 ml-0.5">
                           {sortField === 'responsavel' ? (
                             <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
@@ -3038,9 +3347,8 @@ export function App() {
                           {[
                             { key: 'quantidade', label: 'Qtde (Quantidade)' },
                             { key: 'marca', label: 'Marca' },
-                            { key: 'modelo', label: 'Modelo' },
-                            { key: 'localizacao', label: 'Localização' },
-                            { key: 'responsavel', label: 'Responsável' },
+                            { key: 'localizacao', label: 'Setor' },
+                            ...(filterMode === 'ALL_SECTORS' ? [{ key: 'responsavel', label: 'Resp. Carga' }] : []),
                             { key: 'dataAquisicao', label: 'Aquisição' },
                             { key: 'valorOriginal', label: '$ Original' },
                             { key: 'valorAtual', label: '$ Atual' },
@@ -3102,6 +3410,8 @@ export function App() {
                       onClearSelection={handleClearSelection}
                       onAssignSector={handleBulkAssignSector}
                       sectors={sectors}
+                      servidores={servidores}
+                      onAssignServidor={handleBulkAssignServidor}
                     />
                   </div>
                 </div>
@@ -3433,7 +3743,11 @@ export function App() {
                     (a.baixado || a.status === 'BAIXADO')
                   );
 
-                  return sortedAssets.map((asset, index) => {
+                  const visibleAssets = sortedAssets.slice(0, visibleCount);
+
+                  return (
+                    <>
+                      {visibleAssets.map((asset, index) => {
                     const isBaixado = asset.baixado || asset.status === 'BAIXADO';
                     const isConferido = asset.status === 'CONFERIDO' && !isBaixado;
                     const isFirstConferido = index === firstConferidoIndex;
@@ -3542,6 +3856,7 @@ export function App() {
                         asset={asset}
                         activeSector={activeSector}
                         sectors={sectors}
+                        servidores={servidores}
                         currentUserName={currentUser?.displayName || currentUser?.email}
                         isGeneralView={filterMode === 'ALL_SECTORS' || filterMode === 'DUPLICATES'}
                         isSelected={selectedAssetIds.has(asset.id)}
@@ -3570,8 +3885,8 @@ export function App() {
                           setAssetForSolicitacao(a);
                           setIsSolicitacaoModalOpen(true);
                         }}
-                        hasPendingPedido={pedidosCarga.some(p => p.assetId === asset.id && p.status === 'PENDENTE')}
-                        searchTerm={searchTerm}
+                        hasPendingPedido={pendingPedidoAssetIds.has(asset.id)}
+                        searchTerm={deferredSearchTerm}
                         statusFilter={statusFilter}
                         filterMode={filterMode}
                         visibleColumns={visibleColumns}
@@ -3580,9 +3895,26 @@ export function App() {
                       />
                     </React.Fragment>
                   );
-                });
-              })()}
-            </div>
+                })}
+
+                {sortedAssets.length > visibleCount && (
+                  <div ref={sentinelRef} className="py-6 flex flex-col items-center justify-center gap-2 border-t border-slate-800/60 my-2">
+                    <div className="text-xs text-slate-400 font-medium">
+                      Exibindo <span className="text-cyan-300 font-bold">{Math.min(visibleCount, sortedAssets.length)}</span> de <span className="text-white font-bold">{sortedAssets.length}</span> bens carregados
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount(prev => prev + 100)}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-cyan-300 border border-slate-700 text-xs font-bold transition-all shadow-md cursor-pointer active:scale-95"
+                    >
+                      Carregar mais bens (+100)
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500">
@@ -3649,6 +3981,8 @@ export function App() {
         assetToEdit={assetToEdit}
         defaultSectorId={activeSectorId}
         sectors={sectors}
+        servidores={servidores}
+        onOpenServidoresModal={() => setIsServidoresModalOpen(true)}
       />
 
       <TransferModal
@@ -3781,6 +4115,7 @@ export function App() {
         isAdmin={effectiveUserRole === 'admin'}
         onAprovarPedido={handleAprovarPedido}
         onRecusarPedido={handleRecusarPedido}
+        onAprovarTodos={handleAprovarTodosPedidos}
       />
 
       {/* Modal de Notificações e Autorizações de Envio ao DTIN pelo Detentor */}
@@ -3800,6 +4135,21 @@ export function App() {
         onRejectDtin={handleRejectDtin}
         currentUser={effectiveUser}
         isAdmin={effectiveUserRole === 'admin'}
+      />
+
+      {/* Modal de Gestão de Servidores & Pessoas (Onde os itens estão alocados) */}
+      <ServidoresModal
+        isOpen={isServidoresModalOpen}
+        onClose={() => setIsServidoresModalOpen(false)}
+        servidores={servidores}
+        assets={assets}
+        sectors={sectors}
+        onSaveServidor={handleSaveServidor}
+        onSaveServidoresBatch={handleSaveServidoresBatch}
+        onDeleteServidor={handleDeleteServidor}
+        onSelectServidorToFilter={handleSelectServidorToFilter}
+        onGoToAsset={handleGoToAsset}
+        onUnlinkAssetFromServidor={handleUnlinkAssetFromServidor}
       />
 
       {/* Modal Central Moderno e Elegante de Confirmação para Limpeza de Bens do Setor */}
@@ -4011,6 +4361,8 @@ export function App() {
           onAssignTi={handleBulkAssignTi}
           onAssignSector={handleBulkAssignSector}
           sectors={sectors}
+          servidores={servidores}
+          onAssignServidor={handleBulkAssignServidor}
         />
       </div>
 

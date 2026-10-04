@@ -16,6 +16,7 @@ import {
   Trash2,
   MoreVertical,
   User,
+  Users,
   Layers,
   ChevronDown,
   Lock,
@@ -167,7 +168,7 @@ const DescriptionWithReveal = ({ text, colorClass, searchTerm, isDtin = false, i
           />
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute left-0 top-0 z-50 w-full min-w-full max-w-full bg-slate-900/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-lg p-2.5 text-left animate-in fade-in slide-in-from-top-1 duration-150"
+            className="absolute left-0 top-0 z-50 min-w-[280px] sm:min-w-[420px] max-w-[550px] bg-slate-900/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-lg p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150"
           >
             <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-800 mb-1.5">
               <span className="text-[9.5px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
@@ -191,10 +192,11 @@ const DescriptionWithReveal = ({ text, colorClass, searchTerm, isDtin = false, i
   );
 };
 
-export const AssetTableRowCard = ({
+const AssetTableRowCardComponent = ({
   asset,
   activeSector,
   sectors = [],
+  servidores = [],
   currentUserName,
   userRole = 'admin',
   userSectorId = null,
@@ -266,7 +268,7 @@ export const AssetTableRowCard = ({
   };
 
   const currentSectorName = asset.setorNome || activeSector?.name || (sectors?.find(s => s.id === asset.setorId)?.name) || '';
-  const displayLocation = asset.localizacao || currentSectorName || 'Onde está?';
+  const displayLocation = asset.localizacao || (asset.servidorNome ? `Mesa de ${asset.servidorNome}` : '') || currentSectorName || 'Onde está?';
 
   // Estados de edição inline de localização e auto-close
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -290,6 +292,28 @@ export const AssetTableRowCard = ({
   useEffect(() => {
     setObsValue(asset.observacao || '');
   }, [asset.observacao]);
+
+  const effectiveServidores = React.useMemo(() => {
+    if (servidores && servidores.length > 0) return servidores;
+    try {
+      const stored = localStorage.getItem('carga_patrimonio_servidores');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }, [servidores]);
+
+  const filteredServidores = React.useMemo(() => {
+    if (!effectiveServidores || effectiveServidores.length === 0) return [];
+    if (!obsValue || !obsValue.trim()) return effectiveServidores;
+    const q = obsValue.toLowerCase().trim();
+    const matches = effectiveServidores.filter(s => 
+      s.nome?.toLowerCase().includes(q) || 
+      s.mesa?.toLowerCase().includes(q) || 
+      s.telefone?.includes(q)
+    );
+    return matches.length > 0 ? matches : effectiveServidores;
+  }, [effectiveServidores, obsValue]);
 
   // Fecha o menu de ações e submenus ao pressionar ESC
   useEffect(() => {
@@ -601,11 +625,11 @@ export const AssetTableRowCard = ({
     }
   };
 
-  const handleSaveLocation = (e, directVal = null) => {
+  const handleSaveLocation = (e, directVal = null, servidorData = null) => {
     e?.stopPropagation();
     const val = (directVal !== null ? directVal : locationValue).trim();
     if (onUpdateLocation && val) {
-      onUpdateLocation(asset.id, val);
+      onUpdateLocation(asset.id, val, servidorData);
     }
     closeLocEdit();
   };
@@ -635,11 +659,11 @@ export const AssetTableRowCard = ({
     return null;
   };
 
-  const handleSaveObservation = (e, directVal = null) => {
+  const handleSaveObservation = (e, directVal = null, servidorObj = null) => {
     e?.stopPropagation();
     const val = (directVal !== null ? directVal : obsValue).trim();
     if (onUpdateObservation) {
-      onUpdateObservation(asset.id, val);
+      onUpdateObservation(asset.id, val, servidorObj);
     }
     closeObsEdit();
   };
@@ -717,10 +741,105 @@ export const AssetTableRowCard = ({
   const cardColorClass = asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null;
   const isRowElevated = isDescOpen || isMotivoOpen || isDtinPopupOpen || isActionsOpen || isEditingLocation || isEditingObs || isColorPickerOpen;
 
+  // Modalzinho / Popover do DTIN (Reutilizado sobre tudo)
+  const renderDtinPopover = (positionClass = 'left-0') => {
+    if (!isDtinPopupOpen) return null;
+    const hasAnexos = asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0;
+    const directUrl = asset.dadosDtin?.documentoUrl || (hasAnexos ? asset.dadosDtin.anexos[0].url : null);
+
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-40 bg-transparent"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsDtinPopupOpen(false);
+          }}
+        />
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={`absolute ${positionClass} top-full mt-1.5 z-50 w-80 bg-slate-950/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-xl p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150 cursor-default whitespace-normal select-text`}
+        >
+          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
+            <span className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Server className="w-3.5 h-3.5 text-cyan-400" /> Enviado para a DTIN
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsDtinPopupOpen(false)}
+              className="p-1 rounded text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div>
+              <span className="text-[9.5px] text-slate-400 uppercase font-semibold block mb-0.5">Motivo:</span>
+              <p className="text-slate-100 font-semibold leading-tight text-xs">
+                {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+              <div>
+                <span className="text-[9px] text-slate-400 block">Enviado por:</span>
+                <strong className="text-cyan-300 font-bold truncate block">{asset.dadosDtin?.responsavel || 'Santana'}</strong>
+              </div>
+              <div>
+                <span className="text-[9px] text-slate-400 block">Data do Envio:</span>
+                <span className="text-slate-200 font-mono font-semibold block">{asset.dadosDtin?.data || '---'}</span>
+              </div>
+            </div>
+
+            {asset.dadosDtin?.observacoes && (
+              <div className="pt-1">
+                <span className="text-[9px] text-slate-400 block mb-0.5">Observações:</span>
+                <p className="text-slate-300 text-[11px] leading-snug">{asset.dadosDtin.observacoes}</p>
+              </div>
+            )}
+
+            {/* Ações rápidas */}
+            <div className="flex items-center gap-1.5 pt-2 mt-1">
+              {directUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(directUrl, '_blank');
+                  }}
+                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                >
+                  <FileText className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Ver Doc (PDF)</span>
+                </button>
+              )}
+
+              {canManageAsset && onReturnDtin && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDtinPopupOpen(false);
+                    onReturnDtin(asset.id);
+                  }}
+                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Retornar</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div 
       id={`asset-row-${asset.id}`}
-      className={`relative ${isRowElevated ? 'z-40' : 'z-[1]'} transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
+      className={`relative ${isRowElevated ? 'z-50' : 'z-[1]'} transition-all duration-150 overflow-visible group w-full border-b border-slate-800/80 ${
         isRowSliding ? 'animate-card-slide-curtain' : ''
       } ${
         isSelected
@@ -1154,7 +1273,9 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 3: Item / Descrição (Largura reduzida com flex-1 min-w-[165px]) */}
-        <div className="flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 overflow-hidden whitespace-nowrap transition-all border-r border-slate-800/80 pr-2">
+        <div className={`flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 whitespace-nowrap transition-all border-r border-slate-800/80 pr-2 ${
+          isDtinPopupOpen || isDescOpen ? 'overflow-visible z-50 relative' : 'overflow-hidden'
+        }`}>
           {/* Sinalizador de Patrimônio Duplicado */}
           {duplicateInfo?.isDuplicate && (
             <span 
@@ -1181,101 +1302,8 @@ export const AssetTableRowCard = ({
                 <span>No DTIN</span>
               </button>
 
-              {/* Modalzinho / Popover por cima, pequeno */}
-              {isDtinPopupOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40 bg-transparent"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsDtinPopupOpen(false);
-                    }}
-                  />
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 top-full mt-1.5 z-50 w-80 bg-slate-950/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-xl p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150 cursor-default"
-                  >
-                    <div className="flex items-center justify-between pb-1.5 mb-2">
-                      <span className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Server className="w-3.5 h-3.5 text-cyan-400" /> Enviado para a DTIN
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsDtinPopupOpen(false)}
-                        className="p-1 rounded text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-                      <div>
-                        <span className="text-[9.5px] text-slate-400 uppercase font-semibold block mb-0.5">Motivo:</span>
-                        <p className="text-slate-100 font-semibold leading-tight text-xs">
-                          {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                        <div>
-                          <span className="text-[9px] text-slate-400 block">Enviado por:</span>
-                          <strong className="text-cyan-300 font-bold truncate block">{asset.dadosDtin?.responsavel || 'Santana'}</strong>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-400 block">Data do Envio:</span>
-                          <span className="text-slate-200 font-mono font-semibold block">{asset.dadosDtin?.data || '---'}</span>
-                        </div>
-                      </div>
-
-                      {asset.dadosDtin?.observacoes && (
-                        <div className="pt-1">
-                          <span className="text-[9px] text-slate-400 block mb-0.5">Observações:</span>
-                          <p className="text-slate-300 text-[11px] leading-snug">{asset.dadosDtin.observacoes}</p>
-                        </div>
-                      )}
-
-                      {/* Ações rápidas */}
-                      <div className="flex items-center gap-1.5 pt-2 mt-1">
-                        {(() => {
-                          const hasAnexos = asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0;
-                          const directUrl = asset.dadosDtin?.documentoUrl || (hasAnexos ? asset.dadosDtin.anexos[0].url : null);
-                          if (directUrl) {
-                            return (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(directUrl, '_blank');
-                                }}
-                                className="flex-1 px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
-                              >
-                                <FileText className="w-3.5 h-3.5 text-rose-400" />
-                                <span>Ver Doc (PDF)</span>
-                              </button>
-                            );
-                          }
-                          return null;
-                        })()}
-
-                        {canManageAsset && onReturnDtin && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsDtinPopupOpen(false);
-                              onReturnDtin(asset.id);
-                            }}
-                            className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Retornar</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+              {/* Modalzinho / Popover por cima sobre tudo */}
+              {renderDtinPopover('left-0')}
             </div>
           )}
 
@@ -1286,6 +1314,24 @@ export const AssetTableRowCard = ({
             >
               <Bell className="w-3 h-3 text-cyan-400" />
               <span>DTIN Pendente</span>
+            </div>
+          )}
+
+          {/* Badge do Servidor / Pessoa onde o item está alocado */}
+          {asset.servidorNome && (
+            <div 
+              title={`Item na mesa / com ${asset.servidorNome}${asset.servidorTelefone ? ` • Tel: ${asset.servidorTelefone}` : ''}`}
+              className="px-2 py-0.5 rounded-lg bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/40 text-[10px] flex items-center gap-1.5 shrink-0 shadow-sm"
+            >
+              <User className="w-3 h-3 text-cyan-400 shrink-0" />
+              <span className="truncate max-w-[120px]">
+                <HighlightText text={asset.servidorNome} query={searchTerm} />
+              </span>
+              {asset.servidorTelefone && (
+                <span className="text-[9.5px] text-cyan-400/90 font-mono hidden xl:inline">
+                  • {asset.servidorTelefone}
+                </span>
+              )}
             </div>
           )}
 
@@ -1319,12 +1365,12 @@ export const AssetTableRowCard = ({
 
         {/* Coluna 6: Localização (Centralizado) */}
         {visibleColumns?.localizacao !== false && (
-          <div className="w-40 max-w-[160px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
+          <div className={`w-40 max-w-[160px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 ${isEditingLocation ? 'overflow-visible z-50 relative' : 'overflow-hidden'}`}>
             {isEditingLocation ? (
               <div 
                 ref={locContainerRef}
                 onClick={(e) => e.stopPropagation()} 
-                className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-hidden"
+                className="relative flex items-center justify-center z-50 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-visible"
               >
                 {/* Campo de Entrada e Botão Dropdown */}
                 <div className="relative inline-flex items-center max-w-full">
@@ -1345,8 +1391,8 @@ export const AssetTableRowCard = ({
                       if (e.key === 'Enter') handleSaveLocation(e);
                       if (e.key === 'Escape') closeLocEdit();
                     }}
-                    placeholder="Selecione ou digite o setor..."
-                    className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[120px] max-w-[140px] pr-6 shadow-xl text-center truncate"
+                    placeholder="Digite ou escolha o setor..."
+                    className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-emerald-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 min-w-[120px] max-w-[140px] pr-6 shadow-xl text-center truncate"
                     autoFocus
                   />
                   <button
@@ -1363,37 +1409,65 @@ export const AssetTableRowCard = ({
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLocListbox ? 'rotate-180 text-emerald-400' : ''}`} />
                   </button>
 
-                  {/* Listbox customizado com 10 opções visíveis contendo SOMENTE os setores */}
+                  {/* Listbox customizado de Setores - puxa da tabela Setor */}
                   {showLocListbox && (
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-64 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                      <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
-                        <span>Setores</span>
-                        <span className="text-[9px] text-emerald-400 font-mono">10 visíveis</span>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-emerald-500/40 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Setores ({sectors?.length || 0})</span>
+                        </span>
                       </div>
-                      <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
-                        {sectors.map((s) => (
+
+                      <div className="max-h-[460px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
+                        {/* Atalho para salvar nome customizado digitado */}
+                        {locationValue && !sectors?.some(s => s.name.toLowerCase() === locationValue.trim().toLowerCase()) && (
                           <button
-                            key={`loc-sec-${s.id}`}
                             type="button"
-                            onClick={(e) => {
-                              setLocationValue(s.name);
-                              handleSaveLocation(e, s.name);
-                            }}
-                            className="w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
+                            onClick={(e) => handleSaveLocation(e, locationValue.trim())}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-200 transition-all flex items-center justify-between cursor-pointer mb-1"
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">
-                                {s.name}
-                              </span>
-                              {s.responsavel && (
-                                <span className="text-[10px] text-slate-400 truncate">
-                                  ({s.responsavel})
-                                </span>
-                              )}
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="truncate">Usar: <strong>"{locationValue}"</strong></span>
                             </div>
-                            <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="text-[9px] text-emerald-400 bg-emerald-500/20 px-1 py-0.5 rounded font-mono shrink-0 ml-1">Enter ↵</span>
                           </button>
-                        ))}
+                        )}
+
+                        {/* Lista de Setores da Tabela Setor */}
+                        {sectors && sectors.length > 0 ? (
+                          sectors
+                            .filter(s => !locationValue || !locationValue.trim() || s.name?.toLowerCase().includes(locationValue.toLowerCase().trim()))
+                            .map((s) => (
+                              <button
+                                key={`loc-sec-${s.id}`}
+                                type="button"
+                                onClick={(e) => {
+                                  setLocationValue(s.name);
+                                  handleSaveLocation(e, s.name);
+                                }}
+                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-emerald-950/40 hover:border-emerald-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)] truncate">
+                                    {s.name}
+                                  </span>
+                                  {s.responsavel && (
+                                    <span className="text-[10px] text-slate-400 truncate">
+                                      ({s.responsavel})
+                                    </span>
+                                  )}
+                                </div>
+                                <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                              </button>
+                            ))
+                        ) : (
+                          <div className="p-3 text-center text-slate-400 text-xs">
+                            <Building2 className="w-5 h-5 text-slate-500 mx-auto mb-1 opacity-60" />
+                            <p className="font-semibold text-slate-300">Nenhum setor cadastrado</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1410,7 +1484,7 @@ export const AssetTableRowCard = ({
                       openLocEdit(e);
                     }
                   }}
-                  title={canManageAsset ? "Clique para editar a localização" : "Clique para informar localização"}
+                  title={canManageAsset ? "Clique para editar o setor" : "Clique para informar setor"}
                   className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-[11px] cursor-pointer text-center max-w-full overflow-hidden"
                 >
                   <span className="truncate max-w-[130px] text-center">
@@ -1424,12 +1498,13 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 7: Observação (Aumentada para w-[186px] - Centralizado) */}
-        <div className="w-[186px] max-w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 px-1 overflow-hidden">
+        {/* Coluna 7: Com quem está (Centralizado) */}
+        <div className={`w-[186px] max-w-[186px] shrink-0 flex items-center justify-center text-center border-r border-slate-800/80 px-1 ${isEditingObs ? 'overflow-visible z-50 relative' : 'overflow-hidden'}`}>
           {isEditingObs ? (
             <div 
               ref={obsContainerRef}
               onClick={(e) => e.stopPropagation()} 
-              className="relative flex items-center justify-center z-30 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-hidden"
+              className="relative flex items-center justify-center z-50 animate-in fade-in zoom-in-95 duration-100 max-w-full overflow-visible"
             >
               {/* Campo de Entrada e Botão Dropdown */}
               <div className="relative inline-flex items-center max-w-full">
@@ -1450,8 +1525,8 @@ export const AssetTableRowCard = ({
                     if (e.key === 'Enter') handleSaveObservation(e);
                     if (e.key === 'Escape') closeObsEdit();
                   }}
-                  placeholder="Ex: Está no Studio..."
-                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-blue-500/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 w-[145px] max-w-[145px] pr-6 shadow-xl"
+                  placeholder="Digite ou escolha o nome..."
+                  className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-cyan-500/80 focus:outline-none focus:ring-1 focus:ring-cyan-400 w-[145px] max-w-[145px] pr-6 shadow-xl"
                   autoFocus
                 />
                 <button
@@ -1463,54 +1538,142 @@ export const AssetTableRowCard = ({
                     resetObsTimer();
                   }}
                   className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
-                  title="Mostrar opções de observação"
+                  title="Mostrar lista de servidores (com quem está)"
                 >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showObsListbox ? 'rotate-180 text-emerald-400' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showObsListbox ? 'rotate-180 text-cyan-400' : ''}`} />
                 </button>
 
-                {/* Listbox customizado reduzido em 25% com 10 opções visíveis */}
+                {/* Listbox de Servidores (Com quem está) - até 15 nomes mostrados */}
                 {showObsListbox && (
-                  <div className="absolute left-0 top-full mt-1.5 w-[216px] bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1.5 py-1 border-b border-slate-800 flex items-center justify-between">
-                      <span>Sugestões</span>
-                      <span className="text-[8.5px] text-emerald-400 font-mono">10 visíveis</span>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="text-[9.5px] font-bold text-cyan-400 uppercase tracking-wider px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Servidores ({effectiveServidores?.length || 0})</span>
+                      </span>
                     </div>
-                    <div className="h-[320px] max-h-[320px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
-                      {sectors.map((s) => (
+
+                    <div className="max-h-[460px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
+                      {/* Atalho para salvar qualquer nome digitado */}
+                      {obsValue && !effectiveServidores?.some(s => s.nome.toLowerCase() === obsValue.trim().toLowerCase()) && (
                         <button
-                          key={`obs-sec-${s.id}`}
                           type="button"
-                          onClick={(e) => {
-                            const val = `Está no ${s.name}`;
-                            setObsValue(val);
-                            handleSaveObservation(e, val);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] hover:bg-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+                          onClick={(e) => handleSaveObservation(e, obsValue.trim())}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/50 text-cyan-200 transition-all flex items-center justify-between cursor-pointer mb-1"
                         >
-                          <span className="text-slate-300 font-normal">Está no</span>
-                          <span className="text-emerald-400 font-bold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]">{s.name}</span>
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                            <span className="truncate">Usar: <strong>"{obsValue}"</strong></span>
+                          </div>
+                          <span className="text-[9px] text-cyan-400 bg-cyan-500/20 px-1 py-0.5 rounded font-mono shrink-0 ml-1">Enter ↵</span>
                         </button>
-                      ))}
-                      {[
-                        'Em manutenção técnica',
-                        'Emprestado provisoriamente',
-                        'Aguardando recolhimento',
-                        'Sem etiqueta patrimonial',
-                        'Em uso constante no setor',
-                        'Aguardando vistoria / baixa'
-                      ].map((opt) => (
-                        <button
-                          key={`obs-preset-${opt}`}
-                          type="button"
-                          onClick={(e) => {
-                            setObsValue(opt);
-                            handleSaveObservation(e, opt);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                      )}
+
+                      {/* Lista de Servidores (só o nome) */}
+                      {filteredServidores && filteredServidores.length > 0 ? (
+                        filteredServidores.map((serv) => (
+                          <button
+                            key={`obs-serv-${serv.id}`}
+                            type="button"
+                            onClick={(e) => {
+                              setObsValue(serv.nome);
+                              handleSaveObservation(e, serv.nome, serv);
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-bold">
+                                {serv.nome ? serv.nome.charAt(0).toUpperCase() : '👤'}
+                              </div>
+                              <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
+                                {serv.nome}
+                              </span>
+                              {serv.mesa && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
+                                  {serv.mesa}
+                                </span>
+                              )}
+                            </div>
+                            <Check className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                          </button>
+                        ))
+                      ) : effectiveServidores && effectiveServidores.length > 0 ? (
+                        effectiveServidores.map((serv) => (
+                          <button
+                            key={`obs-serv-${serv.id}`}
+                            type="button"
+                            onClick={(e) => {
+                              setObsValue(serv.nome);
+                              handleSaveObservation(e, serv.nome, serv);
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-bold">
+                                {serv.nome ? serv.nome.charAt(0).toUpperCase() : '👤'}
+                              </div>
+                              <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
+                                {serv.nome}
+                              </span>
+                              {serv.mesa && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
+                                  {serv.mesa}
+                                </span>
+                              )}
+                            </div>
+                            <Check className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-slate-400 text-xs">
+                          <User className="w-5 h-5 text-slate-500 mx-auto mb-1 opacity-60" />
+                          <p className="font-semibold text-slate-300">Nenhum servidor encontrado</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">Cadastre pelo botão Servidores no cabeçalho</p>
+                        </div>
+                      )}
+
+                      {/* Opção de limpar campo */}
+                      {obsValue && (
+                        <div className="pt-1 mt-1 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              setObsValue('');
+                              handleSaveObservation(e, '', null);
+                            }}
+                            className="w-full text-left px-2.5 py-1 rounded-lg text-[11px] text-rose-400 hover:bg-rose-950/30 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                            <span>Limpar (deixar sem responsável)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Outras situações comuns */}
+                      <div className="pt-1 mt-1 border-t border-slate-800">
+                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider px-2 py-0.5">
+                          Outras situações
+                        </div>
+                        {[
+                          'Em manutenção técnica',
+                          'Emprestado provisoriamente',
+                          'Aguardando recolhimento',
+                          'Em uso no setor'
+                        ].map((opt) => (
+                          <button
+                            key={`obs-preset-${opt}`}
+                            type="button"
+                            onClick={(e) => {
+                              setObsValue(opt);
+                              handleSaveObservation(e, opt, null);
+                            }}
+                            className="w-full text-left px-2.5 py-1 rounded-lg text-[11px] text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors cursor-pointer"
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+
                     </div>
                   </div>
                 )}
@@ -1652,7 +1815,7 @@ export const AssetTableRowCard = ({
               <button
                 type="button"
                 onClick={(e) => openObsEdit(e)}
-                title="Clique para adicionar observação"
+                title={isGeneralView ? "Clique para informar com quem está" : "Clique para adicionar observação"}
                 className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-800/80 text-slate-500 hover:text-slate-300 transition-all text-[11px] cursor-pointer text-center"
               >
                 <span>---</span>
@@ -1678,11 +1841,11 @@ export const AssetTableRowCard = ({
           )}
         </div>
 
-        {/* Coluna 8: Responsável */}
-        {visibleColumns?.responsavel !== false && (
+        {/* Coluna 8: Responsável (Apenas na Aba Geral) */}
+        {isGeneralView && visibleColumns?.responsavel !== false && (
           <div className="w-24 max-w-[96px] shrink-0 flex items-center justify-center text-center animate-in fade-in duration-150 border-r border-slate-800/80 px-1 overflow-hidden">
             <div className="truncate w-full text-center">
-              <span className="font-semibold text-slate-200 truncate block text-[10px] text-center" title={asset.responsavel}>
+              <span className="font-semibold text-slate-200 truncate block text-[10px] text-center" title={`Responsável da carga: ${asset.responsavel || '---'}`}>
                 <HighlightText text={asset.responsavel || '---'} query={searchTerm} />
               </span>
             </div>
@@ -1726,7 +1889,9 @@ export const AssetTableRowCard = ({
         )}
 
         {/* Coluna 13: Ações & Conferência movidos para o limite da borda direita */}
-        <div className="w-28 max-w-[112px] shrink-0 flex items-center justify-center gap-1.5 overflow-hidden">
+        <div className={`w-28 max-w-[112px] shrink-0 flex items-center justify-center gap-1.5 ${
+          isDtinPopupOpen || showUncheckConfirm ? 'overflow-visible z-50 relative' : 'overflow-hidden'
+        }`}>
           
           {/* Bloqueado / Conferência / Pedido */}
           {!canManageAsset ? (
@@ -1755,18 +1920,21 @@ export const AssetTableRowCard = ({
               Baixado
             </div>
           ) : isEnviadoDtin ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDtinPopupOpen(!isDtinPopupOpen);
-              }}
-              title="Equipamento no DTIN (Clique para ver detalhes)"
-              className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
-            >
-              <Server className="w-3 h-3 text-cyan-400" />
-              <span>No DTIN</span>
-            </button>
+            <div className="relative inline-flex items-center">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDtinPopupOpen(!isDtinPopupOpen);
+                }}
+                title="Equipamento no DTIN (Clique para ver detalhes)"
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
+              >
+                <Server className="w-3 h-3 text-cyan-400" />
+                <span>No DTIN</span>
+              </button>
+              {renderDtinPopover('right-0')}
+            </div>
           ) : showUncheckConfirm ? (
             <div className="z-20 flex items-center gap-2 bg-slate-950/95 border-2 border-amber-500 px-3.5 py-1.5 rounded-xl shadow-2xl shadow-black select-none whitespace-nowrap animate-in zoom-in-95 duration-150">
               <span className="text-xs text-amber-300 font-black">Desmarcar?</span>
@@ -2461,7 +2629,7 @@ export const AssetTableRowCard = ({
             </div>
 
             {/* Micro metadados com Mesma Largura da Descrição */}
-            {(asset.marca || asset.modelo || asset.localizacao) && (
+            {(asset.marca || asset.modelo || asset.localizacao || asset.servidorNome) && (
               <div className="flex flex-col gap-1.5 text-[10.5px] mb-2 w-full">
                 {(asset.marca || asset.modelo) && (
                   <div className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
@@ -2471,12 +2639,22 @@ export const AssetTableRowCard = ({
                     </span>
                   </div>
                 )}
-                {asset.localizacao && (
-                  <div className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800">
-                    <span className="text-slate-400 block text-[9px]">Local:</span>
-                    <span className="text-slate-200 font-semibold truncate block">
-                      {asset.localizacao}
-                    </span>
+                {(asset.servidorNome || asset.localizacao) && (
+                  <div className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/40 border border-slate-800 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-slate-400 block text-[9px]">Localização:</span>
+                      <span className="text-slate-200 font-semibold truncate block">
+                        {asset.localizacao || (asset.servidorNome ? `Mesa de ${asset.servidorNome}` : '---')}
+                      </span>
+                    </div>
+                    {asset.servidorNome && (
+                      <div className="text-right shrink-0">
+                        <span className="text-cyan-400 font-bold block text-[10.5px]">👤 {asset.servidorNome}</span>
+                        {asset.servidorTelefone && (
+                          <span className="text-slate-400 font-mono text-[9.5px]">📞 {asset.servidorTelefone}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3302,3 +3480,6 @@ export const AssetTableRowCard = ({
     </div>
   );
 };
+
+export const AssetTableRowCard = React.memo(AssetTableRowCardComponent);
+export default AssetTableRowCard;
