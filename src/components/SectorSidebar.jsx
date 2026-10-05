@@ -343,7 +343,7 @@ export const SectorSidebar = ({
               const stats = getSectorStats(sec.id);
               const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
               const isMySector = isUserOwned;
-              const isOtherSector = userRole === 'operador' && !isMySector;
+              const isOtherSector = !isMySector;
               const canManageSector = userRole === 'admin' || isMySector;
 
               return (
@@ -357,7 +357,9 @@ export const SectorSidebar = ({
                     className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
                       isSelected
                         ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
-                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
+                        : isOtherSector
+                          ? 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-l-4 border-l-transparent'
+                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
                     }`}
                   >
                     {/* Nome do Setor */}
@@ -372,16 +374,20 @@ export const SectorSidebar = ({
 
                       <div className="truncate min-w-0">
                         <div className="flex items-center gap-1.5 truncate">
-                          <span className={isSelected ? 'font-bold text-white' : 'font-medium'}>
+                          <span className={isSelected ? 'font-bold text-white' : isOtherSector ? 'font-medium text-slate-400' : 'font-medium text-slate-200'}>
                             {sec.name}
                           </span>
                           {sec.responsavel && (
-                            <span className={`flex items-center gap-1.5 ${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold text-[11px] truncate shrink-0`}>
-                              <span className="w-1 h-1 rounded-full bg-slate-500 shrink-0" />
+                            <span className={`flex items-center gap-1.5 ${
+                              isOtherSector
+                                ? (isSelected ? 'text-slate-300 font-medium' : 'text-slate-400 font-normal')
+                                : `${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold`
+                            } text-[11px] truncate shrink-0`}>
+                              <span className={`w-1 h-1 rounded-full ${isOtherSector ? 'bg-slate-600' : 'bg-slate-500'} shrink-0`} />
                               <span>{sec.responsavel}</span>
                             </span>
                           )}
-                          {isOtherSector && (
+                          {isOtherSector && userRole === 'operador' && (
                             <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
                               <Lock className="w-3 h-3 inline" />
                             </span>
@@ -393,10 +399,14 @@ export const SectorSidebar = ({
                     {/* Badge de quantidade e status de conclusão */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {stats.isCompleted && !isSelected && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${isOtherSector ? 'text-emerald-500/70' : 'text-emerald-400'}`} />
                       )}
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                        isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' : 'bg-slate-800 text-slate-300'
+                        isSelected
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold'
+                          : isOtherSector
+                            ? 'bg-slate-800/70 text-slate-400 border border-slate-700/40'
+                            : 'bg-slate-800 text-slate-300'
                       }`}>
                         {stats.total}
                       </span>
