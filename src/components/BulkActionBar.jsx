@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   CheckCheck, 
   Building2, 
   Users,
   User,
   X, 
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 
 export const BulkActionBar = ({
@@ -18,8 +19,10 @@ export const BulkActionBar = ({
 }) => {
   const [isSectorDropdownOpen, setIsSectorDropdownOpen] = useState(false);
   const [isServidorDropdownOpen, setIsServidorDropdownOpen] = useState(false);
+  const [servidorSearch, setServidorSearch] = useState('');
   const sectorDropdownRef = useRef(null);
   const servidorDropdownRef = useRef(null);
+  const servidorSearchInputRef = useRef(null);
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -35,7 +38,57 @@ export const BulkActionBar = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (selectedCount === 0) return null;
+  // Reseta busca e foca automaticamente no input ao abrir a lista
+  useEffect(() => {
+    if (isServidorDropdownOpen) {
+      setServidorSearch('');
+      const t = setTimeout(() => {
+        servidorSearchInputRef.current?.focus();
+      }, 60);
+      return () => clearTimeout(t);
+    }
+  }, [isServidorDropdownOpen]);
+
+  // Ao digitar com a lista aberta, redireciona o foco para a busca
+  useEffect(() => {
+    if (!isServidorDropdownOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsServidorDropdownOpen(false);
+        return;
+      }
+      // Se pressionou uma tecla de caractere alfanumérico e não está com foco no input
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (document.activeElement !== servidorSearchInputRef.current) {
+          servidorSearchInputRef.current?.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isServidorDropdownOpen]);
+
+  // Normalizador de texto para busca sem acentos e minúscula
+  const normalizeText = (text) => 
+    (text || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  // Filtro ativo e inteligente dos servidores
+  const filteredServidores = useMemo(() => {
+    const q = normalizeText(servidorSearch);
+    if (!q) return servidores;
+
+    return servidores.filter(s => {
+      const nome = normalizeText(s.nome);
+      const mesa = normalizeText(s.mesa);
+      const tel = (s.telefone || '').replace(/\D/g, '');
+      const qDigits = q.replace(/\D/g, '');
+      return nome.includes(q) || mesa.includes(q) || (qDigits.length >= 2 && tel.includes(qDigits));
+    });
+  }, [servidores, servidorSearch]);
+
+  const effectiveCount = selectedCount || 0;
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white">
@@ -46,7 +99,7 @@ export const BulkActionBar = ({
           <CheckCheck className="w-3.5 h-3.5 text-white stroke-[3]" />
         </div>
         <span className="text-xs font-black text-indigo-200 whitespace-nowrap">
-          {selectedCount} {selectedCount === 1 ? 'item selecionado' : 'itens selecionados'}
+          {effectiveCount} {effectiveCount === 1 ? 'item selecionado' : 'itens selecionados'}
         </span>
       </div>
 
@@ -124,55 +177,116 @@ export const BulkActionBar = ({
               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold text-xs flex items-center gap-1.5 border border-cyan-400/40 transition-all cursor-pointer shadow-lg shadow-cyan-600/30 active:scale-95 whitespace-nowrap"
             >
               <Users className="w-3.5 h-3.5 text-cyan-200" />
-              <span>Atribuir a Servidor</span>
+              <span>Quem está com o item?</span>
               <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isServidorDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Menu Suspenso de Servidores */}
+            {/* Menu Suspenso de Servidores com Busca Ativa e Inteligente */}
             {isServidorDropdownOpen && (
-              <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 z-50 w-72 max-h-[384px] overflow-y-auto bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150 custom-scroll-auto-hide">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2.5 py-1 border-b border-slate-800 flex items-center justify-between">
+              <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 z-50 w-72 max-h-[420px] overflow-hidden flex flex-col bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* Cabeçalho */}
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between border-b border-slate-800 shrink-0">
                   <span>Alocar com Servidor:</span>
-                  <span className="text-[9px] font-mono text-cyan-400">{servidores.length} pessoas</span>
+                  <span className="text-[9px] font-mono text-cyan-400">
+                    {servidorSearch ? `${filteredServidores.length} de ${servidores.length}` : `${servidores.length} pessoas`}
+                  </span>
                 </div>
-                <div className="space-y-0.5 pt-1">
-                  {/* Opção para desvincular */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsServidorDropdownOpen(false);
-                      onAssignServidor(null);
-                    }}
-                    className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer group"
-                  >
-                    <span className="font-semibold italic">Desvincular servidor (Uso Geral)</span>
-                  </button>
 
-                  {servidores.map(serv => (
+                {/* Campo de Busca Ativo e Inteligente */}
+                <div className="pt-2 pb-1 shrink-0">
+                  <div className="relative flex items-center">
+                    <Search className="w-3.5 h-3.5 text-cyan-400 absolute left-2.5 pointer-events-none" />
+                    <input
+                      ref={servidorSearchInputRef}
+                      type="text"
+                      value={servidorSearch}
+                      onChange={(e) => setServidorSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && filteredServidores.length === 1) {
+                          e.preventDefault();
+                          setIsServidorDropdownOpen(false);
+                          onAssignServidor(filteredServidores[0]);
+                        }
+                      }}
+                      placeholder="Digite o nome do servidor..."
+                      className="w-full pl-8 pr-7 py-1.5 bg-slate-950/80 border border-slate-700/70 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition-all shadow-inner"
+                      autoFocus
+                    />
+                    {servidorSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setServidorSearch('');
+                          servidorSearchInputRef.current?.focus();
+                        }}
+                        className="absolute right-2 p-0.5 text-slate-400 hover:text-white rounded-md cursor-pointer transition-colors"
+                        title="Limpar busca"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lista de Servidores Filtrados */}
+                <div className="overflow-y-auto max-h-[300px] space-y-0.5 pt-1 custom-scroll-auto-hide">
+                  {/* Opção para desvincular */}
+                  {(!servidorSearch || normalizeText('desvincular uso geral').includes(normalizeText(servidorSearch))) && (
                     <button
-                      key={serv.id}
                       type="button"
                       onClick={() => {
                         setIsServidorDropdownOpen(false);
-                        onAssignServidor(serv);
+                        onAssignServidor(null);
                       }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-cyan-600/30 hover:text-white text-slate-300 transition-colors cursor-pointer group"
+                      className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer group"
                     >
-                      <div className="min-w-0">
-                        <span className="font-semibold truncate block">{serv.nome}</span>
-                        {serv.mesa && (
-                          <span className="text-[10px] text-cyan-400 truncate block">
-                            {serv.mesa}
+                      <span className="font-semibold italic">Desvincular servidor (Uso Geral)</span>
+                    </button>
+                  )}
+
+                  {filteredServidores.length > 0 ? (
+                    filteredServidores.map(serv => (
+                      <button
+                        key={serv.id}
+                        type="button"
+                        onClick={() => {
+                          setIsServidorDropdownOpen(false);
+                          onAssignServidor(serv);
+                        }}
+                        className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-cyan-600/30 hover:text-white text-slate-300 transition-colors cursor-pointer group"
+                      >
+                        <div className="min-w-0 flex-1 pr-2">
+                          <span className="font-semibold truncate block group-hover:text-cyan-200">
+                            {serv.nome}
+                          </span>
+                          {serv.mesa && (
+                            <span className="text-[10px] text-cyan-400/90 truncate block">
+                              {serv.mesa}
+                            </span>
+                          )}
+                        </div>
+                        {serv.telefone && (
+                          <span className="text-[10px] text-slate-400 group-hover:text-cyan-200 truncate ml-2 font-mono shrink-0">
+                            {serv.telefone}
                           </span>
                         )}
-                      </div>
-                      {serv.telefone && (
-                        <span className="text-[10px] text-slate-400 group-hover:text-cyan-200 truncate ml-2 font-mono">
-                          {serv.telefone}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="py-4 text-center text-xs text-slate-400 space-y-1">
+                      <p>Nenhum servidor encontrado para "{servidorSearch}".</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setServidorSearch('');
+                          servidorSearchInputRef.current?.focus();
+                        }}
+                        className="text-[11px] text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        Limpar busca
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

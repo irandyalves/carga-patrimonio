@@ -449,6 +449,13 @@ const AssetTableRowCardComponent = ({
     (userSectorIds && userSectorIds.length > 0)
       ? userSectorIds.includes(asset.setorId)
       : (userSectorId && asset.setorId === userSectorId)
+  ) || (
+    Boolean(sectors && currentUserName && sectors.some(s => {
+      if (s.id !== asset.setorId) return false;
+      const resp = (s.responsavel || '').toLowerCase().trim();
+      const user = currentUserName.toLowerCase().trim();
+      return resp && (resp === user || user.includes(resp) || resp.includes(user));
+    }))
   );
 
   // Check if asset belongs to another sector/carga (não se aplica em visualização Geral)
@@ -1253,7 +1260,7 @@ const AssetTableRowCardComponent = ({
         <div className="hidden md:flex pl-4 sm:pl-5 pr-2 py-0.5 sm:py-1 items-center gap-2 text-[11px] w-full">
         
         {/* Checkbox de Seleção em Lote */}
-        {onToggleSelect && (
+        {onToggleSelect && canManageAsset ? (
           <button
             type="button"
             onClick={(e) => {
@@ -1269,6 +1276,8 @@ const AssetTableRowCardComponent = ({
           >
             <Check className="w-3 h-3 stroke-[3]" />
           </button>
+        ) : (
+          <div className="w-4 h-4 shrink-0" />
         )}
 
         {/* Coluna 1: Patrimônio */}
@@ -1852,8 +1861,14 @@ const AssetTableRowCardComponent = ({
                 <div className="inline-flex items-center gap-1 group/obs max-w-full overflow-hidden">
                   <button
                     type="button"
-                    onClick={(e) => openObsEdit(e)}
-                    title={asset.observacao}
+                    onClick={(e) => {
+                      if (!canManageAsset) {
+                        onOpenSolicitacao(asset);
+                      } else {
+                        openObsEdit(e);
+                      }
+                    }}
+                    title={!canManageAsset ? `Sob responsabilidade de outro setor (${asset.responsavel || 'Responsável'}). Clique para solicitar pedido de carga.` : asset.observacao}
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[175px] min-w-0 overflow-hidden ${
                       hasBadges
                         ? 'bg-slate-900 border border-slate-700/50 hover:border-transparent'
@@ -1891,24 +1906,28 @@ const AssetTableRowCardComponent = ({
                       </span>
                     )}
 
-                    <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5 shrink-0" />
+                    {canManageAsset && (
+                      <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5 shrink-0" />
+                    )}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      openObsEdit(e);
-                      startObservationVoice(e);
-                    }}
-                    title="Ditar observação por voz"
-                    className={`p-1 rounded transition-all cursor-pointer shrink-0 ${
-                      isListeningObs 
-                        ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
-                    }`}
-                  >
-                    <Mic className="w-3 h-3" />
-                  </button>
+                  {canManageAsset && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        openObsEdit(e);
+                        startObservationVoice(e);
+                      }}
+                      title="Ditar observação por voz"
+                      className={`p-1 rounded transition-all cursor-pointer shrink-0 ${
+                        isListeningObs 
+                          ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                          : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
+                      }`}
+                    >
+                      <Mic className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               );
             })()
@@ -1916,29 +1935,39 @@ const AssetTableRowCardComponent = ({
             <div className="inline-flex items-center justify-center gap-1 group/obs text-center max-w-full">
               <button
                 type="button"
-                onClick={(e) => openObsEdit(e)}
-                title={isGeneralView ? "Clique para informar com quem está" : "Clique para adicionar observação"}
+                onClick={(e) => {
+                  if (!canManageAsset) {
+                    onOpenSolicitacao(asset);
+                  } else {
+                    openObsEdit(e);
+                  }
+                }}
+                title={!canManageAsset ? `Sob responsabilidade de outro setor (${asset.responsavel || 'Responsável'}). Clique para solicitar pedido de carga.` : (isGeneralView ? "Clique para informar com quem está" : "Clique para adicionar observação")}
                 className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-800/80 text-slate-500 hover:text-slate-300 transition-all text-[11px] cursor-pointer text-center"
               >
                 <span>---</span>
-                <Edit3 className="w-2.5 h-2.5 opacity-40 group-hover/obs:opacity-100 text-slate-400 ml-0.5" />
+                {canManageAsset && (
+                  <Edit3 className="w-2.5 h-2.5 opacity-40 group-hover/obs:opacity-100 text-slate-400 ml-0.5" />
+                )}
               </button>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  openObsEdit(e);
-                  startObservationVoice(e);
-                }}
-                title="Ditar observação por voz"
-                className={`p-1 rounded opacity-0 group-hover/obs:opacity-100 hover:opacity-100 transition-all cursor-pointer ${
-                  isListeningObs 
-                    ? 'opacity-100 bg-rose-500/20 text-rose-400 animate-pulse' 
-                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
-                }`}
-              >
-                <Mic className="w-3 h-3" />
-              </button>
+              {canManageAsset && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    openObsEdit(e);
+                    startObservationVoice(e);
+                  }}
+                  title="Ditar observação por voz"
+                  className={`p-1 rounded opacity-0 group-hover/obs:opacity-100 hover:opacity-100 transition-all cursor-pointer ${
+                    isListeningObs 
+                      ? 'opacity-100 bg-rose-500/20 text-rose-400 animate-pulse' 
+                      : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -2466,7 +2495,7 @@ const AssetTableRowCardComponent = ({
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
             {/* Checkbox de Seleção no Mobile */}
-            {onToggleSelect && (
+            {onToggleSelect && canManageAsset && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -2565,19 +2594,21 @@ const AssetTableRowCardComponent = ({
                       {asset.localizacao || asset.observacao || 'Local?'}
                     </span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      openLocEdit(e);
-                      startLocationVoice(e);
-                    }}
-                    className={`p-1 rounded border border-slate-700/60 cursor-pointer shrink-0 transition-all ${
-                      isListeningLoc ? 'bg-rose-500 text-white border-rose-400 animate-pulse' : 'bg-slate-800/80 text-slate-400 hover:text-rose-400'
-                    }`}
-                    title="Ditar localização por voz (clique para gravar direto)"
-                  >
-                    <Mic className="w-2.5 h-2.5" />
-                  </button>
+                  {canManageAsset && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        openLocEdit(e);
+                        startLocationVoice(e);
+                      }}
+                      className={`p-1 rounded border border-slate-700/60 cursor-pointer shrink-0 transition-all ${
+                        isListeningLoc ? 'bg-rose-500 text-white border-rose-400 animate-pulse' : 'bg-slate-800/80 text-slate-400 hover:text-rose-400'
+                      }`}
+                      title="Ditar localização por voz (clique para gravar direto)"
+                    >
+                      <Mic className="w-2.5 h-2.5" />
+                    </button>
+                  )}
                 </>
               )}
             </div>

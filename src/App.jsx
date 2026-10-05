@@ -971,6 +971,40 @@ export function App() {
     };
   }, [simulatedPersonaId, sectors, currentUser]);
 
+  // Verifica se o usuário atual tem permissão de gestão sobre um determinado setor
+  const canUserManageSector = useCallback((sectorId) => {
+    if (effectiveUserRole === 'admin') return true;
+    if (!sectorId) return false;
+    const sec = sectors.find(s => s.id === sectorId);
+    if (!sec) return false;
+    if (effectiveUserSectorIds && effectiveUserSectorIds.length > 0 && effectiveUserSectorIds.includes(sec.id)) return true;
+    if (effectiveUserSectorId && effectiveUserSectorId === sec.id) return true;
+    if (userLinkedSectorIds && userLinkedSectorIds.length > 0 && userLinkedSectorIds.includes(sec.id)) return true;
+    const userObj = effectiveUser || currentUser;
+    if (userObj) {
+      const userEmail = (userObj.email || '').toLowerCase().trim();
+      const userName = (userObj.displayName || userObj.name || '').toLowerCase().trim();
+      const sEmail = (sec.email || '').toLowerCase().trim();
+      const sResp = (sec.responsavel || '').toLowerCase().trim();
+      if (userEmail && sEmail && sEmail === userEmail) return true;
+      if (userName && sResp && (sResp === userName || userName.includes(sResp) || sResp.includes(userName))) return true;
+    }
+    return false;
+  }, [effectiveUserRole, effectiveUserSectorIds, effectiveUserSectorId, userLinkedSectorIds, effectiveUser, currentUser, sectors]);
+
+  // Verifica se o usuário atual tem permissão de gerenciar um bem específico
+  const canUserManageAsset = useCallback((asset) => {
+    if (!asset) return false;
+    if (effectiveUserRole === 'admin') return true;
+    return canUserManageSector(asset.setorId);
+  }, [effectiveUserRole, canUserManageSector]);
+
+  // Verifica se o setor atualmente selecionado na tela pode ser gerenciado pelo usuário
+  const canManageActiveSector = useMemo(() => {
+    if (effectiveUserRole === 'admin') return true;
+    return canUserManageSector(activeSectorId);
+  }, [effectiveUserRole, canUserManageSector, activeSectorId]);
+
   const handleSelectPersona = (personaId) => {
     setSimulatedPersonaId(personaId);
     if (personaId !== 'admin') {
@@ -1196,9 +1230,24 @@ export function App() {
 
   // Estado de Seleção em Lote (Bulk Select)
   const [selectedAssetIds, setSelectedAssetIds] = useState(() => new Set());
+  const [displaySelectedCount, setDisplaySelectedCount] = useState(0);
 
-  // Alterna seleção de um item individual
+  // Mantém o contador estável durante a animação de saída suave ao desmarcar
+  useEffect(() => {
+    if (selectedAssetIds.size > 0) {
+      setDisplaySelectedCount(selectedAssetIds.size);
+    }
+  }, [selectedAssetIds.size]);
+
+  // Limpa seleções ao trocar de setor ou modo de visão para evitar carregar seleções indevidas
+  useEffect(() => {
+    setSelectedAssetIds(new Set());
+  }, [activeSectorId, filterMode]);
+
+  // Alterna seleção de um item individual (apenas se o usuário tiver autorização de gestão sobre o bem)
   const handleToggleSelectAsset = (assetId) => {
+    const asset = assets.find(a => a.id === assetId);
+    if (!asset || !canUserManageAsset(asset)) return;
     setSelectedAssetIds(prev => {
       const next = new Set(prev);
       if (next.has(assetId)) next.delete(assetId);
@@ -1207,41 +1256,46 @@ export function App() {
     });
   };
 
-  // Selecionar / Desmarcar Todos os Itens Visíveis
+  // Selecionar / Desmarcar Todos os Itens Visíveis gerenciáveis pelo usuário
   const handleSelectAllVisible = () => {
-    const visibleIds = filteredAssets.map(a => a.id);
-    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedAssetIds.has(id));
+    const manageableVisibleIds = filteredAssets
+      .filter(a => canUserManageAsset(a))
+      .map(a => a.id);
+    if (manageableVisibleIds.length === 0) return;
+    const allSelected = manageableVisibleIds.every(id => selectedAssetIds.has(id));
     if (allSelected) {
       setSelectedAssetIds(prev => {
         const next = new Set(prev);
-        visibleIds.forEach(id => next.delete(id));
+        manageableVisibleIds.forEach(id => next.delete(id));
         return next;
       });
     } else {
       setSelectedAssetIds(prev => {
         const next = new Set(prev);
-        visibleIds.forEach(id => next.add(id));
+        manageableVisibleIds.forEach(id => next.add(id));
         return next;
       });
     }
   };
 
-  // Seleção Inteligente de Bens de Informática (Computador, Notebook, Monitor, etc.)
+  // Seleção Inteligente de Bens de Informática (apenas bens gerenciáveis pelo usuário)
   const handleSelectTiItems = (useAllBase = false) => {
     const targetPool = useAllBase 
       ? allTiAssets 
       : (filteredAssets.filter(a => isTiAsset(a)).length > 0 ? filteredAssets.filter(a => isTiAsset(a)) : allTiAssets);
 
-    if (targetPool.length === 0) {
-      showToast('Nenhum item de Informática/TI encontrado.', 'info');
+    const manageablePool = targetPool.filter(a => canUserManageAsset(a));
+
+    if (manageablePool.length === 0) {
+      showToast('Nenhum item de Informática/TI sob sua responsabilidade encontrado.', 'info');
       return;
     }
     setSelectedAssetIds(prev => {
       const next = new Set(prev);
-      targetPool.forEach(a => next.add(a.id));
+      manageablePool.forEach(a => next.add(a.id));
       return next;
     });
-    showToast(`💻 ${targetPool.length} itens de Informática/TI selecionados!`, 'info');
+    showToast(`💻 ${manageablePool.length} itens de Informática/TI selecionados!`, 'info');
   };
 
   // Limpar Seleção
@@ -1249,14 +1303,37 @@ export function App() {
     setSelectedAssetIds(new Set());
   };
 
+  // Controla se a barra/modal superior de ações em lote deve ser exibida:
+  // Administradores ou responsáveis pelos bens selecionados. Jamais exibida se houver bens de outros setores ou setor de outrem!
+  const canShowBulkActionBar = useMemo(() => {
+    if (selectedAssetIds.size === 0) return false;
+    if (isTiModalOpen) return false;
+    if (effectiveUserRole === 'admin') return true;
+    if (filterMode === 'MY_SECTOR') {
+      return canManageActiveSector;
+    }
+    return Array.from(selectedAssetIds).every(id => {
+      const asset = assets.find(a => a.id === id);
+      return asset && canUserManageAsset(asset);
+    });
+  }, [selectedAssetIds, isTiModalOpen, effectiveUserRole, filterMode, canManageActiveSector, assets, canUserManageAsset]);
+
   // Atribuição em Massa de Setor (Gera Pedidos de Carga para Confirmação do Responsável)
   const handleBulkAssignSector = (targetSectorId) => {
     const targetSector = sectors.find(s => s.id === targetSectorId);
     if (!targetSector || selectedAssetIds.size === 0) return;
 
+    // Filtra estritamente apenas os bens que pertencem ao usuário/setor sob sua responsabilidade
+    const selectedAssetsList = assets.filter(a => selectedAssetIds.has(a.id) && canUserManageAsset(a));
+    if (selectedAssetsList.length === 0) {
+      showToast('Apenas o responsável pela carga dos bens pode transferi-los.', 'error');
+      setSelectedAssetIds(new Set());
+      return;
+    }
+
     const nowStr = new Date().toLocaleString('pt-BR');
-    const count = selectedAssetIds.size;
-    const selectedAssetsList = assets.filter(a => selectedAssetIds.has(a.id));
+    const count = selectedAssetsList.length;
+    const manageableSet = new Set(selectedAssetsList.map(a => a.id));
 
     // Cria pedidos de transferência de carga para cada item selecionado
     const newPedidos = selectedAssetsList.map((a, idx) => ({
@@ -1279,7 +1356,7 @@ export function App() {
 
     // Atualiza o histórico dos bens informando a solicitação de transferência
     const updatedAssets = assets.map(a => {
-      if (selectedAssetIds.has(a.id)) {
+      if (manageableSet.has(a.id)) {
         return {
           ...a,
           historico: [
@@ -1932,10 +2009,19 @@ export function App() {
   const handleBulkAssignServidor = (servidor) => {
     if (selectedAssetIds.size === 0) return;
 
-    const count = selectedAssetIds.size;
+    // Filtra estritamente apenas os bens que pertencem ao usuário/setor sob sua responsabilidade
+    const manageableAssetsList = assets.filter(item => selectedAssetIds.has(item.id) && canUserManageAsset(item));
+    if (manageableAssetsList.length === 0) {
+      showToast('Apenas o responsável pela carga dos bens pode atribuir servidores a eles.', 'error');
+      setSelectedAssetIds(new Set());
+      return;
+    }
+
+    const count = manageableAssetsList.length;
+    const manageableSet = new Set(manageableAssetsList.map(a => a.id));
     const updatedAssetsList = [];
     const updatedAssets = assets.map(item => {
-      if (selectedAssetIds.has(item.id)) {
+      if (manageableSet.has(item.id)) {
         const newLoc = servidor
           ? (item.localizacao && !item.localizacao.toLowerCase().includes('mesa') ? item.localizacao : (servidor.mesa ? `Mesa da ${servidor.nome} (${servidor.mesa})` : `Mesa da ${servidor.nome}`))
           : item.localizacao;
@@ -3067,7 +3153,7 @@ export function App() {
             <div className="hidden md:flex sticky top-0 z-30 shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg shadow-black/40 w-full h-[58px] items-center relative">
               
               {/* TÍTULOS DAS COLUNAS (Normal ou Modo DTIN) */}
-              <div className={`w-full transition-all duration-300 ${selectedAssetIds.size > 0 ? 'opacity-20 pointer-events-none scale-x-[0.98] blur-[0.5px]' : 'opacity-100'}`}>
+              <div className={`w-full transform transition-all duration-1000 ease-in-out ${canShowBulkActionBar ? 'opacity-15 pointer-events-none scale-x-[0.98] blur-[0.5px]' : 'opacity-100'}`}>
                 {statusFilter === 'ENVIADOS_DTIN' ? (
                   /* Cabeçalho Especial da Aba: Enviados para a DTIN */
                   <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
@@ -3176,24 +3262,30 @@ export function App() {
                   <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                   
                   {/* Master Checkbox: Seleção em Lote */}
-                  <button
-                    type="button"
-                    onClick={handleSelectAllVisible}
-                    title={
-                      filteredAssets.length > 0 && filteredAssets.every(a => selectedAssetIds.has(a.id))
-                        ? "Desmarcar todos os itens visíveis"
-                        : `Selecionar todos os ${filteredAssets.length} itens visíveis`
-                    }
-                    className={`w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                      filteredAssets.length > 0 && filteredAssets.every(a => selectedAssetIds.has(a.id))
-                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm'
-                        : selectedAssetIds.size > 0
-                          ? 'bg-indigo-900/60 border-indigo-500 text-indigo-300'
-                          : 'border-slate-600 bg-slate-800 hover:border-indigo-400 text-transparent'
-                    }`}
-                  >
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </button>
+                  {(filterMode === 'ALL_SECTORS' ? filteredAssets.some(a => canUserManageAsset(a)) : canManageActiveSector) ? (
+                    <button
+                      type="button"
+                      onClick={handleSelectAllVisible}
+                      title={
+                        filteredAssets.filter(a => canUserManageAsset(a)).length > 0 && 
+                        filteredAssets.filter(a => canUserManageAsset(a)).every(a => selectedAssetIds.has(a.id))
+                          ? "Desmarcar todos os itens visíveis sob sua responsabilidade"
+                          : `Selecionar todos os itens visíveis sob sua responsabilidade`
+                      }
+                      className={`w-4 h-4 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                        filteredAssets.filter(a => canUserManageAsset(a)).length > 0 && 
+                        filteredAssets.filter(a => canUserManageAsset(a)).every(a => selectedAssetIds.has(a.id))
+                          ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm'
+                          : selectedAssetIds.size > 0
+                            ? 'bg-indigo-900/60 border-indigo-500 text-indigo-300'
+                            : 'border-slate-600 bg-slate-800 hover:border-indigo-400 text-transparent'
+                      }`}
+                    >
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </button>
+                  ) : (
+                    <div className="w-4 h-4 shrink-0" />
+                  )}
 
                   {/* Coluna 1: Patrimônio */}
                   <button
@@ -3574,21 +3666,29 @@ export function App() {
                 )}
               </div>
 
-              {/* BARRA DE AÇÕES EM LOTE: Desce suavemente do topo quando itens são selecionados */}
-              {selectedAssetIds.size > 0 && !isTiModalOpen && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-                  <div className="pointer-events-auto transform transition-all duration-500 ease-out animate-in slide-in-from-top-6 fade-in duration-300">
-                    <BulkActionBar
-                      selectedCount={selectedAssetIds.size}
-                      onClearSelection={handleClearSelection}
-                      onAssignSector={handleBulkAssignSector}
-                      sectors={sectors}
-                      servidores={servidores}
-                      onAssignServidor={handleBulkAssignServidor}
-                    />
-                  </div>
+              {/* BARRA DE AÇÕES EM LOTE: Desce suave de cima para baixo com efeito caindo (igual à cortina do TI) */}
+              <div 
+                className={`absolute inset-0 pointer-events-none z-30 flex items-center justify-center transition-all ${
+                  canShowBulkActionBar ? 'overflow-visible' : 'overflow-hidden'
+                }`}
+              >
+                <div 
+                  className={`pointer-events-auto transform transition-all duration-1000 ease-in-out ${
+                    canShowBulkActionBar
+                      ? 'translate-y-0 opacity-100 pointer-events-auto scale-100'
+                      : '-translate-y-[180%] opacity-0 pointer-events-none scale-95'
+                  }`}
+                >
+                  <BulkActionBar
+                    selectedCount={displaySelectedCount || selectedAssetIds.size}
+                    onClearSelection={handleClearSelection}
+                    onAssignSector={handleBulkAssignSector}
+                    sectors={sectors}
+                    servidores={servidores}
+                    onAssignServidor={handleBulkAssignServidor}
+                  />
                 </div>
-              )}
+              </div>
 
               {/* CORTINA DE TI: Desce SUAVE SUAVE em 1 segundo (duration-1000) SOBRE os títulos */}
               <div className={`absolute inset-0 pointer-events-none z-40 rounded-none transition-all ${isTiModalOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
@@ -3800,110 +3900,7 @@ export function App() {
               </div>
             )}
 
-            {/* Barra Informativa Compacta (apenas quando há busca por texto ou filtro de status ativo exceto DTIN) */}
-            {(searchTerm || (statusFilter !== 'ALL' && statusFilter !== 'ENVIADOS_DTIN')) && (
-              <div className="px-4 pt-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-slate-900/70 border border-slate-800 rounded-xl text-xs text-slate-300 animate-in fade-in">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-slate-400">Filtrando:</span>
-                    {statusFilter !== 'ALL' && (
-                      <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
-                        {statusFilter === 'PENDENTES' ? 'Pendentes' : statusFilter === 'CONFERIDOS' ? 'Conferidos' : statusFilter === 'CAUTELAS' ? 'Em Cautela' : statusFilter === 'ENVIADOS_DTIN' ? 'Enviados para a DTIN' : 'Baixados'}
-                      </span>
-                    )}
-                    {searchTerm && (
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">
-                        Termo: "{searchTerm}"
-                      </span>
-                    )}
-                    <span className="text-slate-400 font-medium">({filteredAssets.length} {filteredAssets.length === 1 ? 'item' : 'itens'})</span>
 
-                    {/* Botão de Envio Rápido para DTIN quando o filtro de DTIN está ativo (Apenas Santana em TI ou Admin) */}
-                    {statusFilter === 'ENVIADOS_DTIN' && canCreateNovoEnvioDtin && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssetForDtin(null);
-                          setIsDtinModalOpen(true);
-                        }}
-                        className="ml-2 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-600/30 transition-all cursor-pointer active:scale-95"
-                      >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>Novo Envio DTIN</span>
-                      </button>
-                    )}
-
-                    {/* Controles de ordenação rápida quando filtrado por conferidos */}
-                    {statusFilter === 'CONFERIDOS' && (
-                      <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-700">
-                        <span className="text-[10.5px] text-slate-400 font-medium">Ordenar:</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (conferidosSortField === 'numeroPatrimonio') {
-                              setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setConferidosSortField('numeroPatrimonio');
-                              setConferidosSortDirection('asc');
-                            }
-                          }}
-                          className={`px-2 py-1 rounded-lg text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 ${
-                            conferidosSortField === 'numeroPatrimonio'
-                              ? 'bg-blue-600/30 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
-                              : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700/80'
-                          }`}
-                          title={`Ordenar conferidos por Patrimônio (${conferidosSortDirection === 'asc' ? 'Crescente ▲' : 'Decrescente ▼'})`}
-                        >
-                          <Hash className={`w-3.5 h-3.5 ${conferidosSortField === 'numeroPatrimonio' ? 'text-blue-400' : 'text-slate-400'}`} />
-                          <span className="text-[9px] leading-none select-none font-bold">
-                            {conferidosSortField === 'numeroPatrimonio' ? (
-                              conferidosSortDirection === 'asc' ? '▲' : '▼'
-                            ) : (
-                              <span className="opacity-40">▲</span>
-                            )}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (conferidosSortField === 'descricao') {
-                              setConferidosSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setConferidosSortField('descricao');
-                              setConferidosSortDirection('asc');
-                            }
-                          }}
-                          className={`px-2 py-1 rounded-lg text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95 ${
-                            conferidosSortField === 'descricao'
-                              ? 'bg-blue-600/30 text-blue-200 shadow-sm ring-1 ring-blue-400/50'
-                              : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700/80'
-                          }`}
-                          title={`Ordenar conferidos por Item / Descrição (${conferidosSortDirection === 'asc' ? 'A-Z ▲' : 'Z-A ▼'})`}
-                        >
-                          <FileText className={`w-3.5 h-3.5 ${conferidosSortField === 'descricao' ? 'text-blue-400' : 'text-slate-400'}`} />
-                          <span className="text-[9px] leading-none select-none font-bold">
-                            {conferidosSortField === 'descricao' ? (
-                              conferidosSortDirection === 'asc' ? '▲' : '▼'
-                            ) : (
-                              <span className="opacity-40">▲</span>
-                            )}
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => {
-                      setStatusFilter('ALL');
-                      setSearchTerm('');
-                    }}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer underline underline-offset-2"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Asset Cards or Empty State (Linha começa debaixo da slidebar, sem puxar o conteúdo) */}
             {filteredAssets.length > 0 ? (
@@ -4534,10 +4531,16 @@ export function App() {
         sectorName={filterMode === 'MY_SECTOR' ? activeSector?.name : 'Todos os Setores'}
       />
 
-      {/* Barra Flutuante de Ações em Lote Apenas para Mobile (no Desktop ela brota no centro do cabeçalho) */}
-      <div className="md:hidden">
+      {/* Barra Flutuante de Ações em Lote Apenas para Mobile: Desce suave do topo */}
+      <div 
+        className={`md:hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 transform transition-all duration-1000 ease-in-out ${
+          canShowBulkActionBar
+            ? 'translate-y-0 opacity-100 pointer-events-auto scale-100'
+            : '-translate-y-28 opacity-0 pointer-events-none scale-95'
+        }`}
+      >
         <BulkActionBar
-          selectedCount={selectedAssetIds.size}
+          selectedCount={displaySelectedCount || selectedAssetIds.size}
           onClearSelection={handleClearSelection}
           onAssignTi={handleBulkAssignTi}
           onAssignSector={handleBulkAssignSector}
