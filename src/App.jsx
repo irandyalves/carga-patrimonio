@@ -2944,43 +2944,13 @@ export function App() {
     }
   };
 
-  // Se não estiver autenticado ou autorizado, exibe a tela de login mágico do Google
+  // Se não estiver autenticado ou autorizado, exibe a tela de login com conta Google
   if (!isAuthorized || !currentUser) {
-    const isLocalhost = typeof window !== 'undefined' && (
-      window.location.hostname === 'localhost' || 
-      window.location.hostname === '127.0.0.1'
-    );
-
-    const isAlbernazAttempt = Boolean(
-      (authError && (authError.toLowerCase().includes('albernaz') || authError.toLowerCase().includes('stm.jus.br'))) ||
-      (typeof window !== 'undefined' && (
-        window.sessionStorage?.getItem('last_attempted_email')?.toLowerCase().includes('albernaz') ||
-        window.localStorage?.getItem('last_attempted_email')?.toLowerCase().includes('albernaz')
-      ))
-    );
-
-    // Bypass só é permitido estritamente em ambiente local de desenvolvimento, NUNCA no GitHub Pages
-    const allowBypass = isLocalhost && !isAlbernazAttempt && !authError;
-
     return (
       <LoginScreen
         onLoginSuccess={handleLoginSuccess}
         authError={authError}
         isConfigured={isFirebaseActive}
-        onBypassLogin={allowBypass ? () => {
-          const fallbackUser = {
-            displayName: 'Irandy Alves',
-            name: 'Irandy Alves',
-            email: 'irandyalves@gmail.com',
-            role: 'admin'
-          };
-          setCurrentUser(fallbackUser);
-          setUserRole('admin');
-          setIsAuthorized(true);
-          setAuthError(null);
-          localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(fallbackUser));
-          showToast('Acesso de contingência como Administrador local ativado.', 'info');
-        } : null}
       />
     );
   }
