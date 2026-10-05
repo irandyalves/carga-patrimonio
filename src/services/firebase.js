@@ -118,23 +118,17 @@ export const loginWithGoogle = async () => {
   const { isConfigured, auth } = initFirebase();
   if (isConfigured && auth && googleProvider) {
     try {
-      const popupPromise = signInWithPopup(auth, googleProvider);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Tempo limite excedido ao conectar com o Google.')), 10000)
-      );
-      const result = await Promise.race([popupPromise, timeoutPromise]);
+      const result = await signInWithPopup(auth, googleProvider);
       if (result && result.user) {
         return result.user;
       }
     } catch (err) {
       console.warn('Login Google via popup não concluído ou bloqueado:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        throw err;
-      }
+      throw err;
     }
   }
 
-  // Fallback seguro imediato para Super Admin
+  // Fallback seguro imediato se o Firebase não estiver configurado
   return {
     displayName: 'Irandy Alves',
     email: 'irandyalves@gmail.com',
@@ -165,14 +159,35 @@ export const subscribeToAuth = (callback) => {
 
 // --- AUTHORIZED USERS MANAGEMENT ---
 
-export const getInitialAuthorizedUsers = () => {
-  return DEFAULT_ADMIN_EMAILS.map(email => ({
-    email: email.toLowerCase().trim(),
-    name: email.toLowerCase().trim() === 'irandyalves@gmail.com' ? 'Irandy Alves' : email.split('@')[0],
+export const DEFAULT_AUTHORIZED_USERS = [
+  {
+    id: 'irandyalves_gmail_com',
+    email: 'irandyalves@gmail.com',
+    name: 'Irandy Alves',
     role: 'admin',
-    addedAt: new Date().toISOString(),
-    addedBy: 'Sistema (Super Admin)'
-  }));
+    addedAt: '2026-01-01T00:00:00.000Z',
+    addedBy: 'Super Admin'
+  },
+  {
+    id: 'irandyalves_stm_jus_br',
+    email: 'irandyalves@stm.jus.br',
+    name: 'irandyalves',
+    role: 'admin',
+    addedAt: '2026-01-01T00:00:00.000Z',
+    addedBy: 'Super Admin'
+  },
+  {
+    id: 'albernaz_stm_jus_br',
+    email: 'albernaz@stm.jus.br',
+    name: 'Alex',
+    role: 'operador',
+    addedAt: '2026-01-01T00:00:00.000Z',
+    addedBy: 'Super Admin'
+  }
+];
+
+export const getInitialAuthorizedUsers = () => {
+  return DEFAULT_AUTHORIZED_USERS.map(u => ({ ...u }));
 };
 
 export const loadAuthorizedUsers = async () => {
@@ -188,43 +203,52 @@ export const loadAuthorizedUsers = async () => {
     console.error(e);
   }
 
-  // Garante que o Super Admin oficial (irandyalves@gmail.com) sempre exista
-  DEFAULT_ADMIN_EMAILS.forEach(adminEmail => {
-    const exists = users.some(u => u.email.toLowerCase() === adminEmail.toLowerCase());
-    if (!exists) {
-      users.unshift({
-        id: adminEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-        email: adminEmail,
-        name: adminEmail.toLowerCase() === 'irandyalves@gmail.com' ? 'Irandy Alves' : adminEmail.split('@')[0],
-        role: 'admin',
-        addedAt: new Date().toISOString(),
-        addedBy: 'Super Admin'
-      });
+  // Garante que os 3 usuários oficiais sempre existam com seus nomes corretos
+  DEFAULT_AUTHORIZED_USERS.forEach(defaultUser => {
+    const idx = users.findIndex(u => u && u.email && u.email.toLowerCase() === defaultUser.email.toLowerCase());
+    if (idx === -1) {
+      users.push({ ...defaultUser });
+    } else if (!users[idx].name || users[idx].name === users[idx].email.split('@')[0]) {
+      users[idx] = { ...users[idx], name: defaultUser.name };
     }
   });
 
-  // 2. Consulta Firestore em segundo plano com timeout curto (1.2s) para nunca congelar
+  // 2. Consulta Firestore em segundo plano com timeout de 1.5s
   const { isConfigured, db } = initFirebase();
   if (isConfigured && db) {
     try {
       const fetchPromise = getDocs(collection(db, 'authorized_users'));
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1200));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500));
       const snap = await Promise.race([fetchPromise, timeoutPromise]);
       if (snap && !snap.empty) {
-        users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        DEFAULT_ADMIN_EMAILS.forEach(adminEmail => {
-          if (!users.some(u => u.email.toLowerCase() === adminEmail.toLowerCase())) {
-            users.unshift({
-              id: adminEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-              email: adminEmail,
-              name: adminEmail.split('@')[0],
-              role: 'admin',
-              addedAt: new Date().toISOString(),
-              addedBy: 'Super Admin'
-            });
+        const cloudUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const mergedMap = new Map();
+        
+        // Insere defaults primeiro
+        DEFAULT_AUTHORIZED_USERS.forEach(u => mergedMap.set(u.email.toLowerCase(), { ...u }));
+        // Sobrescreve com dados da nuvem
+        cloudUsers.forEach(u => {
+          if (u && u.email) {
+            const key = u.email.toLowerCase().trim();
+            const existing = mergedMap.get(key) || {};
+            mergedMap.set(key, { ...existing, ...u });
           }
         });
+
+        users = Array.from(mergedMap.values());
         localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+      } else {
+        // Se a coleção estiver vazia no Firestore, faz seed automático dos 3 usuários
+        try {
+          const batch = writeBatch(db);
+          DEFAULT_AUTHORIZED_USERS.forEach(u => {
+            const docId = u.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+            batch.set(doc(db, 'authorized_users', docId), u, { merge: true });
+          });
+          await batch.commit();
+        } catch (seedErr) {
+          console.warn('Erro ao semear usuários autorizados no Firestore:', seedErr);
+        }
       }
     } catch (e) {
       // Modo local/offline resiliente - não trava a aplicação
@@ -291,20 +315,43 @@ export const deleteAuthorizedUserFromCloud = async (email) => {
 };
 
 export const checkUserAuthorization = (email, userList = []) => {
-  if (!email) return null;
+  if (!email) return { authorized: false, role: null, user: null };
   const clean = email.toLowerCase().trim();
 
-  // Direct super admins check
+  // 1. Procura na lista informada
+  let match = (userList || []).find(u => u && u.email && u.email.toLowerCase().trim() === clean);
+
+  // 2. Se não encontrou, procura nos padrões do sistema
+  if (!match) {
+    match = DEFAULT_AUTHORIZED_USERS.find(u => u.email.toLowerCase().trim() === clean);
+  }
+
+  // 3. Verifica se é Super Admin oficial
   if (DEFAULT_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(clean)) {
-    return { authorized: true, role: 'admin', isSuperAdmin: true };
+    const superAdminUser = match || {
+      email: clean,
+      name: clean === 'irandyalves@gmail.com' ? 'Irandy Alves' : 'irandyalves',
+      role: 'admin'
+    };
+    return { 
+      authorized: true, 
+      role: 'admin', 
+      isSuperAdmin: true, 
+      user: superAdminUser 
+    };
   }
 
-  const match = userList.find(u => u.email.toLowerCase() === clean);
+  // 4. Usuário cadastrado (ex: Alex)
   if (match) {
-    return { authorized: true, role: match.role || 'operador', isSuperAdmin: false, user: match };
+    return { 
+      authorized: true, 
+      role: match.role || 'operador', 
+      isSuperAdmin: match.role === 'admin', 
+      user: match 
+    };
   }
 
-  return { authorized: false, role: null };
+  return { authorized: false, role: null, user: null };
 };
 
 // --- DATA HELPERS ---

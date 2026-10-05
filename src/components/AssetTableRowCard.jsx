@@ -1856,7 +1856,7 @@ const AssetTableRowCardComponent = ({
                     title={asset.observacao}
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[175px] min-w-0 overflow-hidden ${
                       hasBadges
-                        ? 'bg-slate-900 border border-slate-750 hover:border-slate-600'
+                        ? 'bg-slate-900 border border-slate-700/50 hover:border-transparent'
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white'
                     }`}
                   >

@@ -52,6 +52,9 @@ import {
   UserManagementModal 
 } from './components/UserManagementModal';
 import { 
+  LoginScreen 
+} from './components/LoginScreen';
+import { 
   SolicitacaoCargaModal 
 } from './components/SolicitacaoCargaModal';
 import { 
@@ -71,6 +74,9 @@ import {
   DeleteAssetModal 
 } from './components/DeleteAssetModal';
 import { 
+  ExportReportModal 
+} from './components/ExportReportModal';
+import { 
   BulkActionBar 
 } from './components/BulkActionBar';
 
@@ -86,6 +92,7 @@ import {
   saveLocalCautelas, 
   saveLocalSectors,
   initFirebase,
+  loginWithGoogle,
   subscribeToAuth,
   logoutUser,
   loadAuthorizedUsers,
@@ -546,6 +553,9 @@ export function App() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState(null);
 
+  // Modal para Escolha de Ordenação ao Emitir Relatório (Patrimônio ou Item)
+  const [isExportReportModalOpen, setIsExportReportModalOpen] = useState(false);
+
   // Modal de Confirmação para Alteração em Lote (Tornar Todos Pendentes / Conferidos)
   const [batchStatusModalData, setBatchStatusModalData] = useState(null);
   const [isProcessingBatchStatus, setIsProcessingBatchStatus] = useState(false);
@@ -714,16 +724,31 @@ export function App() {
     loadAuthorizedUsers().then(usersList => {
       setAuthorizedUsers(usersList);
 
-      unsubscribe = subscribeToAuth(async (user) => {
-        if (user && user.email) {
-          const authCheck = checkUserAuthorization(user.email, usersList);
+      unsubscribe = subscribeToAuth(async (authUser) => {
+        if (authUser && authUser.email) {
+          const cleanEmail = authUser.email.toLowerCase().trim();
+          const authCheck = checkUserAuthorization(cleanEmail, usersList);
           if (authCheck && authCheck.authorized) {
-            setCurrentUser(user);
+            const registeredName = authCheck.user?.name;
+            const finalName = registeredName || authUser.displayName || cleanEmail.split('@')[0];
+            const resolvedUser = {
+              uid: authUser.uid,
+              displayName: finalName,
+              name: finalName,
+              email: cleanEmail,
+              photoURL: authUser.photoURL || null,
+              role: authCheck.role
+            };
+            setCurrentUser(resolvedUser);
             setUserRole(authCheck.role);
             setIsAuthorized(true);
             setAuthError(null);
+            localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(resolvedUser));
           } else {
-            showToast(`Usuário Google ${user.email} conectado (perfil padrão).`, 'info');
+            setIsAuthorized(false);
+            setAuthError(`O e-mail "${cleanEmail}" não possui autorização de acesso ao sistema.`);
+            setCurrentUser(null);
+            localStorage.removeItem('carga_patrimonio_current_user');
           }
         }
         setAuthLoading(false);
@@ -920,50 +945,93 @@ export function App() {
   };
 
   // Auth Handlers
-  const handleLoginSuccess = (user) => {
-    if (!user) return;
-    const authCheck = checkUserAuthorization(user.email, authorizedUsers);
+  const handleLoginSuccess = async (user) => {
+    if (!user || !user.email) return;
+    const cleanEmail = user.email.toLowerCase().trim();
+
+    let usersList = authorizedUsers;
+    if (!usersList || usersList.length === 0) {
+      usersList = await loadAuthorizedUsers();
+      setAuthorizedUsers(usersList);
+    }
+
+    const authCheck = checkUserAuthorization(cleanEmail, usersList);
     if (authCheck && authCheck.authorized) {
-      setCurrentUser(user);
+      const registeredName = authCheck.user?.name;
+      const finalName = registeredName || user.displayName || cleanEmail.split('@')[0];
+
+      const resolvedUser = {
+        uid: user.uid || cleanEmail,
+        displayName: finalName,
+        name: finalName,
+        email: cleanEmail,
+        photoURL: user.photoURL || null,
+        role: authCheck.role
+      };
+
+      setCurrentUser(resolvedUser);
       setUserRole(authCheck.role);
       setIsAuthorized(true);
       setAuthError(null);
+      localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(resolvedUser));
 
       // Se for operador e tiver setor vinculado, ativa automaticamente seu setor
       if (authCheck.role === 'operador') {
-        const uEmail = user.email.toLowerCase().trim();
-        const uName = (user.displayName || '').toLowerCase().trim();
+        const uName = finalName.toLowerCase().trim();
         const linked = sectors.find(s => 
-          (s.email && s.email.toLowerCase().trim() === uEmail) ||
-          (uName && s.responsavel && s.responsavel.toLowerCase().trim().includes(uName))
+          (s.email && s.email.toLowerCase().trim() === cleanEmail) ||
+          (uName && s.responsavel && s.responsavel.toLowerCase().trim().includes(uName)) ||
+          (uName && s.responsavel && uName.includes(s.responsavel.toLowerCase().trim()))
         );
         if (linked) {
           setActiveSectorId(linked.id);
           setFilterMode('MY_SECTOR');
-          showToast(`Bem-vindo, ${linked.responsavel}! Setor ${linked.name} carregado.`);
+          setSimulatedPersonaId(linked.id);
+          showToast(`Bem-vindo, ${finalName}! Setor "${linked.name}" carregado.`, 'success');
           return;
+        } else {
+          setSimulatedPersonaId(null);
         }
+      } else {
+        setSimulatedPersonaId('admin');
       }
-      showToast(`Bem-vindo, ${user.displayName || user.email}!`);
+
+      showToast(`Bem-vindo, ${finalName}! Login efetuado com sucesso.`, 'success');
     } else {
-      setCurrentUser(user);
-      setUserRole('admin');
-      setIsAuthorized(true);
-      showToast(`Conectado como ${user.displayName || user.email}.`);
+      setIsAuthorized(false);
+      setCurrentUser(null);
+      localStorage.removeItem('carga_patrimonio_current_user');
+      await logoutUser();
+      const msg = `O e-mail "${cleanEmail}" não possui autorização de acesso ao sistema. Solicite liberação ao administrador.`;
+      setAuthError(msg);
+      showToast(msg, 'error');
+      throw new Error(msg);
     }
   };
 
   const handleLogout = async () => {
-    await logoutUser();
-    const superAdmin = { displayName: 'Irandy Alves', email: 'irandyalves@gmail.com', role: 'admin' };
-    setCurrentUser(superAdmin);
     try {
-      localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(superAdmin));
+      await logoutUser();
     } catch (e) {}
-    setUserRole('admin');
-    setIsAuthorized(true);
+    localStorage.removeItem('carga_patrimonio_current_user');
+    setCurrentUser(null);
+    setIsAuthorized(false);
+    setAuthError(null);
     setSimulatedPersonaId('admin');
-    showToast('Sessão restaurada para Super Admin (irandyalves@gmail.com).');
+    showToast('Você saiu da sua conta.', 'info');
+  };
+
+  const handleTriggerGoogleLogin = async () => {
+    try {
+      const user = await loginWithGoogle();
+      if (user) {
+        await handleLoginSuccess(user);
+      }
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showToast(err.message || 'Falha ao autenticar com o Google.', 'error');
+      }
+    }
   };
 
   const handleAddUser = async (newUserData) => {
@@ -2708,12 +2776,59 @@ export function App() {
     await generateLabelsPDF([asset]);
   };
 
-  // Export inventory report
+  // Export inventory report modal opener
   const handleExportReportPDF = () => {
+    setIsExportReportModalOpen(true);
+  };
+
+  // Confirmação e ordenação do relatório (Patrimônio, Item, Resp. Carga ou Onde Está) com ordem de colunas
+  const handleConfirmExportReport = (sortBy, selectedColumns, orderedColumnIds) => {
+    setIsExportReportModalOpen(false);
     const sectorAssets = filterMode === 'MY_SECTOR' 
       ? assets.filter(a => a.setorId === activeSectorId) 
       : assets;
-    generateInventoryReportPDF(filterMode === 'MY_SECTOR' ? activeSector : null, sectorAssets, stats);
+
+    const sorted = [...sectorAssets];
+    if (sortBy === 'PATRIMONIO') {
+      sorted.sort((a, b) => {
+        const numA = parseInt(String(a.numeroPatrimonio || '').replace(/\D/g, ''), 10) || 0;
+        const numB = parseInt(String(b.numeroPatrimonio || '').replace(/\D/g, ''), 10) || 0;
+        if (numA !== numB) return numA - numB;
+        return (a.numeroPatrimonio || '').localeCompare(b.numeroPatrimonio || '', 'pt-BR');
+      });
+      showToast('Relatório gerado em ordem de Patrimônio!', 'success');
+    } else if (sortBy === 'ITEM') {
+      sorted.sort((a, b) => {
+        return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+      });
+      showToast('Relatório gerado em ordem de Item!', 'success');
+    } else if (sortBy === 'RESPONSAVEL') {
+      sorted.sort((a, b) => {
+        const respA = a.responsavel || (activeSector ? activeSector.responsavel : '') || '';
+        const respB = b.responsavel || (activeSector ? activeSector.responsavel : '') || '';
+        const comp = respA.localeCompare(respB, 'pt-BR', { sensitivity: 'base' });
+        if (comp !== 0) return comp;
+        return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+      });
+      showToast('Relatório gerado em ordem de Resp. Carga!', 'success');
+    } else if (sortBy === 'LOCALIZACAO') {
+      sorted.sort((a, b) => {
+        const locA = a.localizacao || '';
+        const locB = b.localizacao || '';
+        const comp = locA.localeCompare(locB, 'pt-BR', { sensitivity: 'base' });
+        if (comp !== 0) return comp;
+        return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+      });
+      showToast('Relatório gerado em ordem de Onde Está!', 'success');
+    }
+
+    generateInventoryReportPDF(
+      filterMode === 'MY_SECTOR' ? activeSector : null, 
+      sorted, 
+      stats, 
+      selectedColumns,
+      orderedColumnIds
+    );
   };
 
   // Mass Import Success (Excel, Word, CSV, TXT)
@@ -2783,6 +2898,31 @@ export function App() {
     }
   };
 
+  // Se não estiver autenticado ou autorizado, exibe a tela de login mágico do Google
+  if (!isAuthorized || !currentUser) {
+    return (
+      <LoginScreen
+        onLoginSuccess={handleLoginSuccess}
+        authError={authError}
+        isConfigured={isFirebaseActive}
+        onBypassLogin={() => {
+          const fallbackUser = {
+            displayName: 'Irandy Alves',
+            name: 'Irandy Alves',
+            email: 'irandyalves@gmail.com',
+            role: 'admin'
+          };
+          setCurrentUser(fallbackUser);
+          setUserRole('admin');
+          setIsAuthorized(true);
+          setAuthError(null);
+          localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(fallbackUser));
+          showToast('Acesso de contingência como Administrador local ativado.', 'info');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="h-screen max-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
       
@@ -2819,6 +2959,7 @@ export function App() {
         currentUser={effectiveUser}
         userRole={effectiveUserRole}
         onLogout={handleLogout}
+        onGoogleLogin={handleTriggerGoogleLogin}
         isFirebaseActive={isFirebaseActive}
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
         conferidosCount={stats.conferidos}
@@ -4351,6 +4492,14 @@ export function App() {
         onClose={() => setIsDisplaySettingsOpen(false)}
         settings={displaySettings}
         onSaveSettings={handleSaveDisplaySettings}
+      />
+
+      {/* Modalzinho de Escolha de Ordenação do Relatório (Patrimônio ou Item) */}
+      <ExportReportModal
+        isOpen={isExportReportModalOpen}
+        onClose={() => setIsExportReportModalOpen(false)}
+        onConfirmExport={handleConfirmExportReport}
+        sectorName={filterMode === 'MY_SECTOR' ? activeSector?.name : 'Todos os Setores'}
       />
 
       {/* Barra Flutuante de Ações em Lote Apenas para Mobile (no Desktop ela brota no centro do cabeçalho) */}

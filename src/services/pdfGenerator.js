@@ -174,63 +174,173 @@ export const generateLabelsPDF = async (assets) => {
   doc.save(`Etiquetas_Patrimonio_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
+// Helper para formatar texto em Title Case (apenas a primeira letra maiúscula)
+const formatTitleCase = (text) => {
+  if (!text) return '';
+  return String(text).toLowerCase().replace(/(?:^|\s|-|\/)\S/g, char => char.toUpperCase());
+};
+
 // 3. Relatório de Conferência & Auditoria de Setor
-export const generateInventoryReportPDF = (sector, assets, stats) => {
+export const generateInventoryReportPDF = (sector, assets, stats, selectedColumns = null, orderedColumnIds = null) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
+  // Cabeçalho em linha única e alinhado verticalmente ao centro (fonte 7.5pt)
+  const headerHeight = 9;
   doc.setFillColor(30, 41, 59);
-  doc.rect(0, 0, pageWidth, 24, 'F');
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
   
-  doc.setFontSize(14);
+  const setorText = sector ? formatTitleCase(sector.name) : 'Todos os Setores';
+  const dataHoraText = new Date().toLocaleString('pt-BR');
+  const headerFullText = `RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  Setor: ${setorText}  |  Data: ${dataHoraText}`;
+
+  doc.setFontSize(7.5);
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.text(`RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL`, pageWidth / 2, 12, { align: 'center' });
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Setor: ${sector ? sector.name : 'Todos os Setores'}  |  Data: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 19, { align: 'center' });
+  doc.text(headerFullText, pageWidth / 2, headerHeight / 2, { align: 'center', baseline: 'middle' });
 
-  // Summary box
+  // Summary box compacta em linha única (números na frente do texto)
   autoTable(doc, {
-    startY: 30,
-    head: [['TOTAL DE ITENS', 'CONFERIDOS', 'PENDENTES', 'EM CAUTELA', 'BAIXADOS']],
-    body: [[
-      stats.total,
-      `${stats.conferidos} (${stats.pctConferido}%)`,
-      stats.pendentes,
-      stats.cautelas,
-      stats.baixados
+    startY: 11,
+    margin: { left: 10, right: 10, bottom: 12 },
+    head: [[
+      `TOTAL DE ITENS: ${stats.total}`,
+      `CONFERIDOS: ${stats.conferidos} (${stats.pctConferido}%)`,
+      `PENDENTES: ${stats.pendentes}`,
+      `EM CAUTELA: ${stats.cautelas}`,
+      `BAIXADOS: ${stats.baixados}`
     ]],
     theme: 'plain',
-    headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', halign: 'center' },
-    styles: { halign: 'center', fontStyle: 'bold', fontSize: 10, cellPadding: 3 }
-  });
-
-  const tableData = assets.map(a => [
-    a.numeroPatrimonio,
-    a.descricao,
-    a.setorNome,
-    a.localizacao,
-    a.status === 'CONFERIDO' ? `Conferido (${a.conferidoEm || 'Sim'})` : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')),
-    `R$ ${Number(a.valorAtual || a.valorOriginal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-  ]);
-
-  autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 8,
-    head: [['Patrimônio', 'Descrição', 'Setor Oficial', 'Localização', 'Status Conferência', 'Valor Atual']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 8 },
-    styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 2.5 },
-    columnStyles: {
-      0: { cellWidth: 22, fontStyle: 'bold' },
-      1: { cellWidth: 60 },
-      2: { cellWidth: 32 },
-      3: { cellWidth: 30 },
-      4: { cellWidth: 26 },
-      5: { cellWidth: 20, halign: 'right' }
+    headStyles: { 
+      fillColor: [241, 245, 249], 
+      textColor: [15, 23, 42], 
+      fontStyle: 'bold', 
+      halign: 'center', 
+      fontSize: 7.2, 
+      cellPadding: { top: 1.6, right: 1, bottom: 1.6, left: 1 } 
     }
   });
 
-  doc.save(`Relatorio_Inventario_${sector ? sector.id : 'Geral'}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  // Configuração das colunas ativas selecionadas pelo usuário
+  const cols = selectedColumns || {
+    patrimonio: true,
+    descricao: true,
+    setorNome: true,
+    responsavel: true,
+    localizacao: true,
+    status: true,
+    valorAtual: true
+  };
+
+  const ALL_COLS_DEF_MAP = {
+    patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 17, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
+    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 76, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao }, // Fonte reduzida em 20%
+    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 21, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.setorNome) },
+    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 20, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.responsavel || (sector && sector.id === a.setorId ? sector.responsavel : '') || '-') },
+    localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
+    marca: { id: 'marca', header: 'Marca', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
+    modelo: { id: 'modelo', header: 'Modelo', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
+    dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 17, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
+    status: { id: 'status', header: 'Status', baseWidth: 18, fontSize: 5.8, fontStyle: 'normal', halign: 'center', getValue: a => a.status === 'CONFERIDO' ? 'Conferido' : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')) },
+    valorOriginal: { id: 'valorOriginal', header: 'Valor Original', baseWidth: 19, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    valorAtual: { id: 'valorAtual', header: 'Valor Atual', baseWidth: 20, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorAtual || a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    depreciacao: { id: 'depreciacao', header: 'Depreciação', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.depreciacao ? (String(a.depreciacao).includes('%') ? a.depreciacao : `${a.depreciacao}%`) : '-' }
+  };
+
+  // Respeita a ordem exata definida pelo usuário via Drag & Drop
+  const defaultOrder = [
+    'patrimonio', 'descricao', 'setorNome', 'responsavel', 'localizacao', 
+    'status', 'valorAtual', 'marca', 'modelo', 'dataAquisicao', 'valorOriginal', 'depreciacao'
+  ];
+  const orderSeq = (Array.isArray(orderedColumnIds) && orderedColumnIds.length > 0) ? orderedColumnIds : defaultOrder;
+
+  // Filtra apenas as colunas marcadas como ativas mantendo a ordem exata
+  const activeColDefs = orderSeq
+    .filter(id => cols[id] && ALL_COLS_DEF_MAP[id])
+    .map(id => ALL_COLS_DEF_MAP[id]);
+
+  const tableHeaders = activeColDefs.map(c => c.header);
+
+  // Calcula larguras exatas para preencher 190 mm (área útil da folha A4 com margens de 10 mm)
+  const totalAvailableWidth = 190;
+  const fixedWidthSum = activeColDefs.filter(c => !c.isFlex).reduce((acc, c) => acc + c.baseWidth, 0);
+  const flexCol = activeColDefs.find(c => c.isFlex);
+
+  let finalColStyles = {};
+  if (flexCol && totalAvailableWidth - fixedWidthSum >= 35) {
+    const flexWidth = totalAvailableWidth - fixedWidthSum;
+    activeColDefs.forEach((c, idx) => {
+      finalColStyles[idx] = {
+        cellWidth: c.isFlex ? flexWidth : c.baseWidth,
+        fontSize: c.fontSize,
+        fontStyle: c.fontStyle,
+        halign: c.halign
+      };
+    });
+  } else {
+    // Se muitas colunas forem ativadas, faz distribuição proporcional exata de 190mm
+    const baseSum = activeColDefs.reduce((acc, c) => acc + (c.isFlex ? 55 : c.baseWidth), 0) || 1;
+    activeColDefs.forEach((c, idx) => {
+      const assigned = ((c.isFlex ? 55 : c.baseWidth) / baseSum) * totalAvailableWidth;
+      finalColStyles[idx] = {
+        cellWidth: Number(assigned.toFixed(1)),
+        fontSize: c.fontSize,
+        fontStyle: c.fontStyle,
+        halign: c.halign
+      };
+    });
+  }
+
+  const tableData = assets.map(a => activeColDefs.map(c => c.getValue(a)));
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 4,
+    margin: { left: 10, right: 10, bottom: 12 },
+    head: [tableHeaders],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { 
+      fillColor: [51, 65, 85], 
+      textColor: 255, 
+      fontStyle: 'bold', 
+      fontSize: 7.2,
+      cellPadding: { top: 2, right: 1.2, bottom: 2, left: 1.2 }
+    },
+    styles: { 
+      font: 'helvetica', 
+      fontSize: 6.4,
+      cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 },
+      overflow: 'linebreak'
+    },
+    columnStyles: finalColStyles
+  });
+
+  // Numeração de Página e Rodapé Institucional em todas as páginas geradas
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Linha sutil divisória do rodapé
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.2);
+    doc.line(10, pageHeight - 7, pageWidth - 10, pageHeight - 7);
+
+    // Textos do rodapé
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text(`Carga Patrimonial  •  ${sector ? formatTitleCase(sector.name) : 'Todos os Setores'}`, 10, pageHeight - 3.5);
+    doc.text(`Página ${i} de ${totalPages}`, pageWidth - 10, pageHeight - 3.5, { align: 'right' });
+  }
+
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateFormatted = `${day}-${month}-${year}`;
+  const sectorTitle = sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Geral';
+  const fileName = `${sectorTitle}_relatório_${dateFormatted}.pdf`;
+
+  doc.save(fileName);
 };
