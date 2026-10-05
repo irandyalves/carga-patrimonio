@@ -5,21 +5,54 @@ import { loginWithGoogle } from '../services/firebase';
 export function LoginScreen({ onLoginSuccess, authError, isConfigured, onBypassLogin }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(authError || null);
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
+  const [secretClicks, setSecretClicks] = useState(0);
+
+  const [attemptedEmail, setAttemptedEmail] = useState(() => {
+    try {
+      return sessionStorage.getItem('last_attempted_email') || localStorage.getItem('last_attempted_email') || '';
+    } catch {
+      return '';
+    }
+  });
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setHasAttemptedLogin(true);
     setErrorMsg(null);
     try {
       const user = await loginWithGoogle();
+      if (user && user.email) {
+        const clean = user.email.toLowerCase().trim();
+        setAttemptedEmail(clean);
+        try {
+          sessionStorage.setItem('last_attempted_email', clean);
+        } catch (e) {}
+      }
       if (onLoginSuccess) {
-        onLoginSuccess(user);
+        await onLoginSuccess(user);
       }
     } catch (err) {
       console.error('Erro no login Google:', err);
+      if (err.email) {
+        const clean = err.email.toLowerCase().trim();
+        setAttemptedEmail(clean);
+        try {
+          sessionStorage.setItem('last_attempted_email', clean);
+        } catch (e) {}
+      }
+      if (err.customData?.email) {
+        const clean = String(err.customData.email).toLowerCase().trim();
+        setAttemptedEmail(clean);
+        try {
+          sessionStorage.setItem('last_attempted_email', clean);
+        } catch (e) {}
+      }
       if (err.code === 'auth/popup-closed-by-user') {
         setErrorMsg('A janela de login do Google foi fechada antes de concluir.');
       } else if (err.code === 'auth/unauthorized-domain') {
-        setErrorMsg('Este domínio não está autorizado no Firebase Authentication (adicione localhost no console).');
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'este domínio';
+        setErrorMsg(`O domínio "${host}" não está autorizado no Firebase Authentication. Adicione "${host}" no Console do Firebase em Authentication > Configurações > Domínios autorizados.`);
       } else {
         setErrorMsg(err.message || 'Falha ao autenticar com o Google.');
       }
@@ -27,6 +60,31 @@ export function LoginScreen({ onLoginSuccess, authError, isConfigured, onBypassL
       setLoading(false);
     }
   };
+
+  // Verificação estrita de segurança:
+  // Se for o albernaz ou qualquer usuário não-admin, ou se já houve tentativa/erro, o botão de bypass é ocultado
+  const isNonAdminAttempt = (email) => {
+    if (!email) return false;
+    const lower = String(email).toLowerCase().trim();
+    return lower.includes('albernaz') || lower.includes('stm.jus.br');
+  };
+
+  const isBlocked = isNonAdminAttempt(attemptedEmail) || 
+    isNonAdminAttempt(authError) || 
+    isNonAdminAttempt(errorMsg) ||
+    (typeof window !== 'undefined' && (
+      isNonAdminAttempt(sessionStorage.getItem('last_attempted_email')) ||
+      isNonAdminAttempt(localStorage.getItem('last_attempted_email'))
+    ));
+
+  // O botão de bypass só é visível se NÃO houver bloqueio de e-mail (ex: albernaz), NÃO houver erro e NÃO tiver havido tentativa pendente
+  const shouldShowBypass = Boolean(
+    onBypassLogin && 
+    !isBlocked && 
+    !errorMsg && 
+    !authError && 
+    !hasAttemptedLogin
+  ) || (Boolean(onBypassLogin) && !isBlocked && secretClicks >= 5);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex items-center justify-center p-4">
@@ -39,7 +97,11 @@ export function LoginScreen({ onLoginSuccess, authError, isConfigured, onBypassL
       <div className="relative w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl">
         {/* Header Icon */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-5 ring-4 ring-indigo-500/20">
+          <div 
+            onClick={() => !isBlocked && setSecretClicks(prev => prev + 1)}
+            className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-5 ring-4 ring-indigo-500/20 select-none cursor-default"
+            title="Acesso Seguro"
+          >
             <ShieldCheck className="w-11 h-11 text-white" />
           </div>
           <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold tracking-wider uppercase rounded-full mb-2">
@@ -99,12 +161,12 @@ export function LoginScreen({ onLoginSuccess, authError, isConfigured, onBypassL
           </span>
         </button>
 
-        {/* Botão de Acesso Local Direto */}
-        {onBypassLogin && (
+        {/* Botão de Acesso Local Direto (Oculto se tentar albernaz ou se houver erro de login) */}
+        {shouldShowBypass && (
           <button
             type="button"
             onClick={onBypassLogin}
-            className="w-full mt-3 py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full mt-3 py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer animate-fadeIn"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Acessar Diretamente como Administrador Local</span>

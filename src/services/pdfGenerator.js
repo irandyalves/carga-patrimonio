@@ -216,6 +216,7 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
       textColor: [15, 23, 42], 
       fontStyle: 'bold', 
       halign: 'center', 
+      valign: 'middle',
       fontSize: 7.2, 
       cellPadding: { top: 1.6, right: 1, bottom: 1.6, left: 1 } 
     }
@@ -232,19 +233,20 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
     valorAtual: true
   };
 
+  // Configuração das colunas com larguras enxutas e otimizadas
   const ALL_COLS_DEF_MAP = {
-    patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 17, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
-    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 76, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao }, // Fonte reduzida em 20%
-    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 21, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.setorNome) },
-    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 20, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.responsavel || (sector && sector.id === a.setorId ? sector.responsavel : '') || '-') },
-    localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
-    marca: { id: 'marca', header: 'Marca', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
-    modelo: { id: 'modelo', header: 'Modelo', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
-    dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 17, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
-    status: { id: 'status', header: 'Status', baseWidth: 18, fontSize: 5.8, fontStyle: 'normal', halign: 'center', getValue: a => a.status === 'CONFERIDO' ? 'Conferido' : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')) },
-    valorOriginal: { id: 'valorOriginal', header: 'Valor Original', baseWidth: 19, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
-    valorAtual: { id: 'valorAtual', header: 'Valor Atual', baseWidth: 20, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorAtual || a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
-    depreciacao: { id: 'depreciacao', header: 'Depreciação', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.depreciacao ? (String(a.depreciacao).includes('%') ? a.depreciacao : `${a.depreciacao}%`) : '-' }
+    patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 16, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
+    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 70, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao }, // Coluna flexível que é esmagada
+    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.setorNome) },
+    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.responsavel || (sector && sector.id === a.setorId ? sector.responsavel : '') || '-') },
+    localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
+    marca: { id: 'marca', header: 'Marca', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
+    modelo: { id: 'modelo', header: 'Modelo', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
+    dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 15, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
+    status: { id: 'status', header: 'Status', baseWidth: 15, fontSize: 5.8, fontStyle: 'normal', halign: 'center', getValue: a => a.status === 'CONFERIDO' ? 'Conferido' : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')) },
+    valorOriginal: { id: 'valorOriginal', header: 'Valor Original', baseWidth: 17, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    valorAtual: { id: 'valorAtual', header: 'Valor Atual', baseWidth: 17, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorAtual || a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    depreciacao: { id: 'depreciacao', header: 'Depreciação', baseWidth: 13, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.depreciacao ? (String(a.depreciacao).includes('%') ? a.depreciacao : `${a.depreciacao}%`) : '-' }
   };
 
   // Respeita a ordem exata definida pelo usuário via Drag & Drop
@@ -261,32 +263,38 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
 
   const tableHeaders = activeColDefs.map(c => c.header);
 
-  // Calcula larguras exatas para preencher 190 mm (área útil da folha A4 com margens de 10 mm)
+  // Calcula larguras: a coluna do item (descricao) absorve toda a redução (é esmagada) conforme novas colunas são adicionadas
   const totalAvailableWidth = 190;
-  const fixedWidthSum = activeColDefs.filter(c => !c.isFlex).reduce((acc, c) => acc + c.baseWidth, 0);
   const flexCol = activeColDefs.find(c => c.isFlex);
+  const fixedCols = activeColDefs.filter(c => !c.isFlex);
+  const fixedWidthSum = fixedCols.reduce((acc, c) => acc + c.baseWidth, 0);
 
   let finalColStyles = {};
-  if (flexCol && totalAvailableWidth - fixedWidthSum >= 35) {
-    const flexWidth = totalAvailableWidth - fixedWidthSum;
+
+  if (flexCol) {
+    // Ao inserir novas colunas, todas as outras mantêm suas larguras fixas exatas;
+    // Somente a coluna de descrição do item é esmagada para absorver o restante da folha (190 mm)
+    const flexWidth = Math.max(16, totalAvailableWidth - fixedWidthSum);
     activeColDefs.forEach((c, idx) => {
       finalColStyles[idx] = {
         cellWidth: c.isFlex ? flexWidth : c.baseWidth,
         fontSize: c.fontSize,
         fontStyle: c.fontStyle,
-        halign: c.halign
+        halign: c.halign,
+        valign: 'middle'
       };
     });
   } else {
-    // Se muitas colunas forem ativadas, faz distribuição proporcional exata de 190mm
-    const baseSum = activeColDefs.reduce((acc, c) => acc + (c.isFlex ? 55 : c.baseWidth), 0) || 1;
+    // Se a coluna do item não estiver entre as selecionadas, distribui proporcionalmente
+    const baseSum = activeColDefs.reduce((acc, c) => acc + c.baseWidth, 0) || 1;
     activeColDefs.forEach((c, idx) => {
-      const assigned = ((c.isFlex ? 55 : c.baseWidth) / baseSum) * totalAvailableWidth;
+      const assigned = (c.baseWidth / baseSum) * totalAvailableWidth;
       finalColStyles[idx] = {
         cellWidth: Number(assigned.toFixed(1)),
         fontSize: c.fontSize,
         fontStyle: c.fontStyle,
-        halign: c.halign
+        halign: c.halign,
+        valign: 'middle'
       };
     });
   }
@@ -304,11 +312,13 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
       textColor: 255, 
       fontStyle: 'bold', 
       fontSize: 7.2,
+      valign: 'middle',
       cellPadding: { top: 2, right: 1.2, bottom: 2, left: 1.2 }
     },
     styles: { 
       font: 'helvetica', 
       fontSize: 6.4,
+      valign: 'middle',
       cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 },
       overflow: 'linebreak'
     },

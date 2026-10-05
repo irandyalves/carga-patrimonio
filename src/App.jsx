@@ -163,29 +163,60 @@ import {
 } from 'lucide-react';
 
 export function App() {
-  // Authentication and Authorization States (Sessão inicial Super Admin: irandyalves@gmail.com)
+  // Authentication and Authorization States (Exige autenticação obrigatória via Google)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('carga_patrimonio_current_user');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.email && !parsed.email.includes('patrimonio.gov.br')) {
-          return parsed;
+      const isLocalhost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1'
+      );
+      if (isLocalhost) {
+        const stored = localStorage.getItem('carga_patrimonio_current_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.email && !parsed.email.includes('patrimonio.gov.br')) {
+            return parsed;
+          }
         }
       }
     } catch (e) {}
-    const defaultAdmin = { 
-      displayName: 'Irandy Alves', 
-      email: 'irandyalves@gmail.com',
-      role: 'admin'
-    };
-    try {
-      localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(defaultAdmin));
-    } catch (e) {}
-    return defaultAdmin;
+    return null;
   });
-  const [userRole, setUserRole] = useState('admin'); // 'admin' | 'operador'
-  const [isAuthorized, setIsAuthorized] = useState(true);
+
+  const [userRole, setUserRole] = useState(() => {
+    try {
+      const isLocalhost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1'
+      );
+      if (isLocalhost) {
+        const stored = localStorage.getItem('carga_patrimonio_current_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.role) return parsed.role;
+        }
+      }
+    } catch (e) {}
+    return 'operador';
+  });
+
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    try {
+      const isLocalhost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1'
+      );
+      if (isLocalhost) {
+        const stored = localStorage.getItem('carga_patrimonio_current_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.email) return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  });
+
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authorizedUsers, setAuthorizedUsers] = useState([]);
@@ -750,6 +781,17 @@ export function App() {
             setCurrentUser(null);
             localStorage.removeItem('carga_patrimonio_current_user');
           }
+        } else {
+          // Se não há usuário autenticado no Firebase: em produção / GitHub Pages, bloqueia imediatamente
+          const isLocalhost = typeof window !== 'undefined' && (
+            window.location.hostname === 'localhost' || 
+            window.location.hostname === '127.0.0.1'
+          );
+          if (!isLocalhost) {
+            setIsAuthorized(false);
+            setCurrentUser(null);
+            localStorage.removeItem('carga_patrimonio_current_user');
+          }
         }
         setAuthLoading(false);
       });
@@ -948,6 +990,10 @@ export function App() {
   const handleLoginSuccess = async (user) => {
     if (!user || !user.email) return;
     const cleanEmail = user.email.toLowerCase().trim();
+    try {
+      sessionStorage.setItem('last_attempted_email', cleanEmail);
+      localStorage.setItem('last_attempted_email', cleanEmail);
+    } catch (e) {}
 
     let usersList = authorizedUsers;
     if (!usersList || usersList.length === 0) {
@@ -2900,12 +2946,28 @@ export function App() {
 
   // Se não estiver autenticado ou autorizado, exibe a tela de login mágico do Google
   if (!isAuthorized || !currentUser) {
+    const isLocalhost = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1'
+    );
+
+    const isAlbernazAttempt = Boolean(
+      (authError && (authError.toLowerCase().includes('albernaz') || authError.toLowerCase().includes('stm.jus.br'))) ||
+      (typeof window !== 'undefined' && (
+        window.sessionStorage?.getItem('last_attempted_email')?.toLowerCase().includes('albernaz') ||
+        window.localStorage?.getItem('last_attempted_email')?.toLowerCase().includes('albernaz')
+      ))
+    );
+
+    // Bypass só é permitido estritamente em ambiente local de desenvolvimento, NUNCA no GitHub Pages
+    const allowBypass = isLocalhost && !isAlbernazAttempt && !authError;
+
     return (
       <LoginScreen
         onLoginSuccess={handleLoginSuccess}
         authError={authError}
         isConfigured={isFirebaseActive}
-        onBypassLogin={() => {
+        onBypassLogin={allowBypass ? () => {
           const fallbackUser = {
             displayName: 'Irandy Alves',
             name: 'Irandy Alves',
@@ -2918,7 +2980,7 @@ export function App() {
           setAuthError(null);
           localStorage.setItem('carga_patrimonio_current_user', JSON.stringify(fallbackUser));
           showToast('Acesso de contingência como Administrador local ativado.', 'info');
-        }}
+        } : null}
       />
     );
   }
