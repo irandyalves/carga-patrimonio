@@ -110,6 +110,7 @@ import {
   savePedidoToCloud,
   savePedidosBatchToCloud,
   deletePedidoFromCloud,
+  deletePedidosBatchFromCloud,
   subscribeToCloudServidores,
   saveServidorToCloud,
   deleteServidorFromCloud,
@@ -2223,6 +2224,31 @@ export function App() {
     showToast('Pedido arquivado como recusado.', 'info');
   };
 
+  // Excluir registro individual do histórico de pedidos
+  const handleExcluirHistoricoPedido = async (pedidoId) => {
+    const updated = pedidosCarga.filter(p => p.id !== pedidoId);
+    setPedidosCarga(updated);
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(updated));
+    } catch (e) {}
+    await deletePedidoFromCloud(pedidoId);
+    showToast('Registro do histórico excluído com sucesso.', 'info');
+  };
+
+  // Excluir todo o histórico de pedidos (aprovados e recusados)
+  const handleLimparHistoricoPedidos = async () => {
+    const toDeleteIds = pedidosCarga.filter(p => p.status !== 'PENDENTE').map(p => p.id);
+    const remaining = pedidosCarga.filter(p => p.status === 'PENDENTE');
+    setPedidosCarga(remaining);
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(remaining));
+    } catch (e) {}
+    if (toDeleteIds.length > 0) {
+      await deletePedidosBatchFromCloud(toDeleteIds);
+    }
+    showToast('Todo o histórico de pedidos foi excluído.', 'info');
+  };
+
   // Save New or Edited Asset
   const handleSaveAsset = (assetData) => {
     if (assetToEdit) {
@@ -4286,6 +4312,8 @@ export function App() {
         onAprovarPedido={handleAprovarPedido}
         onRecusarPedido={handleRecusarPedido}
         onAprovarTodos={handleAprovarTodosPedidos}
+        onExcluirHistorico={handleExcluirHistoricoPedido}
+        onLimparHistorico={handleLimparHistoricoPedidos}
       />
 
       {/* Modal de Notificações e Autorizações de Envio ao DTIN pelo Detentor */}

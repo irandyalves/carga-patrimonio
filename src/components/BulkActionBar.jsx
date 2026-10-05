@@ -174,11 +174,11 @@ export const BulkActionBar = ({
                 setIsServidorDropdownOpen(!isServidorDropdownOpen);
                 setIsSectorDropdownOpen(false);
               }}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold text-xs flex items-center gap-1.5 border border-cyan-400/40 transition-all cursor-pointer shadow-lg shadow-cyan-600/30 active:scale-95 whitespace-nowrap"
+              className="px-3.5 py-1.5 rounded-xl bg-[#FA8072] hover:bg-[#ff8f82] text-black font-extrabold text-xs flex items-center gap-1.5 border border-rose-300/80 transition-all cursor-pointer shadow-lg shadow-rose-500/25 active:scale-95 whitespace-nowrap"
             >
-              <Users className="w-3.5 h-3.5 text-cyan-200" />
-              <span>Quem está com o item?</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isServidorDropdownOpen ? 'rotate-180' : ''}`} />
+              <Users className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+              <span className="text-black font-extrabold">Quem está com o item?</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-black stroke-[2.5] transition-transform duration-200 ${isServidorDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Menu Suspenso de Servidores com Busca Ativa e Inteligente */}

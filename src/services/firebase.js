@@ -699,6 +699,27 @@ export const deletePedidoFromCloud = async (pedidoId) => {
   }
 };
 
+export const deletePedidosBatchFromCloud = async (pedidoIds) => {
+  const { isConfigured, db } = initFirebase();
+  if (!isConfigured || !db || !pedidoIds || pedidoIds.length === 0) return;
+
+  const chunkSize = 250;
+  for (let i = 0; i < pedidoIds.length; i += chunkSize) {
+    const chunk = pedidoIds.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach(id => {
+      if (id) {
+        batch.delete(doc(db, 'pedidos_carga', String(id)));
+      }
+    });
+    try {
+      await batch.commit();
+    } catch (e) {
+      console.warn('Erro ao excluir lote de pedidos no Firestore:', e);
+    }
+  }
+};
+
 export const saveAssetToCloud = async (asset) => {
   const { isConfigured, db } = initFirebase();
   if (!isConfigured || !db || !asset || !asset.id) return;
