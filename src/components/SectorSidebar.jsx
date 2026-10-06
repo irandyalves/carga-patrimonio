@@ -341,7 +341,7 @@ export const SectorSidebar = ({
                   })}
 
                   {/* Botão Emitir Relatório logo abaixo de Baixados */}
-                  {userRole === 'admin' && onExportReportPDF && (
+                  {onExportReportPDF && (
                     <button
                       type="button"
                       onClick={() => {

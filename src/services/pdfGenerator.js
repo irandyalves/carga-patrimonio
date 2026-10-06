@@ -320,70 +320,22 @@ export const generateInventoryReportPDF = (
     });
   }
 
-  // Agrupamento dos setores:
-  // Se for um setor específico: 1 único grupo.
-  // Se for Todos os Setores: agrupa cada setor individualmente para quebrar nova folha para o próximo setor.
+  // Determina se o relatório é do setor específico ou geral (Todos os Setores)
+  const isAllSectorsReport = !sector || !sector.id || sector.id === 'all' || (sector.name && sector.name.toLowerCase().includes('todos os setores'));
+
   const sectorGroups = [];
 
-  if (sector) {
+  if (!isAllSectorsReport) {
+    // Relatório de um setor específico
     sectorGroups.push({
       sector: sector,
       assets: sortAssetsByCriterion(assets, sortBy)
     });
   } else {
-    if (allSectors && allSectors.length > 0) {
-      allSectors.forEach(sec => {
-        const secAssets = assets.filter(a => a.setorId === sec.id);
-        if (secAssets.length > 0) {
-          sectorGroups.push({
-            sector: sec,
-            assets: sortAssetsByCriterion(secAssets, sortBy)
-          });
-        }
-      });
-      // Itens órfãos (sem setorId correspondente na lista de setores)
-      const knownIds = new Set(allSectors.map(s => s.id));
-      const orphanAssets = assets.filter(a => !a.setorId || !knownIds.has(a.setorId));
-      if (orphanAssets.length > 0) {
-        const orphanMap = new Map();
-        orphanAssets.forEach(a => {
-          const sName = a.setorNome || 'Outros Setores';
-          if (!orphanMap.has(sName)) orphanMap.set(sName, []);
-          orphanMap.get(sName).push(a);
-        });
-        orphanMap.forEach((oAssets, sName) => {
-          sectorGroups.push({
-            sector: { id: `orphan-${sName}`, name: sName, responsavel: '-' },
-            assets: sortAssetsByCriterion(oAssets, sortBy)
-          });
-        });
-      }
-    } else {
-      const groupMap = new Map();
-      assets.forEach(a => {
-        const sKey = a.setorId || a.setorNome || 'Geral';
-        if (!groupMap.has(sKey)) {
-          groupMap.set(sKey, {
-            sector: { id: sKey, name: a.setorNome || sKey, responsavel: a.responsavel || '-' },
-            assets: []
-          });
-        }
-        groupMap.get(sKey).assets.push(a);
-      });
-      groupMap.forEach(grp => {
-        sectorGroups.push({
-          sector: grp.sector,
-          assets: sortAssetsByCriterion(grp.assets, sortBy)
-        });
-      });
-    }
-  }
-
-  // Fallback caso não haja bens
-  if (sectorGroups.length === 0) {
+    // Relatório Consolidado de TODOS OS SETORES (contém todos os bens juntos)
     sectorGroups.push({
-      sector: sector || { name: 'Todos os Setores' },
-      assets: []
+      sector: { id: 'all', name: 'Todos os Setores', responsavel: '-' },
+      assets: sortAssetsByCriterion(assets, sortBy)
     });
   }
 
@@ -398,68 +350,34 @@ export const generateInventoryReportPDF = (
     const startPage = doc.internal.getNumberOfPages();
     const currentSector = group.sector;
     const currentAssets = group.assets;
-    const currentStats = calculateSectorStats(currentAssets);
+    const currentStats = (isAllSectorsReport && stats) ? stats : calculateSectorStats(currentAssets);
 
-    // 1. Faixa azul escura aumentada em 100% (18mm)
+    // 1. Faixa azul escura (18mm) com Título e Estatísticas integradas
     doc.setFillColor(30, 41, 59);
     doc.rect(0, 0, pageWidth, headerHeight, 'F');
     
-    const prefixText = 'RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  SETOR:';
     const setorNome = (currentSector && currentSector.name) ? currentSector.name.toUpperCase().trim() : 'TODOS OS SETORES';
-    const dataHoraText = `  |  Data: ${new Date().toLocaleString('pt-BR')}`;
+    const dataHoraText = new Date().toLocaleString('pt-BR');
+    const titleText = `RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  SETOR: ${setorNome}  |  Data: ${dataHoraText}`;
 
-    doc.setFontSize(8);
+    // Linha 1: Título do relatório (Fonte branca em negrito)
+    doc.setFontSize(7.6);
     doc.setFont('helvetica', 'bold');
-
-    const charSpace = Math.max(1.1, doc.getTextWidth('A A') - doc.getTextWidth('AA'));
-    const prefixWidth = doc.getTextWidth(prefixText);
-    const setorWidth = doc.getTextWidth(setorNome);
-    const dataHoraWidth = doc.getTextWidth(dataHoraText);
-    const totalHeaderWidth = prefixWidth + charSpace + setorWidth + dataHoraWidth;
-
-    const startX = (pageWidth - totalHeaderWidth) / 2;
-    const centerY = headerHeight / 2;
-
-    // Prefixo em branco
     doc.setTextColor(255, 255, 255);
-    doc.text(prefixText, startX, centerY, { baseline: 'middle' });
+    doc.text(titleText, pageWidth / 2, 6.5, { align: 'center', baseline: 'middle' });
 
-    // Setor em Caixa Alta e Laranja vibrante (#fb923c) com espaço garantido
-    doc.setTextColor(251, 146, 60);
-    doc.text(setorNome, startX + prefixWidth + charSpace, centerY, { baseline: 'middle' });
+    // Linha 2: Totais e estatísticas do setor (Em fonte amarelinha, fina e 100% menor / delicada)
+    const statsText = `TOTAL DE ITENS: ${currentStats.total}   •   CONFERIDOS: ${currentStats.conferidos} (${currentStats.pctConferido}%)   •   PENDENTES: ${currentStats.pendentes}   •   EM CAUTELA: ${currentStats.cautelas}   •   BAIXADOS: ${currentStats.baixados}`;
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(254, 240, 138); // Amarelinho suave (#fef08a)
+    doc.text(statsText, pageWidth / 2, 12.2, { align: 'center', baseline: 'middle' });
 
-    // Sufixo Data/Hora em branco
-    doc.setTextColor(255, 255, 255);
-    doc.text(dataHoraText, startX + prefixWidth + charSpace + setorWidth, centerY, { baseline: 'middle' });
-
-    // 2. Summary box com estatísticas do setor
-    autoTable(doc, {
-      startY: headerHeight + 0.8,
-      margin: { left: 10, right: 10, bottom: 12 },
-      head: [[
-        `TOTAL DE ITENS: ${currentStats.total}`,
-        `CONFERIDOS: ${currentStats.conferidos} (${currentStats.pctConferido}%)`,
-        `PENDENTES: ${currentStats.pendentes}`,
-        `EM CAUTELA: ${currentStats.cautelas}`,
-        `BAIXADOS: ${currentStats.baixados}`
-      ]],
-      theme: 'plain',
-      headStyles: { 
-        fillColor: [241, 245, 249], 
-        textColor: [15, 23, 42], 
-        fontStyle: 'normal', 
-        halign: 'center', 
-        valign: 'middle',
-        fontSize: 7.2, 
-        cellPadding: { top: 1.2, right: 1, bottom: 1.2, left: 1 } 
-      }
-    });
-
-    // 3. Tabela com os bens do setor (ordenados pelo critério escolhido dentro do setor)
+    // 2. Tabela com os bens do setor (iniciando logo abaixo da faixa azul escura)
     const tableData = currentAssets.map(a => activeColDefs.map(c => c.getValue(a, currentSector)));
 
     autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 1.2,
+      startY: headerHeight + 1.2,
       margin: { top: 12, left: 10, right: 10, bottom: 12 },
       head: [tableHeaders],
       body: tableData,
@@ -504,7 +422,7 @@ export const generateInventoryReportPDF = (
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184); // slate-400
-    const secNameForPage = pageSectorMap[i] || (sector ? formatTitleCase(sector.name) : 'Todos os Setores');
+    const secNameForPage = pageSectorMap[i] || (!isAllSectorsReport && sector ? formatTitleCase(sector.name) : 'Todos os Setores');
     doc.text(`Carga Patrimonial  •  ${secNameForPage}`, 10, pageHeight - 3.5);
     doc.text(`Página ${i} de ${totalPages}`, pageWidth - 10, pageHeight - 3.5, { align: 'right' });
   }
@@ -514,7 +432,7 @@ export const generateInventoryReportPDF = (
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = now.getFullYear();
   const dateFormatted = `${day}-${month}-${year}`;
-  const sectorTitle = sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Todos_os_Setores';
+  const sectorTitle = !isAllSectorsReport && sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Todos_os_Setores';
   const fileName = `${sectorTitle}_relatório_${dateFormatted}.pdf`;
 
   doc.save(fileName);
