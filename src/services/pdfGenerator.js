@@ -180,47 +180,71 @@ const formatTitleCase = (text) => {
   return String(text).toLowerCase().replace(/(?:^|\s|-|\/)\S/g, char => char.toUpperCase());
 };
 
+// Helper para ordenar bens patrimoniais conforme critério escolhido
+const sortAssetsByCriterion = (items, sortBy) => {
+  const sorted = [...items];
+  if (sortBy === 'PATRIMONIO') {
+    sorted.sort((a, b) => {
+      const numA = parseInt(String(a.numeroPatrimonio || '').replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(String(b.numeroPatrimonio || '').replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numA - numB;
+      return (a.numeroPatrimonio || '').localeCompare(b.numeroPatrimonio || '', 'pt-BR');
+    });
+  } else if (sortBy === 'ITEM') {
+    sorted.sort((a, b) => {
+      return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  } else if (sortBy === 'RESPONSAVEL') {
+    sorted.sort((a, b) => {
+      const respA = a.responsavel || '';
+      const respB = b.responsavel || '';
+      const comp = respA.localeCompare(respB, 'pt-BR', { sensitivity: 'base' });
+      if (comp !== 0) return comp;
+      return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  } else if (sortBy === 'LOCALIZACAO') {
+    sorted.sort((a, b) => {
+      const locA = a.localizacao || '';
+      const locB = b.localizacao || '';
+      const comp = locA.localeCompare(locB, 'pt-BR', { sensitivity: 'base' });
+      if (comp !== 0) return comp;
+      return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  }
+  return sorted;
+};
+
+// Helper para calcular estatísticas de conferência de um setor específico
+const calculateSectorStats = (secAssets) => {
+  const total = secAssets.length;
+  const conferidos = secAssets.filter(a => a.status === 'CONFERIDO').length;
+  const cautelas = secAssets.filter(a => a.status === 'EM_CAUTELA' || a.cautelaAtual).length;
+  const baixados = secAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length;
+  const pendentes = Math.max(0, total - conferidos - baixados);
+  const pctConferido = total > 0 ? Math.round((conferidos / (total - baixados || 1)) * 100) : 0;
+  return {
+    total,
+    conferidos,
+    pendentes,
+    cautelas,
+    baixados,
+    pctConferido: Math.min(100, pctConferido)
+  };
+};
+
 // 3. Relatório de Conferência & Auditoria de Setor
-export const generateInventoryReportPDF = (sector, assets, stats, selectedColumns = null, orderedColumnIds = null) => {
+export const generateInventoryReportPDF = (
+  sector, 
+  assets, 
+  stats, 
+  selectedColumns = null, 
+  orderedColumnIds = null, 
+  allSectors = [], 
+  sortBy = 'PATRIMONIO'
+) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-
-  // Cabeçalho em linha única e alinhado verticalmente ao centro (fonte 7.5pt)
-  const headerHeight = 9;
-  doc.setFillColor(30, 41, 59);
-  doc.rect(0, 0, pageWidth, headerHeight, 'F');
-  
-  const setorText = sector ? formatTitleCase(sector.name) : 'Todos os Setores';
-  const dataHoraText = new Date().toLocaleString('pt-BR');
-  const headerFullText = `RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  Setor: ${setorText}  |  Data: ${dataHoraText}`;
-
-  doc.setFontSize(7.5);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.text(headerFullText, pageWidth / 2, headerHeight / 2, { align: 'center', baseline: 'middle' });
-
-  // Summary box compacta em linha única (números na frente do texto)
-  autoTable(doc, {
-    startY: 11,
-    margin: { left: 10, right: 10, bottom: 12 },
-    head: [[
-      `TOTAL DE ITENS: ${stats.total}`,
-      `CONFERIDOS: ${stats.conferidos} (${stats.pctConferido}%)`,
-      `PENDENTES: ${stats.pendentes}`,
-      `EM CAUTELA: ${stats.cautelas}`,
-      `BAIXADOS: ${stats.baixados}`
-    ]],
-    theme: 'plain',
-    headStyles: { 
-      fillColor: [241, 245, 249], 
-      textColor: [15, 23, 42], 
-      fontStyle: 'bold', 
-      halign: 'center', 
-      valign: 'middle',
-      fontSize: 7.2, 
-      cellPadding: { top: 1.6, right: 1, bottom: 1.6, left: 1 } 
-    }
-  });
+  const headerHeight = 18;
 
   // Configuração das colunas ativas selecionadas pelo usuário
   const cols = selectedColumns || {
@@ -236,9 +260,9 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
   // Configuração das colunas com larguras enxutas e otimizadas
   const ALL_COLS_DEF_MAP = {
     patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 16, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
-    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 70, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao }, // Coluna flexível que é esmagada
-    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.setorNome) },
-    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.responsavel || (sector && sector.id === a.setorId ? sector.responsavel : '') || '-') },
+    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 70, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao },
+    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.setorNome || (sec ? sec.name : '')) },
+    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.responsavel || (sec ? sec.responsavel : '') || '-') },
     localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
     marca: { id: 'marca', header: 'Marca', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
     modelo: { id: 'modelo', header: 'Modelo', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
@@ -263,7 +287,7 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
 
   const tableHeaders = activeColDefs.map(c => c.header);
 
-  // Calcula larguras: a coluna do item (descricao) absorve toda a redução (é esmagada) conforme novas colunas são adicionadas
+  // Calcula larguras: a coluna do item (descricao) absorve toda a redução
   const totalAvailableWidth = 190;
   const flexCol = activeColDefs.find(c => c.isFlex);
   const fixedCols = activeColDefs.filter(c => !c.isFlex);
@@ -272,8 +296,6 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
   let finalColStyles = {};
 
   if (flexCol) {
-    // Ao inserir novas colunas, todas as outras mantêm suas larguras fixas exatas;
-    // Somente a coluna de descrição do item é esmagada para absorver o restante da folha (190 mm)
     const flexWidth = Math.max(16, totalAvailableWidth - fixedWidthSum);
     activeColDefs.forEach((c, idx) => {
       finalColStyles[idx] = {
@@ -285,7 +307,6 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
       };
     });
   } else {
-    // Se a coluna do item não estiver entre as selecionadas, distribui proporcionalmente
     const baseSum = activeColDefs.reduce((acc, c) => acc + c.baseWidth, 0) || 1;
     activeColDefs.forEach((c, idx) => {
       const assigned = (c.baseWidth / baseSum) * totalAvailableWidth;
@@ -299,30 +320,173 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
     });
   }
 
-  const tableData = assets.map(a => activeColDefs.map(c => c.getValue(a)));
+  // Agrupamento dos setores:
+  // Se for um setor específico: 1 único grupo.
+  // Se for Todos os Setores: agrupa cada setor individualmente para quebrar nova folha para o próximo setor.
+  const sectorGroups = [];
 
-  autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 4,
-    margin: { left: 10, right: 10, bottom: 12 },
-    head: [tableHeaders],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { 
-      fillColor: [51, 65, 85], 
-      textColor: 255, 
-      fontStyle: 'bold', 
-      fontSize: 7.2,
-      valign: 'middle',
-      cellPadding: { top: 2, right: 1.2, bottom: 2, left: 1.2 }
-    },
-    styles: { 
-      font: 'helvetica', 
-      fontSize: 6.4,
-      valign: 'middle',
-      cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 },
-      overflow: 'linebreak'
-    },
-    columnStyles: finalColStyles
+  if (sector) {
+    sectorGroups.push({
+      sector: sector,
+      assets: sortAssetsByCriterion(assets, sortBy)
+    });
+  } else {
+    if (allSectors && allSectors.length > 0) {
+      allSectors.forEach(sec => {
+        const secAssets = assets.filter(a => a.setorId === sec.id);
+        if (secAssets.length > 0) {
+          sectorGroups.push({
+            sector: sec,
+            assets: sortAssetsByCriterion(secAssets, sortBy)
+          });
+        }
+      });
+      // Itens órfãos (sem setorId correspondente na lista de setores)
+      const knownIds = new Set(allSectors.map(s => s.id));
+      const orphanAssets = assets.filter(a => !a.setorId || !knownIds.has(a.setorId));
+      if (orphanAssets.length > 0) {
+        const orphanMap = new Map();
+        orphanAssets.forEach(a => {
+          const sName = a.setorNome || 'Outros Setores';
+          if (!orphanMap.has(sName)) orphanMap.set(sName, []);
+          orphanMap.get(sName).push(a);
+        });
+        orphanMap.forEach((oAssets, sName) => {
+          sectorGroups.push({
+            sector: { id: `orphan-${sName}`, name: sName, responsavel: '-' },
+            assets: sortAssetsByCriterion(oAssets, sortBy)
+          });
+        });
+      }
+    } else {
+      const groupMap = new Map();
+      assets.forEach(a => {
+        const sKey = a.setorId || a.setorNome || 'Geral';
+        if (!groupMap.has(sKey)) {
+          groupMap.set(sKey, {
+            sector: { id: sKey, name: a.setorNome || sKey, responsavel: a.responsavel || '-' },
+            assets: []
+          });
+        }
+        groupMap.get(sKey).assets.push(a);
+      });
+      groupMap.forEach(grp => {
+        sectorGroups.push({
+          sector: grp.sector,
+          assets: sortAssetsByCriterion(grp.assets, sortBy)
+        });
+      });
+    }
+  }
+
+  // Fallback caso não haja bens
+  if (sectorGroups.length === 0) {
+    sectorGroups.push({
+      sector: sector || { name: 'Todos os Setores' },
+      assets: []
+    });
+  }
+
+  const pageSectorMap = {};
+
+  // Renderiza cada setor iniciando em uma nova página (exceto a primeira que já é página 1)
+  sectorGroups.forEach((group, groupIdx) => {
+    if (groupIdx > 0) {
+      doc.addPage();
+    }
+
+    const startPage = doc.internal.getNumberOfPages();
+    const currentSector = group.sector;
+    const currentAssets = group.assets;
+    const currentStats = calculateSectorStats(currentAssets);
+
+    // 1. Faixa azul escura aumentada em 100% (18mm)
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, pageWidth, headerHeight, 'F');
+    
+    const prefixText = 'RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  SETOR:';
+    const setorNome = (currentSector && currentSector.name) ? currentSector.name.toUpperCase().trim() : 'TODOS OS SETORES';
+    const dataHoraText = `  |  Data: ${new Date().toLocaleString('pt-BR')}`;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+
+    const charSpace = Math.max(1.1, doc.getTextWidth('A A') - doc.getTextWidth('AA'));
+    const prefixWidth = doc.getTextWidth(prefixText);
+    const setorWidth = doc.getTextWidth(setorNome);
+    const dataHoraWidth = doc.getTextWidth(dataHoraText);
+    const totalHeaderWidth = prefixWidth + charSpace + setorWidth + dataHoraWidth;
+
+    const startX = (pageWidth - totalHeaderWidth) / 2;
+    const centerY = headerHeight / 2;
+
+    // Prefixo em branco
+    doc.setTextColor(255, 255, 255);
+    doc.text(prefixText, startX, centerY, { baseline: 'middle' });
+
+    // Setor em Caixa Alta e Laranja vibrante (#fb923c) com espaço garantido
+    doc.setTextColor(251, 146, 60);
+    doc.text(setorNome, startX + prefixWidth + charSpace, centerY, { baseline: 'middle' });
+
+    // Sufixo Data/Hora em branco
+    doc.setTextColor(255, 255, 255);
+    doc.text(dataHoraText, startX + prefixWidth + charSpace + setorWidth, centerY, { baseline: 'middle' });
+
+    // 2. Summary box com estatísticas do setor
+    autoTable(doc, {
+      startY: headerHeight + 0.8,
+      margin: { left: 10, right: 10, bottom: 12 },
+      head: [[
+        `TOTAL DE ITENS: ${currentStats.total}`,
+        `CONFERIDOS: ${currentStats.conferidos} (${currentStats.pctConferido}%)`,
+        `PENDENTES: ${currentStats.pendentes}`,
+        `EM CAUTELA: ${currentStats.cautelas}`,
+        `BAIXADOS: ${currentStats.baixados}`
+      ]],
+      theme: 'plain',
+      headStyles: { 
+        fillColor: [241, 245, 249], 
+        textColor: [15, 23, 42], 
+        fontStyle: 'normal', 
+        halign: 'center', 
+        valign: 'middle',
+        fontSize: 7.2, 
+        cellPadding: { top: 1.2, right: 1, bottom: 1.2, left: 1 } 
+      }
+    });
+
+    // 3. Tabela com os bens do setor (ordenados pelo critério escolhido dentro do setor)
+    const tableData = currentAssets.map(a => activeColDefs.map(c => c.getValue(a, currentSector)));
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 1.2,
+      margin: { top: 12, left: 10, right: 10, bottom: 12 },
+      head: [tableHeaders],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [51, 65, 85], 
+        textColor: 255, 
+        fontStyle: 'bold', 
+        fontSize: 7.2, 
+        valign: 'middle',
+        cellPadding: { top: 2, right: 1.2, bottom: 2, left: 1.2 } 
+      },
+      styles: { 
+        font: 'helvetica', 
+        fontSize: 6.4, 
+        valign: 'middle',
+        cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 },
+        overflow: 'linebreak'
+      },
+      columnStyles: finalColStyles
+    });
+
+    // Mapeia todas as páginas geradas por este setor
+    const endPage = doc.internal.getNumberOfPages();
+    for (let p = startPage; p <= endPage; p++) {
+      pageSectorMap[p] = formatTitleCase(currentSector.name);
+    }
   });
 
   // Numeração de Página e Rodapé Institucional em todas as páginas geradas
@@ -340,7 +504,8 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184); // slate-400
-    doc.text(`Carga Patrimonial  •  ${sector ? formatTitleCase(sector.name) : 'Todos os Setores'}`, 10, pageHeight - 3.5);
+    const secNameForPage = pageSectorMap[i] || (sector ? formatTitleCase(sector.name) : 'Todos os Setores');
+    doc.text(`Carga Patrimonial  •  ${secNameForPage}`, 10, pageHeight - 3.5);
     doc.text(`Página ${i} de ${totalPages}`, pageWidth - 10, pageHeight - 3.5, { align: 'right' });
   }
 
@@ -349,7 +514,7 @@ export const generateInventoryReportPDF = (sector, assets, stats, selectedColumn
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = now.getFullYear();
   const dateFormatted = `${day}-${month}-${year}`;
-  const sectorTitle = sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Geral';
+  const sectorTitle = sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Todos_os_Setores';
   const fileName = `${sectorTitle}_relatório_${dateFormatted}.pdf`;
 
   doc.save(fileName);

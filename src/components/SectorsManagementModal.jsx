@@ -25,6 +25,7 @@ export const SectorsManagementModal = ({
   sectors = [],
   assets = [],
   users = [],
+  servidores = [],
   onSaveSector,
   onDeleteSector,
   onClearSectorAssets
@@ -40,7 +41,7 @@ export const SectorsManagementModal = ({
     sala: ''
   });
 
-  // Lista unificada de responsáveis disponíveis para puxar (usuários do sistema + responsáveis já cadastrados)
+  // Lista unificada de responsáveis disponíveis para puxar (usuários do sistema + responsáveis de setores + servidores)
   const availableUsers = useMemo(() => {
     const map = new Map();
     // 1. Usuários autorizados no sistema
@@ -80,8 +81,45 @@ export const SectorsManagementModal = ({
       }
     });
 
+    // 3. Servidores cadastrados no sistema
+    (servidores || []).forEach(serv => {
+      const servNome = (serv.nome || '').trim();
+      if (!servNome) return;
+      
+      let servEmail = (serv.email || '').trim();
+      if (!servEmail) {
+        // Tenta associar com e-mail de usuário cadastrado de mesmo nome
+        const matchedUser = users.find(u => (u.name || '').toLowerCase().trim() === servNome.toLowerCase());
+        if (matchedUser?.email) {
+          servEmail = matchedUser.email.trim();
+        } else {
+          // Tenta associar com e-mail de setor onde essa pessoa é responsável
+          const matchedSector = sectors.find(s => (s.responsavel || '').toLowerCase().trim() === servNome.toLowerCase());
+          if (matchedSector?.email) {
+            servEmail = matchedSector.email.trim();
+          }
+        }
+      }
+
+      const key = servEmail ? servEmail.toLowerCase() : `serv-${servNome.toLowerCase()}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          name: servNome,
+          email: servEmail,
+          role: 'servidor',
+          isRegisteredUser: false,
+          isServidor: true
+        });
+      } else {
+        const existing = map.get(key);
+        if (!existing.email && servEmail) {
+          existing.email = servEmail;
+        }
+      }
+    });
+
     return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [users, sectors]);
+  }, [users, sectors, servidores]);
 
   // Lista de setores ordenada em ordem alfabética (A-Z)
   const sortedSectors = useMemo(() => {
@@ -245,7 +283,7 @@ export const SectorsManagementModal = ({
                     onChange={(e) => {
                       const selectedVal = e.target.value;
                       if (!selectedVal) return;
-                      const cand = availableUsers.find(u => u.email === selectedVal || u.name === selectedVal);
+                      const cand = availableUsers.find(u => u.name === selectedVal || u.email === selectedVal);
                       if (cand) {
                         setFormData(prev => ({
                           ...prev,
@@ -257,11 +295,11 @@ export const SectorsManagementModal = ({
                     className="w-full mb-1.5 bg-slate-900 border border-indigo-500/40 hover:border-indigo-400 text-indigo-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer transition-all"
                   >
                     <option value="" disabled>
-                      👥 Puxar usuário responsável...
+                      👥 Puxar integrante / servidor...
                     </option>
                     {availableUsers.map((u, i) => (
-                      <option key={`${u.email || u.name}-${i}`} value={u.email || u.name} className="bg-slate-900 text-white">
-                        {u.name} {u.email ? `(${u.email})` : ''} {u.isRegisteredUser ? '✓ Usuário do Sistema' : ''}
+                      <option key={`${u.email || u.name}-${i}`} value={u.name} className="bg-slate-900 text-white">
+                        {u.name} {u.email ? `(${u.email})` : ''} {u.isRegisteredUser ? '✓ Usuário' : u.isServidor ? '• Servidor' : ''}
                       </option>
                     ))}
                   </select>
@@ -289,14 +327,14 @@ export const SectorsManagementModal = ({
                       setFormData(prev => ({ ...prev, responsavel: val }));
                     }
                   }}
-                  placeholder="Ex: Alex ou selecione da lista acima"
+                  placeholder="Ex: Alex, Cmte Alexandre ou selecione da lista"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 />
 
                 <datalist id="responsibles-datalist">
                   {availableUsers.map((u, i) => (
                     <option key={`dl-${u.email || u.name}-${i}`} value={u.name}>
-                      {u.email ? `${u.email} (${u.role})` : u.name}
+                      {u.email ? `${u.name} — ${u.email}` : u.name}
                     </option>
                   ))}
                 </datalist>

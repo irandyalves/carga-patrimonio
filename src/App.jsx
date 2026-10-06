@@ -231,7 +231,7 @@ export function App() {
 
   // Sector and View Filters
   const [activeSectorId, setActiveSectorId] = useState('sec-foyer');
-  const [filterMode, setFilterMode] = useState('MY_SECTOR'); // 'MY_SECTOR' | 'ALL_SECTORS'
+  const [filterMode, setFilterMode] = useState('ALL_SECTORS'); // 'ALL_SECTORS' | 'MY_SECTOR'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PENDENTES' | 'CONFERIDOS' | 'CAUTELAS' | 'BAIXADOS'
   const [searchTerm, setSearchTerm] = useState('');
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -587,6 +587,7 @@ export function App() {
 
   // Modal para Escolha de Ordenação ao Emitir Relatório (Patrimônio ou Item)
   const [isExportReportModalOpen, setIsExportReportModalOpen] = useState(false);
+  const [exportReportSector, setExportReportSector] = useState(null);
 
   // Modal de Confirmação para Alteração em Lote (Tornar Todos Pendentes / Conferidos)
   const [batchStatusModalData, setBatchStatusModalData] = useState(null);
@@ -1017,6 +1018,7 @@ export function App() {
       const sectorNames = matched.length > 1 ? matched.map(s => s.name).join(' & ') : sec?.name;
       showToast(`Visão de Operador ativada: ${sec?.responsavel || 'Operador'} (${sectorNames})`, 'info');
     } else {
+      setFilterMode('ALL_SECTORS');
       showToast('Visão de Administrador ativada (Acesso e alteração liberados em todos os departamentos)', 'success');
     }
   };
@@ -2064,12 +2066,12 @@ export function App() {
             servidorNome: servidorObj.nome || null,
             servidorTelefone: servidorObj.telefone || null,
             servidorMesa: servidorObj.mesa || null
-          } : (!newObservation ? {
+          } : {
             servidorId: null,
             servidorNome: null,
             servidorTelefone: null,
             servidorMesa: null
-          } : {}))
+          })
         };
         saveAssetToCloud(updatedItem);
         return updatedItem;
@@ -2935,15 +2937,24 @@ export function App() {
   };
 
   // Export inventory report modal opener
-  const handleExportReportPDF = () => {
+  const handleExportReportPDF = (targetSec = undefined) => {
+    if (targetSec === null) {
+      setExportReportSector(null);
+    } else if (targetSec && typeof targetSec === 'object' && targetSec.id) {
+      setExportReportSector(targetSec);
+    } else {
+      setExportReportSector(filterMode === 'MY_SECTOR' ? activeSector : null);
+    }
     setIsExportReportModalOpen(true);
   };
 
   // Confirmação e ordenação do relatório (Patrimônio, Item, Resp. Carga ou Onde Está) com ordem de colunas
   const handleConfirmExportReport = (sortBy, selectedColumns, orderedColumnIds) => {
     setIsExportReportModalOpen(false);
-    const sectorAssets = filterMode === 'MY_SECTOR' 
-      ? assets.filter(a => a.setorId === activeSectorId) 
+    const targetSector = exportReportSector;
+    const isSectorSpecific = !!targetSector;
+    const sectorAssets = isSectorSpecific 
+      ? assets.filter(a => a.setorId === targetSector.id) 
       : assets;
 
     const sorted = [...sectorAssets];
@@ -2962,8 +2973,8 @@ export function App() {
       showToast('Relatório gerado em ordem de Item!', 'success');
     } else if (sortBy === 'RESPONSAVEL') {
       sorted.sort((a, b) => {
-        const respA = a.responsavel || (activeSector ? activeSector.responsavel : '') || '';
-        const respB = b.responsavel || (activeSector ? activeSector.responsavel : '') || '';
+        const respA = a.responsavel || (targetSector ? targetSector.responsavel : '') || '';
+        const respB = b.responsavel || (targetSector ? targetSector.responsavel : '') || '';
         const comp = respA.localeCompare(respB, 'pt-BR', { sensitivity: 'base' });
         if (comp !== 0) return comp;
         return (a.descricao || '').localeCompare(b.descricao || '', 'pt-BR', { sensitivity: 'base' });
@@ -2980,12 +2991,27 @@ export function App() {
       showToast('Relatório gerado em ordem de Onde Está!', 'success');
     }
 
+    const reportStats = isSectorSpecific
+      ? {
+          total: sectorAssets.length,
+          conferidos: sectorAssets.filter(a => a.status === 'CONFERIDO').length,
+          pendentes: Math.max(0, sectorAssets.length - sectorAssets.filter(a => a.status === 'CONFERIDO').length - sectorAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length),
+          cautelas: sectorAssets.filter(a => a.status === 'EM_CAUTELA').length,
+          baixados: sectorAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length,
+          pctConferido: sectorAssets.length > 0 
+            ? Math.round((sectorAssets.filter(a => a.status === 'CONFERIDO').length / (sectorAssets.length - sectorAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length || 1)) * 100) 
+            : 0
+        }
+      : stats;
+
     generateInventoryReportPDF(
-      filterMode === 'MY_SECTOR' ? activeSector : null, 
+      targetSector, 
       sorted, 
-      stats, 
+      reportStats, 
       selectedColumns,
-      orderedColumnIds
+      orderedColumnIds,
+      sectors,
+      sortBy
     );
   };
 
@@ -4198,6 +4224,7 @@ export function App() {
         sectors={sectors}
         assets={assets}
         users={authorizedUsers}
+        servidores={servidores}
         onSaveSector={handleSaveSector}
         onDeleteSector={handleDeleteSector}
         onClearSectorAssets={handleClearSectorAssets}
@@ -4554,9 +4581,12 @@ export function App() {
       {/* Modalzinho de Escolha de Ordenação do Relatório (Patrimônio ou Item) */}
       <ExportReportModal
         isOpen={isExportReportModalOpen}
-        onClose={() => setIsExportReportModalOpen(false)}
+        onClose={() => {
+          setIsExportReportModalOpen(false);
+          setExportReportSector(null);
+        }}
         onConfirmExport={handleConfirmExportReport}
-        sectorName={filterMode === 'MY_SECTOR' ? activeSector?.name : 'Todos os Setores'}
+        sectorName={exportReportSector ? exportReportSector.name : 'Todos os Setores'}
       />
 
       {/* Barra Flutuante de Ações em Lote Apenas para Mobile: Desce suave do topo */}

@@ -25,7 +25,10 @@ import {
   FileSpreadsheet,
   Plus,
   AlertCircle,
-  FileText
+  AlertTriangle,
+  FileText,
+  Crown,
+  Mail
 } from 'lucide-react';
 import { formatLast5Patrimonio } from '../utils/formatters';
 
@@ -46,6 +49,30 @@ export const formatPhoneWithRamal = (val) => {
   }
   // Celular com 9 dígitos (11 dígitos no total)
   return digits.slice(0, 11).replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
+};
+
+// Normalização para comparação flexível de nomes (sem acento, case-insensitive)
+const normalizeName = (name) => {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
+
+const isNameMatch = (nameA, nameB) => {
+  const normA = normalizeName(nameA);
+  const normB = normalizeName(nameB);
+  if (!normA || !normB) return false;
+  if (normA === normB) return true;
+  const wordsA = normA.split(/\s+/);
+  const wordsB = normB.split(/\s+/);
+  if (wordsA.length === 1 && wordsB.length === 1) {
+    return normA === normB;
+  }
+  if (normA.startsWith(normB + ' ') || normB.startsWith(normA + ' ')) return true;
+  return false;
 };
 
 export const ServidoresModal = ({
@@ -73,11 +100,40 @@ export const ServidoresModal = ({
       || null;
   }, [sectors]);
 
-  // Estados do Cadastro e Edição na Barra Superior (Nome -> Telefone -> Setor)
+  // Estados do Cadastro e Edição na Barra Superior (Nome -> Telefone -> E-mail -> Setor -> Resp. Carga)
   const [quickNome, setQuickNome] = useState('');
   const [quickTelefone, setQuickTelefone] = useState('');
+  const [quickEmail, setQuickEmail] = useState('');
   const [quickSetorId, setQuickSetorId] = useState('');
+  const [quickIsRespCarga, setQuickIsRespCarga] = useState(false);
   const [quickFeedback, setQuickFeedback] = useState(null);
+
+  // Filtro de Responsáveis de Carga
+  const [filterOnlyResp, setFilterOnlyResp] = useState(false);
+
+  // Helper para verificar se um servidor é Responsável / Detentor da Carga
+  const getResponsavelInfo = (serv) => {
+    if (!serv) return { isResp: false, sectors: [], sectorNames: '' };
+    
+    // Setores oficiais vinculados a este servidor
+    const matchedSectors = (sectors || []).filter(s => s.responsavel && isNameMatch(s.responsavel, serv.nome));
+    
+    // Bens com detentor patrimonial explícito
+    const hasAssetResp = (assets || []).some(a => a.responsavel && isNameMatch(a.responsavel, serv.nome));
+
+    const isResp = Boolean(serv.isResponsavelCarga || matchedSectors.length > 0 || hasAssetResp);
+    
+    return {
+      isResp,
+      sectors: matchedSectors,
+      sectorNames: matchedSectors.map(s => s.name).join(', ')
+    };
+  };
+
+  // Contagem de pessoas que são responsáveis pela carga
+  const respCargaCount = useMemo(() => {
+    return servidores.filter(s => getResponsavelInfo(s).isResp).length;
+  }, [servidores, sectors, assets]);
 
   // Estados de Importação em Lote
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -88,6 +144,22 @@ export const ServidoresModal = ({
   const [openSetorDropdownId, setOpenSetorDropdownId] = useState(null);
   const [editingPhoneServidorId, setEditingPhoneServidorId] = useState(null);
   const [tempPhoneValue, setTempPhoneValue] = useState('');
+
+  // Estado para Modal Bonito de Confirmação (Substitui confirm do navegador)
+  const [confirmModalData, setConfirmModalData] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && confirmModalData) {
+        e.stopPropagation();
+        setConfirmModalData(null);
+      }
+    };
+    if (confirmModalData) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [confirmModalData]);
 
   // Refs
   const directPhoneInputRef = useRef(null);
@@ -101,7 +173,9 @@ export const ServidoresModal = ({
     setEditingServidor(servidor);
     setQuickNome(servidor.nome || '');
     setQuickTelefone(servidor.telefone || '');
+    setQuickEmail(servidor.email || '');
     setQuickSetorId(servidor.setorId || defaultAdminSector?.id || '');
+    setQuickIsRespCarga(Boolean(servidor.isResponsavelCarga || getResponsavelInfo(servidor).isResp));
     setTimeout(() => {
       quickNameInputRef.current?.focus();
       quickNameInputRef.current?.select();
@@ -112,7 +186,21 @@ export const ServidoresModal = ({
     setEditingServidor(null);
     setQuickNome('');
     setQuickTelefone('');
+    setQuickEmail('');
     setQuickSetorId(defaultAdminSector?.id || '');
+    setQuickIsRespCarga(false);
+  };
+
+  // Alternar rapidamente status de Resp. Carga
+  const handleToggleRespCarga = (serv, e) => {
+    if (e) e.stopPropagation();
+    const currentResp = getResponsavelInfo(serv).isResp;
+    const updated = {
+      ...serv,
+      isResponsavelCarga: !currentResp,
+      dataAtualizacao: new Date().toISOString()
+    };
+    onSaveServidor(updated);
   };
 
   // Alterar setor diretamente na linha
@@ -197,8 +285,10 @@ export const ServidoresModal = ({
         ...editingServidor,
         nome: cleanNome,
         telefone: quickTelefone.trim(),
+        email: quickEmail.trim(),
         setorId: selectedSector?.id || null,
         setorNome: selectedSector?.name || '',
+        isResponsavelCarga: quickIsRespCarga,
         dataAtualizacao: new Date().toISOString()
       };
       onSaveServidor(updatedServ);
@@ -209,10 +299,11 @@ export const ServidoresModal = ({
         id: `serv-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         nome: cleanNome,
         telefone: quickTelefone.trim(),
+        email: quickEmail.trim(),
         setorId: selectedSector?.id || null,
         setorNome: selectedSector?.name || '',
+        isResponsavelCarga: quickIsRespCarga,
         mesa: '',
-        email: '',
         observacoes: '',
         dataAtualizacao: new Date().toISOString()
       };
@@ -223,6 +314,8 @@ export const ServidoresModal = ({
     // Limpa os campos para nova inserção imediata, mantendo setor padrão selecionado
     setQuickNome('');
     setQuickTelefone('');
+    setQuickEmail('');
+    setQuickIsRespCarga(false);
     setTimeout(() => setQuickFeedback(null), 2500);
 
     // Mantém o foco no campo Nome para digitar o próximo servidor sem interrupção
@@ -252,9 +345,11 @@ export const ServidoresModal = ({
       }
 
       const rawNome = parts[0]?.trim();
-      const rawTel = parts[1] ? formatPhoneWithRamal(parts[1].trim()) : '';
-      const rawSetor = parts[2]?.trim() || '';
-      const rawMesa = parts[3]?.trim() || '';
+      const rawEmail = parts.find(p => p.includes('@'))?.trim() || '';
+      const partsNoEmail = parts.filter(p => !p.includes('@'));
+      const rawTel = partsNoEmail[1] ? formatPhoneWithRamal(partsNoEmail[1].trim()) : '';
+      const rawSetor = partsNoEmail[2]?.trim() || '';
+      const rawMesa = partsNoEmail[3]?.trim() || '';
 
       if (rawNome && rawNome.length >= 2 && !rawNome.toLowerCase().includes('nome')) {
         const matchedSector = sectors.find(s => s.name.toLowerCase() === rawSetor.toLowerCase());
@@ -265,7 +360,7 @@ export const ServidoresModal = ({
           setorId: matchedSector ? matchedSector.id : (defaultAdminSector?.id || sectors[0]?.id || null),
           setorNome: matchedSector ? matchedSector.name : (defaultAdminSector?.name || sectors[0]?.name || ''),
           mesa: rawMesa,
-          email: '',
+          email: rawEmail,
           observacoes: '',
           dataAtualizacao: new Date().toISOString()
         });
@@ -299,9 +394,11 @@ export const ServidoresModal = ({
             if (!firstCell || firstCell.toLowerCase() === 'nome' || firstCell.toLowerCase() === 'servidor') continue;
 
             const servNome = firstCell;
-            const servTel = row[1] ? formatPhoneWithRamal(String(row[1]).trim()) : '';
-            const servSetor = row[2] ? String(row[2]).trim() : '';
-            const servMesa = row[3] ? String(row[3]).trim() : '';
+            const servEmail = String(row.find(c => typeof c === 'string' && c.includes('@')) || '').trim();
+            const cellsNoEmail = row.filter(c => typeof c !== 'string' || !c.includes('@'));
+            const servTel = cellsNoEmail[1] ? formatPhoneWithRamal(String(cellsNoEmail[1]).trim()) : '';
+            const servSetor = cellsNoEmail[2] ? String(cellsNoEmail[2]).trim() : '';
+            const servMesa = cellsNoEmail[3] ? String(cellsNoEmail[3]).trim() : '';
 
             if (servNome.length >= 2) {
               const matchedSector = sectors.find(s => s.name.toLowerCase() === servSetor.toLowerCase());
@@ -312,7 +409,7 @@ export const ServidoresModal = ({
                 setorId: matchedSector ? matchedSector.id : (sectors[0]?.id || null),
                 setorNome: matchedSector ? matchedSector.name : (sectors[0]?.name || ''),
                 mesa: servMesa,
-                email: '',
+                email: servEmail,
                 observacoes: '',
                 dataAtualizacao: new Date().toISOString()
               });
@@ -348,16 +445,24 @@ export const ServidoresModal = ({
     setImportText('');
   };
 
-  // Exclusão com confirmação
+  // Exclusão com modal de confirmação estilizado e bonito
   const handleDelete = (servidor) => {
     const linked = getAssetsForServidor(servidor);
-    const msg = linked.length > 0 
-      ? `Atenção: Existem ${linked.length} patrimônio(s) associado(s) a ${servidor.nome}. Deseja realmente excluir este servidor?`
-      : `Deseja realmente remover o servidor "${servidor.nome}"?`;
-
-    if (window.confirm(msg)) {
-      onDeleteServidor(servidor.id);
-    }
+    setConfirmModalData({
+      type: 'DELETE_SERVIDOR',
+      servidor,
+      linkedCount: linked.length,
+      title: 'Excluir Servidor',
+      message: `Deseja realmente remover o servidor "${servidor.nome}"?`,
+      warning: linked.length > 0 
+        ? `Atenção: Existem ${linked.length} patrimônio(s) atualmente associado(s) a ${servidor.nome}. Ao excluir o servidor, o vínculo desses bens será removido.` 
+        : null,
+      confirmLabel: 'Sim, Excluir',
+      onConfirm: () => {
+        onDeleteServidor(servidor.id);
+        setConfirmModalData(null);
+      }
+    });
   };
 
   // Mapear quais patrimônios pertencem a cada servidor (estritamente vinculado via ID ou nome exato de servidor oficial)
@@ -380,19 +485,24 @@ export const ServidoresModal = ({
   // Filtragem e Ordenação Alfabética dos servidores (A-Z)
   const filteredServidores = useMemo(() => {
     let list = servidores;
+    if (filterOnlyResp) {
+      list = list.filter(s => getResponsavelInfo(s).isResp);
+    }
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
-      list = servidores.filter(s => {
+      list = list.filter(s => {
         const matchNome = (s.nome || '').toLowerCase().includes(term);
         const matchTel = (s.telefone || '').replace(/\D/g, '').includes(term.replace(/\D/g, '')) || (s.telefone || '').toLowerCase().includes(term);
         const matchSetor = (s.setorNome || '').toLowerCase().includes(term);
         const matchMesa = (s.mesa || '').toLowerCase().includes(term);
-        return matchNome || matchTel || matchSetor || matchMesa;
+        const respInfo = getResponsavelInfo(s);
+        const matchRespTerm = respInfo.isResp && ('resp. carga responsavel detentor carga'.includes(term) || (respInfo.sectorNames || '').toLowerCase().includes(term));
+        return matchNome || matchTel || matchSetor || matchMesa || matchRespTerm;
       });
     }
     // Sempre ordenar em ordem alfabética por nome (A-Z)
     return [...list].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [servidores, searchTerm]);
+  }, [servidores, searchTerm, filterOnlyResp, sectors, assets]);
 
   if (!isOpen) return null;
 
@@ -412,6 +522,21 @@ export const ServidoresModal = ({
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 font-mono">
                   {servidores.length} {servidores.length === 1 ? 'pessoa' : 'pessoas'}
                 </span>
+                {respCargaCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterOnlyResp(prev => !prev)}
+                    title={filterOnlyResp ? "Exibindo apenas Resp. Carga. Clique para ver todos." : "Filtrar apenas Responsáveis pela Carga"}
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                      filterOnlyResp
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-1 ring-amber-400'
+                        : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
+                    }`}
+                  >
+                    <Crown className={`w-3 h-3 ${filterOnlyResp ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'}`} />
+                    <span>{respCargaCount} Resp. Carga</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -477,7 +602,7 @@ export const ServidoresModal = ({
             </div>
 
             {/* Campo 2: Telefone com máscara (aceita ramal) */}
-            <div className="relative w-full md:w-52">
+            <div className="relative w-full md:w-44">
               <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               <input
                 ref={quickPhoneInputRef}
@@ -491,17 +616,36 @@ export const ServidoresModal = ({
                     handleQuickSubmit(e);
                   }
                 }}
-                placeholder="Telefone ou Ramal (ex: 2450)"
+                placeholder="Tel / Ramal (ex: 2450)"
                 className="w-full bg-slate-900 border border-slate-750 focus:border-cyan-400 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none transition-colors"
               />
             </div>
 
-            {/* Campo 3: Setor de Lotação (Padrão ADMINISTRATIVO) */}
-            <div className="relative w-full md:w-60">
+            {/* Campo 3: E-mail (Opcional) */}
+            <div className="relative w-full md:w-52">
+              <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="email"
+                tabIndex={3}
+                value={quickEmail}
+                onChange={(e) => setQuickEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleQuickSubmit(e);
+                  }
+                }}
+                placeholder="E-mail (opcional)"
+                className="w-full bg-slate-900 border border-slate-750 focus:border-cyan-400 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
+              />
+            </div>
+
+            {/* Campo 4: Setor de Lotação (Padrão ADMINISTRATIVO) */}
+            <div className="relative w-full md:w-56">
               <Building2 className="w-3.5 h-3.5 text-cyan-400 absolute left-3 top-2.5 pointer-events-none" />
               <select
                 ref={quickSectorSelectRef}
-                tabIndex={3}
+                tabIndex={4}
                 value={quickSetorId}
                 onChange={(e) => setQuickSetorId(e.target.value)}
                 onKeyDown={(e) => {
@@ -521,6 +665,21 @@ export const ServidoresModal = ({
               </select>
               <ChevronDown className="w-3 h-3 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
             </div>
+
+            {/* Campo 4: Toggle Detentor / Resp. Carga */}
+            <button
+              type="button"
+              onClick={() => setQuickIsRespCarga(!quickIsRespCarga)}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border shrink-0 ${
+                quickIsRespCarga
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm ring-1 ring-amber-500/30'
+                  : 'bg-slate-900 border-slate-750 text-slate-400 hover:text-slate-300'
+              }`}
+              title="Marcar este servidor como Responsável / Detentor da Carga Patrimonial"
+            >
+              <Crown className={`w-3.5 h-3.5 ${quickIsRespCarga ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`} />
+              <span>Resp. Carga</span>
+            </button>
 
             {/* Botão de Ação */}
             <div className="flex items-center gap-1.5 w-full md:w-auto shrink-0">
@@ -664,7 +823,7 @@ export const ServidoresModal = ({
         <div className="flex-1 flex flex-col min-h-0 border border-slate-800/80 rounded-xl overflow-hidden mt-1">
           {/* Cabeçalho das Colunas com Linhas Verticais Discretas */}
           <div className="flex items-center text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800/80 shrink-0 select-none">
-            <div className="w-48 sm:w-56 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
+            <div className="w-56 sm:w-64 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
               Servidor
             </div>
             <div className="w-48 sm:w-56 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
@@ -676,7 +835,7 @@ export const ServidoresModal = ({
             <div className="w-20 px-2 py-2 border-r border-slate-800/80 text-center shrink-0">
               Bens
             </div>
-            <div className="w-24 px-2 py-2 text-center shrink-0">
+            <div className="w-28 px-2 py-2 text-center shrink-0">
               Ações
             </div>
           </div>
@@ -706,20 +865,54 @@ export const ServidoresModal = ({
                 const isEditingPhone = editingPhoneServidorId === serv.id;
                 const isSetorOpen = openSetorDropdownId === serv.id;
                 const openUpward = idx > filteredServidores.length - 4 && filteredServidores.length > 4;
+                const respInfo = getResponsavelInfo(serv);
 
                 return (
-                  <div key={serv.id} className="hover:bg-slate-800/25 transition-colors group">
+                  <div key={serv.id} className={`transition-colors group ${
+                    respInfo.isResp
+                      ? 'bg-amber-500/[0.04] hover:bg-amber-500/[0.08]'
+                      : 'hover:bg-slate-800/25'
+                  }`}>
                     {/* Linha com Colunas Separadas por Linhas Verticais Discretas */}
-                    <div className="flex items-center min-h-[38px] w-full">
+                    <div className="flex items-center min-h-[42px] w-full">
                       
-                      {/* Coluna 1: Servidor (Avatar + Nome) */}
-                      <div className="w-48 sm:w-56 px-3.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2.5 shrink-0 min-w-0">
-                        <div className="w-6 h-6 rounded-md bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
+                      {/* Coluna 1: Servidor (Avatar + Nome + Destaque Resp. Carga) */}
+                      <div className="w-56 sm:w-64 px-3.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2.5 shrink-0 min-w-0">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs shrink-0 ${
+                          respInfo.isResp
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-950/40 ring-1 ring-amber-500/20'
+                            : 'bg-cyan-500/10 text-cyan-400'
+                        }`}>
                           {(serv.nome || 'S')[0].toUpperCase()}
                         </div>
-                        <span className="font-bold text-white text-xs truncate" title={serv.nome}>
-                          {serv.nome}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span 
+                              className={`font-bold text-xs truncate ${
+                                respInfo.isResp ? 'text-amber-200' : 'text-white'
+                              }`} 
+                              title={serv.nome}
+                            >
+                              {serv.nome}
+                            </span>
+                            {respInfo.isResp && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleToggleRespCarga(serv, e)}
+                                title={respInfo.sectorNames ? `Responsável Oficial pela Carga de: ${respInfo.sectorNames} (Clique para alternar)` : 'Responsável pela Carga Patrimonial (Clique para alternar)'}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-gradient-to-r from-amber-500/25 to-orange-500/25 hover:from-amber-500/35 hover:to-orange-500/35 text-amber-300 border border-amber-500/40 shadow-sm shrink-0 transition-colors cursor-pointer"
+                              >
+                                <Crown className="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" />
+                                <span>Resp. Carga</span>
+                              </button>
+                            )}
+                          </div>
+                          {respInfo.sectorNames && (
+                            <span className="text-[9.5px] text-amber-400/80 truncate font-medium block" title={`Setor(es) sob custódia: ${respInfo.sectorNames}`}>
+                              Carga: {respInfo.sectorNames}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Coluna 2: Setor de Lotação (Listbox ao clicar) */}
@@ -867,6 +1060,14 @@ export const ServidoresModal = ({
                           </a>
                         )}
 
+                        {/* E-mail */}
+                        {serv.email && (
+                          <span className="hidden lg:inline-flex items-center gap-1 text-[10px] text-slate-400 font-mono truncate max-w-[140px]" title={serv.email}>
+                            <Mail className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                            <span className="truncate">{serv.email}</span>
+                          </span>
+                        )}
+
                         {/* Mesa */}
                         {serv.mesa && (
                           <span className="hidden xl:inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-950/30 text-cyan-400 items-center gap-1 shrink-0 ml-auto">
@@ -897,7 +1098,21 @@ export const ServidoresModal = ({
                       </div>
 
                       {/* Coluna 5: Ações */}
-                      <div className="w-24 px-2 py-1.5 flex items-center justify-center gap-1 shrink-0">
+                      <div className="w-28 px-2 py-1.5 flex items-center justify-center gap-1 shrink-0">
+                        {/* Toggle Resp. Carga */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleRespCarga(serv, e)}
+                          className={`p-1 rounded transition cursor-pointer ${
+                            respInfo.isResp
+                              ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/20'
+                              : 'text-slate-500 hover:text-amber-400 hover:bg-slate-800'
+                          }`}
+                          title={respInfo.isResp ? "Remover destaque de Resp. Carga" : "Marcar como Resp. Carga"}
+                        >
+                          <Crown className={`w-3.5 h-3.5 ${respInfo.isResp ? 'fill-amber-400' : ''}`} />
+                        </button>
+
                         {onSelectServidorToFilter && (
                           <button
                             type="button"
@@ -1019,9 +1234,19 @@ export const ServidoresModal = ({
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (window.confirm(`Deseja desvincular o patrimônio ${formatLast5Patrimonio(item.numeroPatrimonio)} do servidor "${serv.nome}"?`)) {
-                                        onUnlinkAssetFromServidor(item.id, serv);
-                                      }
+                                      setConfirmModalData({
+                                        type: 'UNLINK_ASSET',
+                                        servidor: serv,
+                                        asset: item,
+                                        title: 'Desvincular Patrimônio',
+                                        message: `Deseja desvincular o patrimônio ${formatLast5Patrimonio(item.numeroPatrimonio)} do servidor "${serv.nome}"?`,
+                                        warning: null,
+                                        confirmLabel: 'Desvincular',
+                                        onConfirm: () => {
+                                          onUnlinkAssetFromServidor(item.id, serv);
+                                          setConfirmModalData(null);
+                                        }
+                                      });
                                     }}
                                     className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 transition-colors cursor-pointer"
                                     title={`Excluir / Desvincular patrimônio deste servidor`}
@@ -1044,6 +1269,114 @@ export const ServidoresModal = ({
           )}
         </div>
       </div>
+
+      {/* Modal Bonito de Confirmação (Substitui confirm do navegador) */}
+      {confirmModalData && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setConfirmModalData(null)}
+        >
+          <div 
+            className="w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 shadow-2xl shadow-rose-950/30 rounded-3xl p-6 relative overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Efeitos Glow no fundo */}
+            <div className="absolute -top-16 -right-16 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Botão Fechar no Canto Superior */}
+            <button
+              type="button"
+              onClick={() => setConfirmModalData(null)}
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-colors cursor-pointer"
+              title="Fechar (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Topo: Ícone e Título */}
+            <div className="flex items-start gap-3.5 mb-4 pr-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500/20 to-red-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 shadow-lg shadow-rose-500/10">
+                <AlertTriangle className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-white tracking-wide">
+                  {confirmModalData.title}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Esta ação removerá o cadastro do sistema.
+                </p>
+              </div>
+            </div>
+
+            {/* Card com Detalhes do Servidor / Alvo */}
+            {confirmModalData.servidor && (
+              <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-bold text-sm shrink-0">
+                    {(confirmModalData.servidor.nome || 'S').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white truncate">
+                      {confirmModalData.servidor.nome}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+                      <span className="text-cyan-400 font-medium">
+                        {sectors.find(s => s.id === confirmModalData.servidor.setorId)?.name || confirmModalData.servidor.setorNome || 'Administrativo'}
+                      </span>
+                      {confirmModalData.servidor.telefone && (
+                        <>
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-300 flex items-center gap-1">
+                            <Phone className="w-2.5 h-2.5 text-slate-500 inline" />
+                            {formatPhoneWithRamal(confirmModalData.servidor.telefone)}
+                          </span>
+                        </>
+                      )}
+                      {confirmModalData.servidor.email && (
+                        <>
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-300 flex items-center gap-1 truncate max-w-[170px]" title={confirmModalData.servidor.email}>
+                            <Mail className="w-2.5 h-2.5 text-slate-500 inline" />
+                            {confirmModalData.servidor.email}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Alerta de Bens Vinculados, se houver */}
+                {confirmModalData.warning && (
+                  <div className="pt-2.5 border-t border-slate-800/80 flex items-start gap-2.5 text-amber-300/90 bg-amber-500/10 border-l-2 border-l-amber-400 p-2.5 rounded-xl text-xs leading-relaxed">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span>{confirmModalData.warning}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Botões de Ação */}
+            <div className="flex items-center justify-end gap-2.5 pt-1 border-t border-slate-800/80">
+              <button
+                type="button"
+                onClick={() => setConfirmModalData(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/60 transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmModalData.onConfirm}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all cursor-pointer active:scale-95"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{confirmModalData.confirmLabel || 'Confirmar'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   </div>

@@ -555,7 +555,7 @@ export const AssetModal = ({
                       servidorTelefone: matched ? (matched.telefone || prev.servidorTelefone) : prev.servidorTelefone
                     }));
                   }}
-                  placeholder="Ou digite o nome do servidor..."
+                  placeholder="Ou digite qualquer nome (livre)..."
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400 placeholder-slate-500"
                 />
 

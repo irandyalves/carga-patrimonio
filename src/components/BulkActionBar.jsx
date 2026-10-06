@@ -6,7 +6,8 @@ import {
   User,
   X, 
   ChevronDown,
-  Search
+  Search,
+  Sparkles
 } from 'lucide-react';
 
 export const BulkActionBar = ({
@@ -202,13 +203,17 @@ export const BulkActionBar = ({
                       value={servidorSearch}
                       onChange={(e) => setServidorSearch(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && filteredServidores.length === 1) {
+                        if (e.key === 'Enter') {
                           e.preventDefault();
                           setIsServidorDropdownOpen(false);
-                          onAssignServidor(filteredServidores[0]);
+                          if (filteredServidores.length === 1) {
+                            onAssignServidor(filteredServidores[0]);
+                          } else if (servidorSearch.trim()) {
+                            onAssignServidor({ id: null, nome: servidorSearch.trim() });
+                          }
                         }
                       }}
-                      placeholder="Digite o nome do servidor..."
+                      placeholder="Digite qualquer nome ou escolha..."
                       className="w-full pl-8 pr-7 py-1.5 bg-slate-950/80 border border-slate-700/70 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition-all shadow-inner"
                       autoFocus
                     />
@@ -230,6 +235,26 @@ export const BulkActionBar = ({
 
                 {/* Lista de Servidores Filtrados */}
                 <div className="overflow-y-auto max-h-[300px] space-y-0.5 pt-1 custom-scroll-auto-hide">
+                  {/* Atalho para usar qualquer nome digitado */}
+                  {servidorSearch.trim() && !servidores?.some(s => s.nome.toLowerCase() === servidorSearch.trim().toLowerCase()) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsServidorDropdownOpen(false);
+                        onAssignServidor({ id: null, nome: servidorSearch.trim() });
+                      }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-400/50 text-cyan-200 transition-colors cursor-pointer group mb-1.5"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="truncate">Usar nome digitado: <strong>"{servidorSearch.trim()}"</strong></span>
+                      </div>
+                      <span className="text-[9.5px] text-cyan-300 bg-cyan-500/25 px-1 py-0.5 rounded font-mono shrink-0 ml-1">
+                        Enter ↵
+                      </span>
+                    </button>
+                  )}
+
                   {/* Opção para desvincular */}
                   {(!servidorSearch || normalizeText('desvincular uso geral').includes(normalizeText(servidorSearch))) && (
                     <button

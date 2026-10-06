@@ -56,24 +56,69 @@ export const SectorSidebar = ({
   onOpenDisplaySettings,
   onOpenBatchStatusChange
 }) => {
-  // Ícones representativos para as abas ativas dos setores
-  const getSectorIcon = (secId) => {
-    switch (secId) {
-      case 'sec-studio': return <Tv className="w-4 h-4 shrink-0" />;
-      case 'sec-auditorio': return <Volume2 className="w-4 h-4 shrink-0" />;
-      case 'sec-foyer': return <Monitor className="w-4 h-4 shrink-0" />;
-      case 'sec-recepcao': return <UserCheck className="w-4 h-4 shrink-0" />;
-      case 'sec-lab-inovacao': return <Sparkles className="w-4 h-4 shrink-0" />;
-      case 'sec-revista-jmu': return <BookOpen className="w-4 h-4 shrink-0" />;
-      case 'sec-sacadi': return <Users className="w-4 h-4 shrink-0" />;
-      case 'sec-cadmi': return <Users className="w-4 h-4 shrink-0" />;
-      case 'sec-sacadi-cadmi': return <Users className="w-4 h-4 shrink-0" />;
-      case 'sec-ti': return <Server className="w-4 h-4 shrink-0" />;
-      case 'sec-reunioes': return <Users className="w-4 h-4 shrink-0" />;
-      case 'sec-copa-terreo': return <Coffee className="w-4 h-4 shrink-0" />;
-      case 'sec-copa-1piso': return <Flame className="w-4 h-4 shrink-0" />;
-      default: return <Building2 className="w-4 h-4 shrink-0" />;
+  // Determina a cor temtica do setor quando selecionado
+  const getSectorColorClass = (sec) => {
+    const cor = (sec?.cor || '').toLowerCase();
+    const id = (sec?.id || '').toLowerCase();
+    const name = (sec?.name || '').toLowerCase();
+
+    if (cor === 'indigo' || id.includes('auditorio') || id.includes('ti') || name.includes('auditrio') || name.includes('ti')) {
+      return 'text-indigo-400 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]';
     }
+    if (cor === 'orange' || id.includes('cadmi') || name.includes('cadmi')) {
+      return 'text-orange-400 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]';
+    }
+    if (cor === 'teal' || id.includes('copa-1piso') || name.includes('1 piso') || name.includes('1 piso')) {
+      return 'text-teal-400 drop-shadow-[0_0_6px_rgba(45,212,191,0.6)]';
+    }
+    if (cor === 'rose' || id.includes('copa-terreo') || name.includes('trreo') || name.includes('terreo')) {
+      return 'text-rose-400 drop-shadow-[0_0_6px_rgba(251,113,133,0.6)]';
+    }
+    if (cor === 'cyan' || id.includes('foyer') || name.includes('foyer')) {
+      return 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]';
+    }
+    if (cor === 'emerald' || id.includes('inova') || name.includes('inova')) {
+      return 'text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]';
+    }
+    if (cor === 'blue' || id.includes('recep') || name.includes('recep') || name.includes('admin')) {
+      return 'text-blue-400 drop-shadow-[0_0_6px_rgba(96,165,250,0.6)]';
+    }
+    if (cor === 'pink' || id.includes('revista') || name.includes('revista')) {
+      return 'text-pink-400 drop-shadow-[0_0_6px_rgba(244,114,182,0.6)]';
+    }
+    if (cor === 'amber' || id.includes('sacadi') || name.includes('sacadi')) {
+      return 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]';
+    }
+    if (cor === 'violet' || cor === 'purple' || id.includes('reunio') || id.includes('studio') || name.includes('reuni') || name.includes('studio')) {
+      return 'text-purple-400 drop-shadow-[0_0_6px_rgba(192,132,252,0.6)]';
+    }
+    return 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]';
+  };
+
+  // cones representativos dos setores: cinza quando inativo, colorido vibrante quando clicado/selecionado
+  const getSectorIcon = (sec, isSelected) => {
+    const secId = typeof sec === 'string' ? sec : (sec?.id || '');
+    const name = (typeof sec === 'object' ? (sec?.name || '') : '').toLowerCase();
+
+    const colorClass = isSelected
+      ? getSectorColorClass(sec)
+      : 'text-slate-500 group-hover:text-slate-400';
+
+    const iconProps = {
+      className: `w-4 h-4 shrink-0 transition-all duration-200 ${colorClass}`
+    };
+
+    if (secId === 'sec-studio' || name.includes('studio')) return <Tv {...iconProps} />;
+    if (secId === 'sec-auditorio' || name.includes('audit')) return <Volume2 {...iconProps} />;
+    if (secId === 'sec-foyer' || name.includes('foyer')) return <Monitor {...iconProps} />;
+    if (secId === 'sec-recepcao' || name.includes('recep')) return <UserCheck {...iconProps} />;
+    if (secId === 'sec-lab-inovacao' || name.includes('inova')) return <Sparkles {...iconProps} />;
+    if (secId === 'sec-revista-jmu' || name.includes('revista')) return <BookOpen {...iconProps} />;
+    if (secId === 'sec-sacadi' || secId === 'sec-cadmi' || secId === 'sec-sacadi-cadmi' || secId === 'sec-reunioes' || name.includes('sacadi') || name.includes('cadmi') || name.includes('reuni')) return <Users {...iconProps} />;
+    if (secId === 'sec-ti' || name.includes('ti') || name.includes('informt')) return <Server {...iconProps} />;
+    if (secId === 'sec-copa-1piso' || name.includes('1 piso') || name.includes('1 piso')) return <Flame {...iconProps} />;
+    if (secId === 'sec-copa-terreo' || name.includes('copa')) return <Coffee {...iconProps} />;
+    return <Building2 {...iconProps} />;
   };
 
   const getSectorStats = (sectorId) => {
@@ -185,7 +230,7 @@ export const SectorSidebar = ({
             </div>
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Áreas & Setores
+                Setores
               </h3>
             </div>
           </div>
@@ -238,14 +283,18 @@ export const SectorSidebar = ({
                 onSelectFilterMode('ALL_SECTORS');
                 onSelectStatusFilter('ALL');
               }}
-              className={`w-full px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
+              className={`group w-full px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer rounded-xl ${
                 filterMode === 'ALL_SECTORS'
                   ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
                   : 'text-slate-300 hover:bg-slate-800/70 hover:text-white border-l-4 border-l-transparent'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
-                <Layers className="w-4 h-4 shrink-0 text-cyan-400" />
+                <Layers className={`w-4 h-4 shrink-0 transition-all duration-200 ${
+                  filterMode === 'ALL_SECTORS'
+                    ? 'text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]'
+                    : 'text-slate-500 group-hover:text-slate-400'
+                }`} />
                 <span className="font-semibold truncate uppercase tracking-wide">TODOS</span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
@@ -295,7 +344,10 @@ export const SectorSidebar = ({
                   {userRole === 'admin' && onExportReportPDF && (
                     <button
                       type="button"
-                      onClick={onExportReportPDF}
+                      onClick={() => {
+                        onSelectFilterMode('ALL_SECTORS');
+                        onExportReportPDF(null);
+                      }}
                       title="Emitir Relatório Geral de Inventário em PDF"
                       className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                     >
@@ -354,7 +406,7 @@ export const SectorSidebar = ({
                       onSelectSector(sec.id);
                       onSelectStatusFilter('ALL');
                     }}
-                    className={`w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
+                    className={`group w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
                       isSelected
                         ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
                         : isOtherSector
@@ -364,13 +416,7 @@ export const SectorSidebar = ({
                   >
                     {/* Nome do Setor */}
                     <div className="flex items-center gap-2 truncate">
-                      {isSelected ? (
-                        stats.isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-                        ) : (
-                          getSectorIcon(sec.id)
-                        )
-                      ) : null}
+                      {getSectorIcon(sec, isSelected)}
 
                       <div className="truncate min-w-0">
                         <div className="flex items-center gap-1.5 truncate">
@@ -398,8 +444,8 @@ export const SectorSidebar = ({
 
                     {/* Badge de quantidade e status de conclusão */}
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {stats.isCompleted && !isSelected && (
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${isOtherSector ? 'text-emerald-500/70' : 'text-emerald-400'}`} />
+                      {stats.isCompleted && (
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? 'text-emerald-300' : isOtherSector ? 'text-emerald-500/70' : 'text-emerald-400'}`} />
                       )}
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
                         isSelected
@@ -451,7 +497,7 @@ export const SectorSidebar = ({
                         {canManageSector && onExportReportPDF && (
                           <button
                             type="button"
-                            onClick={onExportReportPDF}
+                            onClick={() => onExportReportPDF(sec)}
                             title={`Emitir Relatório de Inventário do setor ${sec.name} em PDF`}
                             className="w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between text-slate-400 hover:text-slate-200 hover:bg-slate-800/70 transition-colors cursor-pointer text-left group"
                           >

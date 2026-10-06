@@ -189,8 +189,13 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
                   EMITIR RELATÓRIO DE CARGA PATRIMONIAL
                 </h3>
                 <span className="text-slate-600 font-semibold hidden sm:inline">|</span>
-                <span className="text-xs sm:text-sm font-bold text-orange-300 uppercase tracking-wide">
-                  {sectorName ? `SETOR: ${sectorName.toUpperCase()}` : 'TODOS OS SETORES'}
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wide">
+                  <span className="text-white">SETOR:&nbsp;</span>
+                  <span className="text-orange-400">
+                    {(!sectorName || sectorName.toUpperCase().includes('TODOS'))
+                      ? 'TODOS OS SETORES'
+                      : sectorName.toUpperCase()}
+                  </span>
                 </span>
               </div>
             </div>

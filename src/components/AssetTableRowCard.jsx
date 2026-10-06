@@ -282,6 +282,11 @@ const AssetTableRowCardComponent = ({
     setLocationValue(asset.localizacao || currentSectorName || '');
   }, [asset.localizacao, currentSectorName]);
 
+  const locationValueRef = useRef(locationValue);
+  useEffect(() => {
+    locationValueRef.current = locationValue;
+  }, [locationValue]);
+
   // Estados de edição inline de observação com inteligência de setor, voz e auto-close
   const [isEditingObs, setIsEditingObs] = useState(false);
   const [obsValue, setObsValue] = useState(asset.observacao || '');
@@ -289,9 +294,14 @@ const AssetTableRowCardComponent = ({
   const [isListeningObs, setIsListeningObs] = useState(false);
   const obsTimerRef = useRef(null);
   const obsContainerRef = useRef(null);
+  const obsValueRef = useRef(obsValue);
   useEffect(() => {
     setObsValue(asset.observacao || '');
+    obsValueRef.current = asset.observacao || '';
   }, [asset.observacao]);
+  useEffect(() => {
+    obsValueRef.current = obsValue;
+  }, [obsValue]);
 
   const effectiveServidores = React.useMemo(() => {
     if (servidores && servidores.length > 0) return servidores;
@@ -313,12 +323,11 @@ const AssetTableRowCardComponent = ({
 
     if (!q) return effectiveServidores;
 
-    const matches = effectiveServidores.filter(s => 
+    return effectiveServidores.filter(s => 
       s.nome?.toLowerCase().includes(q) || 
       s.mesa?.toLowerCase().includes(q) || 
       s.telefone?.includes(q)
     );
-    return matches.length > 0 ? matches : effectiveServidores;
   }, [effectiveServidores, obsValue]);
 
   // Fecha o menu de ações e submenus ao pressionar ESC
@@ -410,10 +419,18 @@ const AssetTableRowCardComponent = ({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (isEditingLocation && locContainerRef.current && !locContainerRef.current.contains(e.target)) {
-        closeLocEdit();
+        if (locationValueRef.current?.trim() !== (asset.localizacao || '').trim()) {
+          handleSaveLocation(e, locationValueRef.current);
+        } else {
+          closeLocEdit();
+        }
       }
       if (isEditingObs && obsContainerRef.current && !obsContainerRef.current.contains(e.target)) {
-        closeObsEdit();
+        if (obsValueRef.current?.trim() !== (asset.observacao || '').trim()) {
+          handleSaveObservation(e, obsValueRef.current);
+        } else {
+          closeObsEdit();
+        }
       }
       if (isColorPickerOpen && colorPickerRef.current && !colorPickerRef.current.contains(e.target)) {
         setIsColorPickerOpen(false);
@@ -680,17 +697,31 @@ const AssetTableRowCardComponent = ({
     return null;
   };
 
-  // Detecção de nome de pessoa em texto livre (ex: "Jean pegou", "Carlos levou")
+  // Detecção de nome de pessoa em texto livre (ex: "Jean pegou", "Carlos levou", "Cmte Alexandre")
   // Retorna apenas o nome para exibição em LARANJA, SEM vincular ao servidor oficial
   const detectPessoaLivreInText = (text) => {
     if (!text || typeof text !== 'string') return null;
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+
     // Padrões comuns como: "Nome pegou", "entregue a Nome", "com Nome", etc.
-    const match = text.match(/\b([A-ZÀ-ÿ][a-zà-ÿ]+)\s+(pegou|levou|recebeu|ficou|guardou)\b/i) 
-      || text.match(/\b(com|para|entregue a|recolhido por)\s+([A-ZÀ-ÿ][a-zà-ÿ]+)\b/i);
+    const match = trimmed.match(/\b([A-ZÀ-ÿ][a-zà-ÿ]+)\s+(pegou|levou|recebeu|ficou|guardou)\b/i) 
+      || trimmed.match(/\b(com|para|entregue a|recolhido por)\s+([A-ZÀ-ÿ][a-zà-ÿ]+(?:\s+[A-ZÀ-ÿ][a-zà-ÿ]+)*)\b/i);
     if (match) {
       const name = match[1] && !['com', 'para', 'entregue a', 'recolhido por'].includes(match[1].toLowerCase()) ? match[1] : match[2];
       if (name && name.length >= 3 && !['Material', 'Setor', 'Item', 'Carga'].includes(name)) {
         return name;
+      }
+    }
+
+    // Texto livre curto que representa uma pessoa ou destinatário digitado livremente (ex: "Cmte Alexandre", "Dr. Marcos", "Carlos Silva")
+    if (trimmed.length >= 2 && trimmed.length <= 45) {
+      const lower = trimmed.toLowerCase();
+      if (!lower.includes('defeito') && !lower.includes('manuten') && !lower.includes('quebrad') && !lower.includes('baixa')) {
+        const sector = detectSectorInText(trimmed);
+        if (!sector) {
+          return trimmed;
+        }
       }
     }
     return null;
@@ -1580,10 +1611,13 @@ const AssetTableRowCardComponent = ({
                   }}
                   onKeyDown={(e) => {
                     resetObsTimer();
-                    if (e.key === 'Enter') handleSaveObservation(e);
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveObservation(e, obsValue.trim());
+                    }
                     if (e.key === 'Escape') closeObsEdit();
                   }}
-                  placeholder="Digite ou escolha o nome..."
+                  placeholder="Digite qualquer nome ou escolha..."
                   className="bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg border border-cyan-500/80 focus:outline-none focus:ring-1 focus:ring-cyan-400 w-[145px] max-w-[145px] pr-6 shadow-xl"
                   autoFocus
                 />
@@ -1596,119 +1630,101 @@ const AssetTableRowCardComponent = ({
                     resetObsTimer();
                   }}
                   className="absolute right-1 p-0.5 text-slate-400 hover:text-white cursor-pointer"
-                  title="Mostrar lista de servidores (com quem está)"
+                  title="Mostrar sugestões de servidores (com quem está)"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showObsListbox ? 'rotate-180 text-cyan-400' : ''}`} />
                 </button>
 
-                {/* Listbox de Servidores (Com quem está) - até 15 nomes mostrados */}
+                {/* Listbox de Servidores (Com quem está) */}
                 {showObsListbox && (
                   <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-cyan-500/40 rounded-xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="text-[9.5px] font-bold text-cyan-400 uppercase tracking-wider px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Servidores ({effectiveServidores?.length || 0})</span>
+                        <span>Sugestões de Servidores ({effectiveServidores?.length || 0})</span>
                       </span>
-                      {obsValue.includes('@') && (
-                        <span className="text-[9px] text-amber-300 font-normal">Menção com @</span>
-                      )}
+                      <span className="text-[9px] text-slate-400 font-normal">Pode digitar qualquer nome</span>
                     </div>
 
                     <div className="max-h-[460px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
-                      {/* Atalho para salvar qualquer nome digitado */}
-                      {obsValue && !effectiveServidores?.some(s => s.nome.toLowerCase() === obsValue.trim().toLowerCase()) && (
+                      {/* Opção prioritária: Usar qualquer nome digitado */}
+                      {obsValue && obsValue.trim() && (
                         <button
                           type="button"
                           onClick={(e) => handleSaveObservation(e, obsValue.trim())}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/50 text-cyan-200 transition-all flex items-center justify-between cursor-pointer mb-1"
+                          className="w-full text-left px-2.5 py-2 rounded-xl text-xs bg-cyan-950/70 hover:bg-cyan-900/90 border border-cyan-400/60 text-cyan-200 transition-all flex items-center justify-between cursor-pointer mb-1.5 shadow-sm group"
                         >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                            <span className="truncate">Usar: <strong>"{obsValue.replace(/@([a-zA-Z0-9À-ÿ]+)/g, '$1')}"</strong></span>
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="p-1 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-500/30">
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </span>
+                            <div className="truncate">
+                              <div className="text-[9.5px] text-cyan-300/80 font-medium">Usar nome digitado:</div>
+                              <div className="font-bold text-white text-xs truncate">"{obsValue.replace(/@([a-zA-Z0-9À-ÿ]+)/g, '$1').trim()}"</div>
+                            </div>
                           </div>
-                          <span className="text-[9px] text-cyan-400 bg-cyan-500/20 px-1 py-0.5 rounded font-mono shrink-0 ml-1">Enter ↵</span>
+                          <span className="text-[9.5px] text-cyan-300 bg-cyan-500/25 px-1.5 py-0.5 rounded font-mono shrink-0 ml-1.5 border border-cyan-400/30">
+                            Enter ↵
+                          </span>
                         </button>
                       )}
 
-                      {/* Lista de Servidores (só o nome) */}
+                      {/* Lista filtrada de Servidores cadastrados */}
                       {filteredServidores && filteredServidores.length > 0 ? (
-                        filteredServidores.map((serv) => (
-                          <button
-                            key={`obs-serv-${serv.id}`}
-                            type="button"
-                            onClick={(e) => {
-                              // Se estiver usando @ (ex: "Material recolhido por @je"), substitui "@je" por "Jean" sem o @
-                              let newValue = serv.nome;
-                              if (obsValue.includes('@')) {
-                                newValue = obsValue.replace(/@[a-zA-Z0-9À-ÿ]*$/, serv.nome);
-                              }
-                              setObsValue(newValue);
-                              handleSaveObservation(e, newValue, serv);
-                            }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-bold">
-                                {serv.nome ? serv.nome.charAt(0).toUpperCase() : '👤'}
-                              </div>
-                              <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
-                                {serv.nome}
-                              </span>
-                              {serv.setorNome && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
-                                  {serv.setorNome}
-                                </span>
-                              )}
-                              {serv.mesa && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
-                                  {serv.mesa}
-                                </span>
-                              )}
+                        <>
+                          {obsValue && obsValue.trim() && (
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-0.5">
+                              Servidores cadastrados encontrados ({filteredServidores.length}):
                             </div>
-                            <Check className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
-                          </button>
-                        ))
-                      ) : effectiveServidores && effectiveServidores.length > 0 ? (
-                        effectiveServidores.map((serv) => (
-                          <button
-                            key={`obs-serv-${serv.id}`}
-                            type="button"
-                            onClick={(e) => {
-                              let newValue = serv.nome;
-                              if (obsValue.includes('@')) {
-                                newValue = obsValue.replace(/@[a-zA-Z0-9À-ÿ]*$/, serv.nome);
-                              }
-                              setObsValue(newValue);
-                              handleSaveObservation(e, newValue, serv);
-                            }}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-bold">
-                                {serv.nome ? serv.nome.charAt(0).toUpperCase() : '👤'}
+                          )}
+                          {filteredServidores.map((serv) => (
+                            <button
+                              key={`obs-serv-${serv.id}`}
+                              type="button"
+                              onClick={(e) => {
+                                let newValue = serv.nome;
+                                if (obsValue.includes('@')) {
+                                  newValue = obsValue.replace(/@[a-zA-Z0-9À-ÿ]*$/, serv.nome);
+                                }
+                                setObsValue(newValue);
+                                handleSaveObservation(e, newValue, serv);
+                              }}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-cyan-950/40 hover:border-cyan-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center shrink-0 text-[10px] font-bold">
+                                  {serv.nome ? serv.nome.charAt(0).toUpperCase() : '👤'}
+                                </div>
+                                <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
+                                  {serv.nome}
+                                </span>
+                                {serv.setorNome && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
+                                    {serv.setorNome}
+                                  </span>
+                                )}
+                                {serv.mesa && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
+                                    {serv.mesa}
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-slate-100 font-bold group-hover:text-cyan-300 transition-colors truncate">
-                                {serv.nome}
-                              </span>
-                              {serv.setorNome && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 font-medium shrink-0">
-                                  {serv.setorNome}
-                                </span>
-                              )}
-                              {serv.mesa && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono shrink-0">
-                                  {serv.mesa}
-                                </span>
-                              )}
-                            </div>
-                            <Check className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
-                          </button>
-                        ))
+                              <Check className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                            </button>
+                          ))}
+                        </>
+                      ) : obsValue && obsValue.trim() ? (
+                        <div className="p-3 text-center text-slate-400 text-xs bg-slate-950/40 rounded-xl border border-slate-800/80 my-1">
+                          <User className="w-5 h-5 text-cyan-400 mx-auto mb-1 opacity-70" />
+                          <p className="font-semibold text-slate-200">Nenhum servidor cadastrado com este nome</p>
+                          <p className="text-[10.5px] text-cyan-300 mt-1">
+                            Pressione <strong className="text-white bg-cyan-950 px-1 py-0.5 rounded border border-cyan-500/40">Enter ↵</strong> para salvar como nome livre.
+                          </p>
+                        </div>
                       ) : (
                         <div className="p-3 text-center text-slate-400 text-xs">
                           <User className="w-5 h-5 text-slate-500 mx-auto mb-1 opacity-60" />
-                          <p className="font-semibold text-slate-300">Nenhum servidor encontrado</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">Cadastre pelo botão Servidores no cabeçalho</p>
+                          <p className="font-semibold text-slate-300">Nenhum servidor cadastrado</p>
                         </div>
                       )}
 
@@ -1887,15 +1903,15 @@ const AssetTableRowCardComponent = ({
                     {officialServidor && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9.5px] font-bold shrink-0 shadow-sm" title={`Nosso Servidor Vinculado: ${officialServidor.nome}`}>
                         <User className="w-2.5 h-2.5 text-cyan-300 shrink-0" />
-                        <span className="truncate max-w-[65px]">{officialServidor.nome}</span>
+                        <span className="truncate max-w-[125px]">{officialServidor.nome}</span>
                       </span>
                     )}
 
-                    {/* 2. PESSOA EXTERNA / TEXTO LIVRE ("Jean pegou", "Jean da ASCOM"): COR LARANJA (SEM VÍNCULO) */}
+                    {/* 2. PESSOA EXTERNA / TEXTO LIVRE ("Jean pegou", "Cmte Alexandre"): COR LARANJA (SEM VÍNCULO) */}
                     {pessoaLivre && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9.5px] font-bold shrink-0" title={`Pessoa citada no texto (não vinculada ao órgão): ${pessoaLivre}`}>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9.5px] font-bold shrink-0 shadow-sm" title={`Com quem está (Texto livre / Não vinculado ao rol): ${pessoaLivre}`}>
                         <User className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-                        <span className="truncate max-w-[65px]">{pessoaLivre}</span>
+                        <span className="truncate max-w-[125px]">{pessoaLivre}</span>
                       </span>
                     )}
 
