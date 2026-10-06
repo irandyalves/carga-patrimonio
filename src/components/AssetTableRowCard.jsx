@@ -1369,10 +1369,10 @@ const AssetTableRowCardComponent = ({
           {/* Sinalizador de Patrimônio Duplicado */}
           {pendingTransferTo && (
             <span
-              title={`Transferência pendente: aguardando aceite do responsável de "${pendingTransferTo}"`}
+              title={`Aguardando ${pendingTransferTo.responsavel || 'o responsável'}, resp. carga do ${pendingTransferTo.setor}, dar o aceite por lá.`}
               className="px-2 py-0.5 rounded-md bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[10px] flex items-center gap-1 shadow-sm shrink-0 animate-pulse"
             >
-              ⏳ <span>Aguardando aceite → {pendingTransferTo}</span>
+              ⏳ <span className="truncate">Aguardando {pendingTransferTo.responsavel || 'o responsável'}, resp. carga do {pendingTransferTo.setor}, dar o aceite por lá.</span>
             </span>
           )}
           {duplicateInfo?.isDuplicate && (
@@ -2718,10 +2718,10 @@ const AssetTableRowCardComponent = ({
         <div className="flex items-center justify-between gap-1.5 py-0.5 min-w-0">
           {pendingTransferTo && (
             <span
-              title={`Transferência pendente: aguardando aceite do responsável de "${pendingTransferTo}"`}
+              title={`Aguardando ${pendingTransferTo.responsavel || 'o responsável'}, resp. carga do ${pendingTransferTo.setor}, dar o aceite por lá.`}
               className="px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[9px] flex items-center gap-0.5 shrink-0 animate-pulse"
             >
-              ⏳ <span>Aguardando aceite → {pendingTransferTo}</span>
+              ⏳ <span className="truncate">Aguardando {pendingTransferTo.responsavel || 'o responsável'}, resp. carga do {pendingTransferTo.setor}, dar o aceite por lá.</span>
             </span>
           )}
           {duplicateInfo?.isDuplicate && (

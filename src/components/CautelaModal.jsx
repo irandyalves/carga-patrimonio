@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Handshake, Calendar, User, Phone, FileText, Download, CheckCircle } from 'lucide-react';
 import { generateCautelaPDF } from '../services/pdfGenerator';
 import { formatLast5Patrimonio } from '../utils/formatters';
@@ -8,7 +8,9 @@ export const CautelaModal = ({
   onClose,
   asset,
   sectors = [],
-  onSaveCautela
+  onSaveCautela,
+  initialResponsavel = '',
+  initialTelefone = ''
 }) => {
   const [formData, setFormData] = useState({
     responsavelRetirada: '',
@@ -22,6 +24,13 @@ export const CautelaModal = ({
   });
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Pré-preenche nome e contato vindos do botão 'Cautelar item' da barra de seleção
+  useEffect(() => {
+    if (isOpen && asset) {
+      setFormData(prev => ({ ...prev, responsavelRetirada: initialResponsavel || '', telefone: initialTelefone || '' }));
+    }
+  }, [isOpen, asset?.id, initialResponsavel, initialTelefone]);
 
   if (!isOpen || !asset) return null;
 

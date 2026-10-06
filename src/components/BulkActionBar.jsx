@@ -7,7 +7,9 @@ import {
   X, 
   ChevronDown,
   Search,
-  Sparkles
+  Sparkles,
+  Handshake,
+  Phone
 } from 'lucide-react';
 
 export const BulkActionBar = ({
@@ -16,7 +18,8 @@ export const BulkActionBar = ({
   onAssignSector,
   sectors = [],
   servidores = [],
-  onAssignServidor
+  onAssignServidor,
+  onCautelarItem
 }) => {
   const [isSectorDropdownOpen, setIsSectorDropdownOpen] = useState(false);
   const [isServidorDropdownOpen, setIsServidorDropdownOpen] = useState(false);
@@ -24,6 +27,14 @@ export const BulkActionBar = ({
   const sectorDropdownRef = useRef(null);
   const servidorDropdownRef = useRef(null);
   const servidorSearchInputRef = useRef(null);
+
+  // Estado do popup "Cautelar item"
+  const [isCautelaOpen, setIsCautelaOpen] = useState(false);
+  const [isCautelaListOpen, setIsCautelaListOpen] = useState(false);
+  const [cautelaNome, setCautelaNome] = useState('');
+  const [cautelaContato, setCautelaContato] = useState('');
+  const cautelaRef = useRef(null);
+  const cautelaNomeRef = useRef(null);
 
   // Fecha dropdown ao clicar fora
   useEffect(() => {
@@ -34,10 +45,25 @@ export const BulkActionBar = ({
       if (servidorDropdownRef.current && !servidorDropdownRef.current.contains(event.target)) {
         setIsServidorDropdownOpen(false);
       }
+      if (cautelaRef.current && !cautelaRef.current.contains(event.target)) {
+        setIsCautelaOpen(false);
+        setIsCautelaListOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Ao abrir o popup de cautela: limpa campos e foca no nome
+  useEffect(() => {
+    if (isCautelaOpen) {
+      setCautelaNome('');
+      setCautelaContato('');
+      setIsCautelaListOpen(false);
+      const t = setTimeout(() => cautelaNomeRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
+  }, [isCautelaOpen]);
 
   // Reseta busca e foca automaticamente no input ao abrir a lista
   useEffect(() => {
@@ -90,6 +116,21 @@ export const BulkActionBar = ({
   }, [servidores, servidorSearch]);
 
   const effectiveCount = selectedCount || 0;
+
+  // Lista filtrada de servidores para o campo de cautela
+  const cautelaFiltered = useMemo(() => {
+    const q = normalizeText(cautelaNome);
+    if (!q) return servidores;
+    return servidores.filter(s => normalizeText(s.nome).includes(q));
+  }, [servidores, cautelaNome]);
+
+  const handleConfirmCautela = () => {
+    const nome = cautelaNome.trim();
+    if (!nome || !onCautelarItem) return;
+    setIsCautelaOpen(false);
+    setIsCautelaListOpen(false);
+    onCautelarItem(nome, cautelaContato.trim());
+  };
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white">
@@ -312,6 +353,105 @@ export const BulkActionBar = ({
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Ação 3: Cautelar item (servidor da lista ou nome livre + contato, tudo na mesma linha) */}
+      {onCautelarItem && (
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative" ref={cautelaRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsCautelaOpen(!isCautelaOpen);
+                setIsSectorDropdownOpen(false);
+                setIsServidorDropdownOpen(false);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold text-xs flex items-center gap-1.5 border border-purple-300/40 transition-all cursor-pointer shadow-lg shadow-purple-600/30 active:scale-95 whitespace-nowrap"
+            >
+              <Handshake className="w-3.5 h-3.5" />
+              <span>Cautelar item</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCautelaOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isCautelaOpen && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-[620px] max-w-[92vw] bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1.5 mb-2 border-b border-slate-800 flex items-center justify-between">
+                  <span>Cautelar com:</span>
+                  <span className="text-[9px] font-mono text-purple-300">
+                    {effectiveCount} {effectiveCount === 1 ? 'item' : 'itens'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Servidor: escolhe da lista ou digita qualquer nome */}
+                  <div className="relative flex-1 min-w-0">
+                    <Search className="w-3.5 h-3.5 text-purple-300 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      ref={cautelaNomeRef}
+                      type="text"
+                      value={cautelaNome}
+                      onChange={(e) => { setCautelaNome(e.target.value); setIsCautelaListOpen(true); }}
+                      onFocus={() => setIsCautelaListOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleConfirmCautela(); }
+                      }}
+                      placeholder="Servidor: escolha ou digite qualquer nome..."
+                      className="w-full pl-8 pr-2 py-1.5 bg-slate-950/80 border border-slate-700/70 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/40 rounded-xl text-xs text-white placeholder-slate-500 outline-none"
+                    />
+                    {isCautelaListOpen && cautelaFiltered.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-50 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-1 space-y-0.5 custom-scroll-auto-hide">
+                        {cautelaFiltered.map(serv => (
+                          <button
+                            key={serv.id}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setCautelaNome(serv.nome);
+                              setCautelaContato(serv.telefone || '');
+                              setIsCautelaListOpen(false);
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between hover:bg-purple-600/30 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <span className="font-semibold truncate">{serv.nome}</span>
+                            {serv.telefone && (
+                              <span className="text-[10px] font-mono text-slate-400 ml-2 shrink-0">{serv.telefone}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Local / telefone para contato */}
+                  <div className="relative w-52 shrink-0">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={cautelaContato}
+                      onChange={(e) => setCautelaContato(e.target.value)}
+                      onFocus={() => setIsCautelaListOpen(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleConfirmCautela(); }
+                      }}
+                      placeholder="Local / telefone p/ contato"
+                      className="w-full pl-8 pr-2 py-1.5 bg-slate-950/80 border border-slate-700/70 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/40 rounded-xl text-xs text-white placeholder-slate-500 outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmCautela}
+                    disabled={!cautelaNome.trim()}
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-extrabold text-xs flex items-center gap-1 transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+                  >
+                    <Handshake className="w-3.5 h-3.5" />
+                    Cautelar
+                  </button>
                 </div>
               </div>
             )}

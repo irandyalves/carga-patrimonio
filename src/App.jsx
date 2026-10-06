@@ -534,6 +534,9 @@ export function App() {
   
   const [isCautelaModalOpen, setIsCautelaModalOpen] = useState(false);
   const [assetForCautela, setAssetForCautela] = useState(null);
+  const [cautelaQueue, setCautelaQueue] = useState([]);
+  const [cautelaPrefill, setCautelaPrefill] = useState({ nome: '', contato: '' });
+  const cautelaSavedRef = useRef(false);
   const [isCautelaListOpen, setIsCautelaListOpen] = useState(false);
   
   const [isBaixaModalOpen, setIsBaixaModalOpen] = useState(false);
@@ -1359,7 +1362,7 @@ export function App() {
       setorDestinoNome: targetSector.name,
       responsavelOrigem: a.responsavel || (sectors.find(s => s.id === a.setorId)?.responsavel) || '',
       responsavelDestino: targetSector.responsavel || 'Responsável do Setor',
-      solicitanteNome: currentUser?.displayName || currentUser?.email || 'Operador',
+      solicitanteNome: effectiveUser?.displayName || effectiveUser?.email || currentUser?.displayName || currentUser?.email || 'Operador',
       dataSolicitacao: new Date().toISOString(),
       status: 'PENDENTE',
       tipo: 'TRANSFERENCIA',
@@ -1643,7 +1646,7 @@ export function App() {
       pedidosCarga.forEach(p => {
         const isTransfer = p.tipo === 'TRANSFERENCIA' || String(p.motivo || '').startsWith('Transferência de carga:');
         if (p.status === 'PENDENTE' && p.assetId && isTransfer) {
-          map.set(p.assetId, p.setorDestinoNome || 'outro setor');
+          map.set(p.assetId, { setor: p.setorDestinoNome || 'outro setor', responsavel: p.responsavelDestino || '' });
         }
       });
     }
@@ -2241,6 +2244,36 @@ export function App() {
     showToast(`${pedidosList.length} ${pedidosList.length === 1 ? 'pedido aceito e transferido' : 'pedidos aceitos e transferidos'} com sucesso!`, 'success');
   };
 
+  // Cancelar Pedido de Carga (somente quem enviou): remove o pedido e o item volta ao normal
+  const handleCancelarPedido = async (pedidoId) => {
+    const existing = pedidosCarga.find(p => p.id === pedidoId);
+    if (!existing) return;
+    const nowStr = new Date().toLocaleString('pt-BR');
+    const userLabel = effectiveUser?.displayName || effectiveUser?.email || currentUser?.displayName || 'Operador';
+    const updatedAssets = assets.map(a => {
+      if (a.id === existing.assetId) {
+        const updatedItem = {
+          ...a,
+          historico: [
+            ...(a.historico || []),
+            { data: nowStr, acao: `Pedido de Transferência cancelado pelo remetente (destino: "${existing.setorDestinoNome}").`, usuario: userLabel }
+          ]
+        };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
+      }
+      return a;
+    });
+    setAssets(updatedAssets);
+    const updated = pedidosCarga.filter(p => p.id !== pedidoId);
+    setPedidosCarga(updated);
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify(updated));
+    } catch (e) {}
+    await deletePedidoFromCloud(pedidoId);
+    showToast(`Envio do bem ${formatLast5Patrimonio(existing.numeroPatrimonio)} para ${existing.setorDestinoNome} cancelado.`, 'info');
+  };
+
   // Recusar Pedido de Carga
   const handleRecusarPedido = (pedidoId) => {
     const existing = pedidosCarga.find(p => p.id === pedidoId);
@@ -2552,9 +2585,35 @@ export function App() {
     setIsCautelaModalOpen(true);
   };
 
+  // Cautelar item(ns) selecionado(s): abre o modal de cautela pré-preenchido (um item por vez)
+  const handleCautelarSelecionados = (nome, contato) => {
+    const lista = assets.filter(item => selectedAssetIds.has(item.id));
+    if (lista.length === 0) return;
+    setCautelaPrefill({ nome, contato });
+    setCautelaQueue(lista.slice(1));
+    handleOpenCautela(lista[0]);
+    setSelectedAssetIds(new Set());
+  };
+
+  // Fecha o modal de cautela: após salvar, segue para o próximo item da fila; ao cancelar, encerra a fila
+  const handleCloseCautela = () => {
+    const saved = cautelaSavedRef.current;
+    cautelaSavedRef.current = false;
+    if (saved && cautelaQueue.length > 0) {
+      setAssetForCautela(cautelaQueue[0]);
+      setCautelaQueue(cautelaQueue.slice(1));
+      setIsCautelaModalOpen(true);
+      return;
+    }
+    setCautelaQueue([]);
+    setCautelaPrefill({ nome: '', contato: '' });
+    setIsCautelaModalOpen(false);
+    setAssetForCautela(null);
+  };
+
   // Save Cautela
   const handleSaveCautela = (cautelaData) => {
-    const pessoa = cautelaData.responsavelRetirada || cautelaData.nomeResponsavel || 'Jean';
+    cautelaSavedRef.current = true;    const pessoa = cautelaData.responsavelRetirada || cautelaData.nomeResponsavel || 'Jean';
     const destino = cautelaData.setorDestino || 'ASCOM';
     const doc = cautelaData.documento || cautelaData.matricula || '';
 
@@ -3162,7 +3221,7 @@ export function App() {
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
-        pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}
+        pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE' && (effectiveUserRole === 'admin' || effectiveUserSectorIds.includes(p.setorDestinoId) || effectiveUserSectorIds.includes(p.setorOrigemId))).length}
         onOpenServidores={() => setIsServidoresModalOpen(true)}
         servidoresCount={servidores.length}
         onOpenDtinPendencias={() => setIsPendenciasDtinOpen(true)}
@@ -3765,6 +3824,7 @@ export function App() {
                     sectors={sectors}
                     servidores={servidores}
                     onAssignServidor={handleBulkAssignServidor}
+                    onCautelarItem={handleCautelarSelecionados}
                   />
                 </div>
               </div>
@@ -4260,13 +4320,12 @@ export function App() {
 
       <CautelaModal
         isOpen={isCautelaModalOpen}
-        onClose={() => {
-          setIsCautelaModalOpen(false);
-          setAssetForCautela(null);
-        }}
+        onClose={handleCloseCautela}
         asset={assetForCautela}
         sectors={sectors}
         onSaveCautela={handleSaveCautela}
+        initialResponsavel={cautelaPrefill.nome}
+        initialTelefone={cautelaPrefill.contato}
       />
 
       <CautelaListModal
@@ -4373,6 +4432,9 @@ export function App() {
         onAprovarTodos={handleAprovarTodosPedidos}
         onExcluirHistorico={handleExcluirHistoricoPedido}
         onLimparHistorico={handleLimparHistoricoPedidos}
+        onCancelarPedido={handleCancelarPedido}
+        currentUserName={effectiveUser?.displayName || effectiveUser?.email || ''}
+        userSectorIds={effectiveUserSectorIds}
       />
 
       {/* Modal de Notificações e Autorizações de Envio ao DTIN pelo Detentor */}
@@ -4639,6 +4701,7 @@ export function App() {
           sectors={sectors}
           servidores={servidores}
           onAssignServidor={handleBulkAssignServidor}
+                    onCautelarItem={handleCautelarSelecionados}
         />
       </div>
 

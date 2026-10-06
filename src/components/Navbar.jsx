@@ -425,16 +425,23 @@ export const Navbar = ({
                 type="button"
                 onClick={onOpenPedidos}
                 title={`Central de Pedidos e Solicitações de Carga (${pedidosCount || 0} pendente${pedidosCount === 1 ? '' : 's'})`}
-                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+                className={`relative px-2.5 py-1.5 rounded-xl text-xs font-medium hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 ${
+                  pedidosCount > 0 ? 'text-amber-300 bg-amber-500/10 border border-amber-500/40 animate-pedidos-attention' : 'text-slate-300'
+                }`}
               >
-                <Inbox className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="hidden md:inline">Pedidos</span>
-                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
-                  pedidosCount > 0 
-                    ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/40 animate-pulse' 
-                    : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
-                }`}>
-                  {pedidosCount || 0}
+                <Inbox className={`w-4 h-4 text-amber-400 shrink-0 ${pedidosCount > 0 ? 'animate-pedidos-wiggle' : ''}`} />
+                <span className={`hidden md:inline ${pedidosCount > 0 ? 'font-bold' : ''}`}>Pedidos</span>
+                <span className="relative inline-flex">
+                  {pedidosCount > 0 && (
+                    <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-75" />
+                  )}
+                  <span className={`relative px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                    pedidosCount > 0 
+                      ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/40 animate-pedidos-badge' 
+                      : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
+                  }`}>
+                    {pedidosCount || 0}
+                  </span>
                 </span>
               </button>
 
