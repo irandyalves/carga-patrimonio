@@ -3135,6 +3135,7 @@ export function App() {
         cautelasCount={cautelas.filter(c => c.status === 'EM_ANDAMENTO').length}
         conferidosCount={stats.conferidos}
         onScrollToConferidos={handleScrollToConferidos}
+        isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE').length}

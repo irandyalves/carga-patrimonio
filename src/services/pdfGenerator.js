@@ -320,22 +320,70 @@ export const generateInventoryReportPDF = (
     });
   }
 
-  // Determina se o relatório é do setor específico ou geral (Todos os Setores)
-  const isAllSectorsReport = !sector || !sector.id || sector.id === 'all' || (sector.name && sector.name.toLowerCase().includes('todos os setores'));
-
+  // Agrupamento dos setores:
+  // Se for um setor específico: 1 único grupo.
+  // Se for Todos os Setores: agrupa cada setor individualmente para quebrar nova folha para o próximo setor.
   const sectorGroups = [];
 
-  if (!isAllSectorsReport) {
-    // Relatório de um setor específico
+  if (sector) {
     sectorGroups.push({
       sector: sector,
       assets: sortAssetsByCriterion(assets, sortBy)
     });
   } else {
-    // Relatório Consolidado de TODOS OS SETORES (contém todos os bens juntos)
+    if (allSectors && allSectors.length > 0) {
+      allSectors.forEach(sec => {
+        const secAssets = assets.filter(a => a.setorId === sec.id);
+        if (secAssets.length > 0) {
+          sectorGroups.push({
+            sector: sec,
+            assets: sortAssetsByCriterion(secAssets, sortBy)
+          });
+        }
+      });
+      // Itens órfãos (sem setorId correspondente na lista de setores)
+      const knownIds = new Set(allSectors.map(s => s.id));
+      const orphanAssets = assets.filter(a => !a.setorId || !knownIds.has(a.setorId));
+      if (orphanAssets.length > 0) {
+        const orphanMap = new Map();
+        orphanAssets.forEach(a => {
+          const sName = a.setorNome || 'Outros Setores';
+          if (!orphanMap.has(sName)) orphanMap.set(sName, []);
+          orphanMap.get(sName).push(a);
+        });
+        orphanMap.forEach((oAssets, sName) => {
+          sectorGroups.push({
+            sector: { id: `orphan-${sName}`, name: sName, responsavel: '-' },
+            assets: sortAssetsByCriterion(oAssets, sortBy)
+          });
+        });
+      }
+    } else {
+      const groupMap = new Map();
+      assets.forEach(a => {
+        const sKey = a.setorId || a.setorNome || 'Geral';
+        if (!groupMap.has(sKey)) {
+          groupMap.set(sKey, {
+            sector: { id: sKey, name: a.setorNome || sKey, responsavel: a.responsavel || '-' },
+            assets: []
+          });
+        }
+        groupMap.get(sKey).assets.push(a);
+      });
+      groupMap.forEach(grp => {
+        sectorGroups.push({
+          sector: grp.sector,
+          assets: sortAssetsByCriterion(grp.assets, sortBy)
+        });
+      });
+    }
+  }
+
+  // Fallback caso não haja bens
+  if (sectorGroups.length === 0) {
     sectorGroups.push({
-      sector: { id: 'all', name: 'Todos os Setores', responsavel: '-' },
-      assets: sortAssetsByCriterion(assets, sortBy)
+      sector: sector || { name: 'Todos os Setores' },
+      assets: []
     });
   }
 
@@ -350,21 +398,37 @@ export const generateInventoryReportPDF = (
     const startPage = doc.internal.getNumberOfPages();
     const currentSector = group.sector;
     const currentAssets = group.assets;
-    const currentStats = (isAllSectorsReport && stats) ? stats : calculateSectorStats(currentAssets);
+    const currentStats = calculateSectorStats(currentAssets);
 
     // 1. Faixa azul escura (18mm) com Título e Estatísticas integradas
     doc.setFillColor(30, 41, 59);
     doc.rect(0, 0, pageWidth, headerHeight, 'F');
     
+    const prefixText = 'RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  SETOR: ';
     const setorNome = (currentSector && currentSector.name) ? currentSector.name.toUpperCase().trim() : 'TODOS OS SETORES';
-    const dataHoraText = new Date().toLocaleString('pt-BR');
-    const titleText = `RELATÓRIO DE CONFERÊNCIA DE CARGA PATRIMONIAL  |  SETOR: ${setorNome}  |  Data: ${dataHoraText}`;
+    const sufixoText = `  |  Data: ${new Date().toLocaleString('pt-BR')}`;
 
-    // Linha 1: Título do relatório (Fonte branca em negrito)
+    // Linha 1: Título do relatório (Prefixo e Data em branco, Setor em AMARELO BOLD)
     doc.setFontSize(7.6);
     doc.setFont('helvetica', 'bold');
+
+    const prefixWidth = doc.getTextWidth(prefixText);
+    const setorWidth = doc.getTextWidth(setorNome);
+    const sufixoWidth = doc.getTextWidth(sufixoText);
+    const totalTitleWidth = prefixWidth + setorWidth + sufixoWidth;
+    const startX = (pageWidth - totalTitleWidth) / 2;
+
+    // Prefixo branco
     doc.setTextColor(255, 255, 255);
-    doc.text(titleText, pageWidth / 2, 6.5, { align: 'center', baseline: 'middle' });
+    doc.text(prefixText, startX, 6.5, { baseline: 'middle' });
+
+    // Nome do Setor em Amarelo Bold (#facc15)
+    doc.setTextColor(250, 204, 21);
+    doc.text(setorNome, startX + prefixWidth, 6.5, { baseline: 'middle' });
+
+    // Sufixo Data/Hora branco
+    doc.setTextColor(255, 255, 255);
+    doc.text(sufixoText, startX + prefixWidth + setorWidth, 6.5, { baseline: 'middle' });
 
     // Linha 2: Totais e estatísticas do setor (Em fonte amarelinha, fina e 100% menor / delicada)
     const statsText = `TOTAL DE ITENS: ${currentStats.total}   •   CONFERIDOS: ${currentStats.conferidos} (${currentStats.pctConferido}%)   •   PENDENTES: ${currentStats.pendentes}   •   EM CAUTELA: ${currentStats.cautelas}   •   BAIXADOS: ${currentStats.baixados}`;
@@ -422,7 +486,7 @@ export const generateInventoryReportPDF = (
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184); // slate-400
-    const secNameForPage = pageSectorMap[i] || (!isAllSectorsReport && sector ? formatTitleCase(sector.name) : 'Todos os Setores');
+    const secNameForPage = pageSectorMap[i] || (sector ? formatTitleCase(sector.name) : 'Todos os Setores');
     doc.text(`Carga Patrimonial  •  ${secNameForPage}`, 10, pageHeight - 3.5);
     doc.text(`Página ${i} de ${totalPages}`, pageWidth - 10, pageHeight - 3.5, { align: 'right' });
   }
@@ -432,7 +496,7 @@ export const generateInventoryReportPDF = (
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = now.getFullYear();
   const dateFormatted = `${day}-${month}-${year}`;
-  const sectorTitle = !isAllSectorsReport && sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Todos_os_Setores';
+  const sectorTitle = sector ? formatTitleCase(sector.name).replace(/[/\\?%*:|"<>]/g, '_').trim() : 'Todos_os_Setores';
   const fileName = `${sectorTitle}_relatório_${dateFormatted}.pdf`;
 
   doc.save(fileName);

@@ -54,6 +54,7 @@ export const Navbar = ({
   cautelasCount = 0,
   conferidosCount = 0,
   onScrollToConferidos,
+  isSidebarOpen = false,
   onToggleSidebar,
   onOpenPedidos,
   pedidosCount = 0,
@@ -191,27 +192,31 @@ export const Navbar = ({
           
           {/* GRUPO ESQUERDA: Sidebar, Conferidos e Fullscreen (Ocultos no mobile quando a busca está aberta) */}
           <div className={`items-center gap-1.5 sm:gap-2 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-            {/* Abrir / Recolher Setores */}
-            <button
-              onClick={onToggleSidebar}
-              title="Abrir/Recolher Barra Lateral de Setores"
-              className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center active:scale-95"
-            >
-              <PanelLeft className="w-5 h-5" />
-            </button>
-
-            {/* Ir direto para Conferidos (Número na esquerda e ícone na direita) */}
-            <button
-              type="button"
-              onClick={onScrollToConferidos}
-              title={`Ir para a seção de Conferidos (${conferidosCount || 0} itens)`}
-              className="px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 transition-all cursor-pointer shadow-sm active:scale-95 group"
-            >
-              <span className="text-[12px] font-mono font-black text-emerald-400 leading-none">{conferidosCount || 0}</span>
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 shrink-0 drop-shadow-[0_0_6px_rgba(74,222,128,0.95)] group-hover:scale-110 transition-transform">
-                <path d="M4.5 12.75L9.5 17.75L19.5 6.75" stroke="#4ade80" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            {/* Abrir / Revelar Barra Lateral de Setores (Sem fundo, setinha verdinha da direita para a esquerda) */}
+            {!isSidebarOpen && (
+              <button
+                type="button"
+                onClick={onToggleSidebar}
+                title="Expandir barra lateral de setores"
+                className="p-1.5 rounded-xl hover:bg-slate-800/60 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center justify-center active:scale-95 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  {/* Retângulo externo e divisória vertical */}
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M9 3v18" />
+                  {/* Setinha apontando da direita para a esquerda, centralizada verticalmente, em VERDINHO */}
+                  <path d="M16.5 9.5L14 12L16.5 14.5" stroke="#4ade80" strokeWidth="2.5" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* GRUPO CENTRAL: Campo de Busca com expansão suave para a esquerda no mobile */}
