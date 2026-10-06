@@ -217,6 +217,7 @@ const AssetTableRowCardComponent = ({
   onUpdateCardColor,
   onOpenSolicitacao,
   hasPendingPedido = false,
+  pendingTransferTo = null,
   searchTerm = '',
   visibleColumns = {
     responsavel: true,
@@ -1366,6 +1367,14 @@ const AssetTableRowCardComponent = ({
           isDtinPopupOpen || isDescOpen ? 'overflow-visible z-50 relative' : 'overflow-hidden'
         }`}>
           {/* Sinalizador de Patrimônio Duplicado */}
+          {pendingTransferTo && (
+            <span
+              title={`Transferência pendente: aguardando aceite do responsável de "${pendingTransferTo}"`}
+              className="px-2 py-0.5 rounded-md bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[10px] flex items-center gap-1 shadow-sm shrink-0 animate-pulse"
+            >
+              ⏳ <span>Aguardando aceite → {pendingTransferTo}</span>
+            </span>
+          )}
           {duplicateInfo?.isDuplicate && (
             <span 
               title={`⚠️ PATRIMÔNIO DUPLICADO! Presente em "${duplicateInfo.itemSector}" e também encontrado em: ${duplicateInfo.otherSectors.join(', ')}`}
@@ -2707,6 +2716,14 @@ const AssetTableRowCardComponent = ({
 
         {/* Linha 2: Descrição com Detecção Real de Truncamento e Revelação */}
         <div className="flex items-center justify-between gap-1.5 py-0.5 min-w-0">
+          {pendingTransferTo && (
+            <span
+              title={`Transferência pendente: aguardando aceite do responsável de "${pendingTransferTo}"`}
+              className="px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[9px] flex items-center gap-0.5 shrink-0 animate-pulse"
+            >
+              ⏳ <span>Aguardando aceite → {pendingTransferTo}</span>
+            </span>
+          )}
           {duplicateInfo?.isDuplicate && (
             <span 
               title={`⚠️ Duplicado: ${duplicateInfo.itemSector} vs ${duplicateInfo.otherSectors.join(', ')}`}

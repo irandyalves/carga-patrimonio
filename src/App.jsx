@@ -952,6 +952,15 @@ export function App() {
 
   const effectiveUserSectorId = effectiveUserSectorIds.length > 0 ? effectiveUserSectorIds[0] : null;
 
+  // Botões TI e DTIN: somente administrador ou responsável pelo setor de TI
+  const canSeeTiDtin = useMemo(() => {
+    if (effectiveUserRole === 'admin') return true;
+    return sectors.some(s => {
+      const isTiSector = s.id === 'sec-ti' || (s.name || '').toUpperCase().trim() === 'TI';
+      return isTiSector && effectiveUserSectorIds.includes(s.id);
+    });
+  }, [effectiveUserRole, sectors, effectiveUserSectorIds]);
+
   // Usuário efetivo para visualização e cabeçalho (quando operador é selecionado, exibe o nome e perfil do operador)
   const effectiveUser = useMemo(() => {
     if (simulatedPersonaId === 'admin') {
@@ -1353,6 +1362,7 @@ export function App() {
       solicitanteNome: currentUser?.displayName || currentUser?.email || 'Operador',
       dataSolicitacao: new Date().toISOString(),
       status: 'PENDENTE',
+      tipo: 'TRANSFERENCIA',
       motivo: `Transferência de carga: enviado de "${a.setorNome || 'Origem'}" para "${targetSector.name}"`,
       localizacaoFisica: targetSector.name
     }));
@@ -1624,6 +1634,20 @@ export function App() {
       });
     }
     return set;
+  }, [pedidosCarga]);
+
+  // Mapa assetId -> setor destino para transferências enviadas pelo dono e ainda aguardando aceite
+  const pendingTransferByAssetId = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(pedidosCarga)) {
+      pedidosCarga.forEach(p => {
+        const isTransfer = p.tipo === 'TRANSFERENCIA' || String(p.motivo || '').startsWith('Transferência de carga:');
+        if (p.status === 'PENDENTE' && p.assetId && isTransfer) {
+          map.set(p.assetId, p.setorDestinoNome || 'outro setor');
+        }
+      });
+    }
+    return map;
   }, [pedidosCarga]);
 
   // Limite progressivo de itens renderizados para ultra performance (60fps mesmo com milhares de itens)
@@ -3146,6 +3170,7 @@ export function App() {
         onToggleTiCard={() => setIsTiModalOpen(prev => !prev)}
         isTiCardOpen={isTiModalOpen}
         tiAssetsCount={allTiAssets.length}
+        canSeeTiDtin={canSeeTiDtin}
         currentPersona={simulatedPersona}
         onSelectPersona={userRole === 'admin' ? handleSelectPersona : null}
         sectors={sectors}
@@ -4110,6 +4135,7 @@ export function App() {
                           setIsSolicitacaoModalOpen(true);
                         }}
                         hasPendingPedido={pendingPedidoAssetIds.has(asset.id)}
+                        pendingTransferTo={pendingTransferByAssetId.get(asset.id) || null}
                         searchTerm={deferredSearchTerm}
                         statusFilter={statusFilter}
                         filterMode={filterMode}

@@ -65,6 +65,7 @@ export const Navbar = ({
   onToggleTiCard,
   isTiCardOpen = false,
   tiAssetsCount = 0,
+  canSeeTiDtin = false,
   currentPersona,
   onSelectPersona,
   sectors = [],
@@ -359,8 +360,8 @@ export const Navbar = ({
           {/* GRUPO DIREITA: Ações Desktop */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
-            {/* Botão Informática (TI) com Ícone de Computador - Exclusivo para Desktop (PC) e Administrador */}
-            {isAdmin && (
+            {/* Botão Informática (TI) - Exclusivo para Administrador e Responsável pelo setor de TI */}
+            {canSeeTiDtin && (
               <button
                 type="button"
                 onClick={onToggleTiCard}
@@ -387,7 +388,8 @@ export const Navbar = ({
               </button>
             )}
 
-            {/* Sino / Notificações de Envio ao DTIN (Visível em todas as telas) */}
+            {/* Sino / Notificações de Envio ao DTIN (Administrador e Responsável de TI) */}
+            {canSeeTiDtin && (
             <button
               type="button"
               onClick={onOpenDtinPendencias}
@@ -413,6 +415,7 @@ export const Navbar = ({
                 {dtinPendenciasCount || 0}
               </span>
             </button>
+            )}
 
             {/* Ações Desktop (Visíveis apenas em telas maiores / md+) */}
             <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
