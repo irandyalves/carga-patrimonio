@@ -3128,6 +3128,7 @@ export function App() {
         onOpenFirebaseConfig={() => setIsFirebaseModalOpen(true)}
         currentUser={effectiveUser}
         userRole={effectiveUserRole}
+        isRealAdmin={userRole === 'admin'}
         onLogout={handleLogout}
         onGoogleLogin={handleTriggerGoogleLogin}
         isFirebaseActive={isFirebaseActive}
@@ -3145,7 +3146,7 @@ export function App() {
         isTiCardOpen={isTiModalOpen}
         tiAssetsCount={allTiAssets.length}
         currentPersona={simulatedPersona}
-        onSelectPersona={handleSelectPersona}
+        onSelectPersona={userRole === 'admin' ? handleSelectPersona : null}
         sectors={sectors}
         activeSectorName={activeSector?.name}
         filterMode={filterMode}
@@ -4304,6 +4305,10 @@ export function App() {
         cautelas={cautelas}
         isFirebaseActive={isFirebaseActive}
         onRestoreBackup={handleRestoreBackup}
+        isAdmin={effectiveUserRole === 'admin'}
+        userRole={effectiveUserRole}
+        userSector={sectors.find(s => s.id === effectiveUserSectorId) || (activeSectorId ? sectors.find(s => s.id === activeSectorId) : null)}
+        userSectorIds={effectiveUserSectorIds.length > 0 ? effectiveUserSectorIds : (effectiveUserSectorId ? [effectiveUserSectorId] : (activeSectorId ? [activeSectorId] : []))}
       />
 
       {/* Admin User Management Modal */}
@@ -4369,6 +4374,8 @@ export function App() {
         servidores={servidores}
         assets={assets}
         sectors={sectors}
+        isAdmin={effectiveUserRole === 'admin'}
+        userRole={effectiveUserRole}
         onSaveServidor={handleSaveServidor}
         onSaveServidoresBatch={handleSaveServidoresBatch}
         onDeleteServidor={handleDeleteServidor}

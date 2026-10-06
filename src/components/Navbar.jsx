@@ -47,6 +47,7 @@ export const Navbar = ({
   onVoiceDirectSearch,
   currentUser,
   userRole,
+  isRealAdmin,
   onLogout,
   onGoogleLogin,
   isFirebaseActive,
@@ -76,6 +77,7 @@ export const Navbar = ({
   displaySettings
 }) => {
   const isAdmin = userRole === 'admin';
+  const canSwitchPersona = isRealAdmin !== undefined ? isRealAdmin : isAdmin;
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -520,12 +522,12 @@ export const Navbar = ({
                       <p className="text-xs font-semibold text-white truncate max-w-[110px] group-hover:text-emerald-300 transition-colors">
                         {currentUser.displayName || currentUser.email.split('@')[0]}
                       </p>
-                      <p className="text-[10px] uppercase font-bold flex items-center gap-0.5">
-                        {isAdmin ? <Crown className="w-2.5 h-2.5 text-amber-400 inline" /> : <Shield className="w-2.5 h-2.5 inline text-emerald-400" />}
-                        <span className={isAdmin ? 'text-amber-400' : 'text-emerald-400'}>
-                          {isAdmin ? 'Admin' : 'Operador'}
-                        </span>
-                      </p>
+                      {isAdmin && (
+                        <p className="text-[10px] uppercase font-bold flex items-center gap-0.5">
+                          <Crown className="w-2.5 h-2.5 text-amber-400 inline" />
+                          <span className="text-amber-400">Admin</span>
+                        </p>
+                      )}
                     </div>
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 hidden sm:block ${isUserMenuOpen ? 'rotate-180 text-emerald-400' : ''}`} />
                   </button>
@@ -554,16 +556,14 @@ export const Navbar = ({
                           <p className="text-[11px] text-slate-400 truncate font-mono">
                             {currentUser.email}
                           </p>
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                              isAdmin 
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            }`}>
-                              {isAdmin ? <Crown className="w-2.5 h-2.5" /> : <Shield className="w-2.5 h-2.5" />}
-                              {isAdmin ? 'Administrador' : 'Operador'}
-                            </span>
-                          </div>
+                          {isAdmin && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                <Crown className="w-2.5 h-2.5" />
+                                Administrador
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -589,8 +589,8 @@ export const Navbar = ({
                         </div>
                       )}
 
-                      {/* Alternador de Perfis / Setores */}
-                      {onSelectPersona && (
+                      {/* Alternador de Perfis / Setores (Exclusivo para o Administrador) */}
+                      {canSwitchPersona && onSelectPersona && (
                         <div className="mt-2 pt-2 border-t border-slate-800">
                           <div className="px-2 pb-1.5 flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">

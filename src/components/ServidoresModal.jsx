@@ -18,7 +18,6 @@ import {
   MessageSquare, 
   Package, 
   ArrowRight,
-  Eye,
   Sparkles,
   Smartphone,
   Upload,
@@ -27,7 +26,6 @@ import {
   AlertCircle,
   AlertTriangle,
   FileText,
-  Crown,
   Mail
 } from 'lucide-react';
 import { formatLast5Patrimonio } from '../utils/formatters';
@@ -81,6 +79,8 @@ export const ServidoresModal = ({
   servidores = [],
   assets = [],
   sectors = [],
+  isAdmin = true,
+  userRole = 'admin',
   onSaveServidor,
   onSaveServidoresBatch,
   onDeleteServidor,
@@ -523,41 +523,49 @@ export const ServidoresModal = ({
                   {servidores.length} {servidores.length === 1 ? 'pessoa' : 'pessoas'}
                 </span>
                 {respCargaCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setFilterOnlyResp(prev => !prev)}
-                    title={filterOnlyResp ? "Exibindo apenas Resp. Carga. Clique para ver todos." : "Filtrar apenas Responsáveis pela Carga"}
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
-                      filterOnlyResp
-                        ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-1 ring-amber-400'
-                        : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
-                    }`}
-                  >
-                    <Crown className={`w-3 h-3 ${filterOnlyResp ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'}`} />
-                    <span>{respCargaCount} Resp. Carga</span>
-                  </button>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono select-none">
+                    {respCargaCount} Resp. Carga
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Botão de Importar Lista */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsImportOpen(!isImportOpen);
-              }}
-              title="Importar lista de servidores (Excel, CSV ou Colar Texto)"
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                isImportOpen 
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' 
-                  : 'bg-slate-800 hover:bg-slate-750 text-cyan-300'
-              }`}
-            >
-              <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">Importar</span>
-            </button>
+            {/* Se NÃO for admin, botão de filtro Resp. Carga fica aqui no topo */}
+            {!isAdmin && (
+              <button
+                type="button"
+                onClick={() => setFilterOnlyResp(prev => !prev)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  filterOnlyResp
+                    ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-md shadow-amber-500/30 ring-1 ring-amber-400/50'
+                    : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700'
+                }`}
+                title={filterOnlyResp ? "Exibindo apenas Resp. Carga. Clique para expandir e ver todos" : "Filtrar para recolher e exibir somente os Responsáveis de Carga"}
+              >
+                <span>Resp. Carga</span>
+              </button>
+            )}
+
+            {/* Botão de Importar Lista (Apenas Admin) */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportOpen(!isImportOpen);
+                }}
+                title="Importar lista de servidores (Excel, CSV ou Colar Texto)"
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isImportOpen 
+                    ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' 
+                    : 'bg-slate-800 hover:bg-slate-750 text-cyan-300'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline">Importar</span>
+              </button>
+            )}
 
             {/* Fechar Modal */}
             <button
@@ -570,8 +578,9 @@ export const ServidoresModal = ({
           </div>
         </div>
 
-        {/* BARRA DE CADASTRO/EDIÇÃO NO TOPO (Nome -> Telefone -> Setor de Lotação (Padrão ADMINISTRATIVO) -> Cadastrar) */}
-        <div className="mt-3 shrink-0">
+        {/* BARRA DE CADASTRO/EDIÇÃO NO TOPO (Apenas Administrador) */}
+        {isAdmin && (
+          <div className="mt-3 shrink-0">
           <form 
             onSubmit={handleQuickSubmit} 
             className="flex flex-col md:flex-row items-center gap-2 bg-slate-950/40 p-2 rounded-xl border border-slate-800/80"
@@ -666,18 +675,17 @@ export const ServidoresModal = ({
               <ChevronDown className="w-3 h-3 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
             </div>
 
-            {/* Campo 4: Toggle Detentor / Resp. Carga */}
+            {/* Botão de Filtro: Resp. Carga ao lado esquerdo do Cadastrar */}
             <button
               type="button"
-              onClick={() => setQuickIsRespCarga(!quickIsRespCarga)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border shrink-0 ${
-                quickIsRespCarga
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm ring-1 ring-amber-500/30'
-                  : 'bg-slate-900 border-slate-750 text-slate-400 hover:text-slate-300'
+              onClick={() => setFilterOnlyResp(prev => !prev)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-300 cursor-pointer border shrink-0 ${
+                filterOnlyResp
+                  ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-md shadow-amber-500/30 ring-1 ring-amber-400/50'
+                  : 'bg-slate-900 border-slate-750 text-slate-400 hover:text-slate-200 hover:border-slate-600'
               }`}
-              title="Marcar este servidor como Responsável / Detentor da Carga Patrimonial"
+              title={filterOnlyResp ? "Exibindo apenas Resp. Carga. Clique para expandir e ver todos" : "Filtrar para recolher e exibir somente os Responsáveis de Carga"}
             >
-              <Crown className={`w-3.5 h-3.5 ${quickIsRespCarga ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`} />
               <span>Resp. Carga</span>
             </button>
 
@@ -717,9 +725,10 @@ export const ServidoresModal = ({
             </div>
           )}
         </div>
+        )}
 
-        {/* PAINEL DE IMPORTAÇÃO DE LISTA (Planilha ou Texto) */}
-        {isImportOpen && (
+        {/* PAINEL DE IMPORTAÇÃO DE LISTA (Planilha ou Texto - Apenas Administrador) */}
+        {isAdmin && isImportOpen && (
           <div className="p-3.5 my-2.5 bg-slate-950/90 border border-cyan-500/40 rounded-2xl shrink-0 space-y-3 animate-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -823,25 +832,27 @@ export const ServidoresModal = ({
         <div className="flex-1 flex flex-col min-h-0 border border-slate-800/80 rounded-xl overflow-hidden mt-1">
           {/* Cabeçalho das Colunas com Linhas Verticais Discretas */}
           <div className="flex items-center text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800/80 shrink-0 select-none">
-            <div className="w-56 sm:w-64 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
+            <div className="w-72 sm:w-80 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
               Servidor
             </div>
-            <div className="w-48 sm:w-56 px-3.5 py-2 border-r border-slate-800/80 shrink-0">
+            <div className="w-36 sm:w-44 px-3 py-2 border-r border-slate-800/80 shrink-0">
               Setor de Lotação
             </div>
-            <div className="flex-1 min-w-[170px] px-3.5 py-2 border-r border-slate-800/80">
+            <div className="flex-1 min-w-[110px] px-3 py-2 border-r border-slate-800/80">
               Telefone
             </div>
-            <div className="w-20 px-2 py-2 border-r border-slate-800/80 text-center shrink-0">
+            <div className={`w-14 sm:w-16 px-1.5 py-2 ${isAdmin ? 'border-r border-slate-800/80' : ''} text-center shrink-0`}>
               Bens
             </div>
-            <div className="w-28 px-2 py-2 text-center shrink-0">
-              Ações
-            </div>
+            {isAdmin && (
+              <div className="w-16 px-1.5 py-2 text-center shrink-0">
+                Ações
+              </div>
+            )}
           </div>
 
           {/* Linhas da Tabela */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50 scrollbar-thin transition-all duration-300 ease-in-out">
             {filteredServidores.length === 0 ? (
               <div className="text-center py-10 text-slate-400 space-y-2">
                 <Users className="w-10 h-10 mx-auto text-slate-600 stroke-[1.5]" />
@@ -877,7 +888,7 @@ export const ServidoresModal = ({
                     <div className="flex items-center min-h-[42px] w-full">
                       
                       {/* Coluna 1: Servidor (Avatar + Nome + Destaque Resp. Carga) */}
-                      <div className="w-56 sm:w-64 px-3.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2.5 shrink-0 min-w-0">
+                      <div className="w-72 sm:w-80 px-3.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2.5 shrink-0 min-w-0">
                         <div className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs shrink-0 ${
                           respInfo.isResp
                             ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-950/40 ring-1 ring-amber-500/20'
@@ -896,15 +907,12 @@ export const ServidoresModal = ({
                               {serv.nome}
                             </span>
                             {respInfo.isResp && (
-                              <button
-                                type="button"
-                                onClick={(e) => handleToggleRespCarga(serv, e)}
-                                title={respInfo.sectorNames ? `Responsável Oficial pela Carga de: ${respInfo.sectorNames} (Clique para alternar)` : 'Responsável pela Carga Patrimonial (Clique para alternar)'}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-gradient-to-r from-amber-500/25 to-orange-500/25 hover:from-amber-500/35 hover:to-orange-500/35 text-amber-300 border border-amber-500/40 shadow-sm shrink-0 transition-colors cursor-pointer"
+                              <span
+                                title={respInfo.sectorNames ? `Responsável Oficial pela Carga de: ${respInfo.sectorNames}` : 'Responsável pela Carga Patrimonial'}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-gradient-to-r from-amber-500/25 to-orange-500/25 text-amber-300 border border-amber-500/40 shadow-sm shrink-0"
                               >
-                                <Crown className="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" />
                                 <span>Resp. Carga</span>
-                              </button>
+                              </span>
                             )}
                           </div>
                           {respInfo.sectorNames && (
@@ -915,30 +923,37 @@ export const ServidoresModal = ({
                         </div>
                       </div>
 
-                      {/* Coluna 2: Setor de Lotação (Listbox ao clicar) */}
-                      <div className="w-48 sm:w-56 px-3 py-1.5 border-r border-slate-800/60 shrink-0 relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenSetorDropdownId(isSetorOpen ? null : serv.id);
-                            setEditingPhoneServidorId(null);
-                          }}
-                          className={`w-full px-2 py-1 rounded text-[11px] font-medium flex items-center justify-between gap-1 transition-colors cursor-pointer ${
-                            isSetorOpen
-                              ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/40'
-                              : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white'
-                          }`}
-                          title="Clique para trocar o setor"
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
+                      {/* Coluna 2: Setor de Lotação */}
+                      <div className="w-36 sm:w-44 px-3 py-1.5 border-r border-slate-800/60 shrink-0 relative">
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenSetorDropdownId(isSetorOpen ? null : serv.id);
+                              setEditingPhoneServidorId(null);
+                            }}
+                            className={`w-full px-2 py-1 rounded text-[11px] font-medium flex items-center justify-between gap-1 transition-colors cursor-pointer ${
+                              isSetorOpen
+                                ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/40'
+                                : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 hover:text-white'
+                            }`}
+                            title="Clique para trocar o setor"
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
+                              <span className="truncate">{serv.setorNome || 'Definir setor'}</span>
+                            </div>
+                            <ChevronDown className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                          </button>
+                        ) : (
+                          <div className="w-full px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1.5 text-slate-300">
                             <Building2 className="w-3 h-3 text-cyan-400 shrink-0" />
-                            <span className="truncate">{serv.setorNome || 'Definir setor'}</span>
+                            <span className="truncate">{serv.setorNome || '—'}</span>
                           </div>
-                          <ChevronDown className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                        </button>
+                        )}
 
-                        {/* Dropdown listbox de Setores */}
-                        {isSetorOpen && (
+                        {/* Dropdown listbox de Setores (Apenas Admin) */}
+                        {isAdmin && isSetorOpen && (
                           <>
                             <div 
                               className="fixed inset-0 z-40 bg-transparent" 
@@ -975,9 +990,9 @@ export const ServidoresModal = ({
                         )}
                       </div>
 
-                      {/* Coluna 3: Telefone (Edição Direta + WhatsApp) */}
-                      <div className="flex-1 min-w-[170px] px-3.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2 min-w-0">
-                        {isEditingPhone ? (
+                      {/* Coluna 3: Telefone (Edição Direta para Admin + WhatsApp) */}
+                      <div className="flex-1 min-w-[110px] px-2.5 py-1.5 border-r border-slate-800/60 flex items-center gap-2 min-w-0">
+                        {isAdmin && isEditingPhone ? (
                           <div className="flex items-center gap-1 bg-slate-950/90 rounded px-2 py-0.5 border border-cyan-500/50 shadow-sm w-full max-w-[220px]">
                             <Phone className="w-3 h-3 text-cyan-400 shrink-0" />
                             <input
@@ -1021,7 +1036,7 @@ export const ServidoresModal = ({
                               <X className="w-3 h-3" />
                             </button>
                           </div>
-                        ) : (
+                        ) : isAdmin ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -1044,6 +1059,19 @@ export const ServidoresModal = ({
                             )}
                             <Edit3 className="w-2.5 h-2.5 text-slate-600 group-hover/phone:text-cyan-400 opacity-0 group-hover/phone:opacity-100 transition-opacity ml-1 shrink-0" />
                           </button>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs px-2 py-1 text-left">
+                            <Phone className={`w-3.5 h-3.5 shrink-0 ${serv.telefone ? 'text-emerald-400' : 'text-slate-500'}`} />
+                            {serv.telefone ? (
+                              <span className="font-mono text-emerald-300 font-medium text-xs">
+                                {serv.telefone}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 italic text-[11px]">
+                                Sem fone
+                              </span>
+                            )}
+                          </div>
                         )}
 
                         {/* WhatsApp se celular */}
@@ -1078,7 +1106,7 @@ export const ServidoresModal = ({
                       </div>
 
                       {/* Coluna 4: Bens Vinculados */}
-                      <div className="w-20 px-2 py-1.5 border-r border-slate-800/60 flex items-center justify-center shrink-0">
+                      <div className={`w-14 sm:w-16 px-1.5 py-1.5 ${isAdmin ? 'border-r border-slate-800/60' : ''} flex items-center justify-center shrink-0`}>
                         <button
                           type="button"
                           onClick={() => setExpandedServidorId(isExpanded ? null : serv.id)}
@@ -1097,54 +1125,28 @@ export const ServidoresModal = ({
                         </button>
                       </div>
 
-                      {/* Coluna 5: Ações */}
-                      <div className="w-28 px-2 py-1.5 flex items-center justify-center gap-1 shrink-0">
-                        {/* Toggle Resp. Carga */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleRespCarga(serv, e)}
-                          className={`p-1 rounded transition cursor-pointer ${
-                            respInfo.isResp
-                              ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/20'
-                              : 'text-slate-500 hover:text-amber-400 hover:bg-slate-800'
-                          }`}
-                          title={respInfo.isResp ? "Remover destaque de Resp. Carga" : "Marcar como Resp. Carga"}
-                        >
-                          <Crown className={`w-3.5 h-3.5 ${respInfo.isResp ? 'fill-amber-400' : ''}`} />
-                        </button>
-
-                        {onSelectServidorToFilter && (
+                      {/* Coluna 5: Ações (Apenas Admin) */}
+                      {isAdmin && (
+                        <div className="w-16 px-1.5 py-1.5 flex items-center justify-center gap-1.5 shrink-0">
                           <button
                             type="button"
-                            onClick={() => {
-                              onSelectServidorToFilter(serv.nome);
-                              onClose();
-                            }}
-                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition cursor-pointer"
-                            title={`Buscar patrimônios de ${serv.nome} no painel`}
+                            onClick={() => handleOpenEdit(serv)}
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                            title="Editar servidor"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
-                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(serv)}
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-                          title="Editar servidor"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(serv)}
-                          className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                          title="Excluir servidor"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(serv)}
+                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                            title="Excluir servidor"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
 
                     </div>
 
@@ -1230,7 +1232,7 @@ export const ServidoresModal = ({
                                 )}
 
                                 {/* Botão Excluir/Desvincular deste servidor */}
-                                {onUnlinkAssetFromServidor && (
+                                {isAdmin && onUnlinkAssetFromServidor && (
                                   <button
                                     type="button"
                                     onClick={() => {

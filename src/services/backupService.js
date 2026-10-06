@@ -16,13 +16,13 @@ export const generateBackupPayload = (assets, sectors, cautelas) => {
 };
 
 // 1. Download Local JSON File
-export const downloadLocalBackupFile = (backupPayload) => {
+export const downloadLocalBackupFile = (backupPayload, customFileName = null) => {
   const jsonStr = JSON.stringify(backupPayload, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   
   const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const fileName = `BACKUP_PATRIMONIO_${dateStr}.json`;
+  const fileName = customFileName || `BACKUP_PATRIMONIO_${dateStr}.json`;
 
   const link = document.createElement('a');
   link.href = url;
