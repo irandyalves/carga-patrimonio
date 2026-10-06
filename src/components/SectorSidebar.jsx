@@ -262,13 +262,27 @@ export const SectorSidebar = ({
               </button>
             )}
 
-            {/* Botão Recolher Slide Bar */}
+            {/* Botão Recolher Slide Bar (Setinha para a esquerda em verdinho) */}
             <button
               onClick={onToggle}
               title="Recolher barra lateral"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
             >
-              <PanelLeftClose className="w-4 h-4" />
+              <svg 
+                className="w-4 h-4" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                {/* Retângulo externo e divisória vertical */}
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M9 3v18" />
+                {/* Setinha apontando para a ESQUERDA (<) em VERDINHO */}
+                <path d="M16.5 9.5L14 12L16.5 14.5" stroke="#4ade80" strokeWidth="2.5" />
+              </svg>
             </button>
           </div>
         </div>

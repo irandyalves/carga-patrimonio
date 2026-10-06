@@ -192,7 +192,7 @@ export const Navbar = ({
           
           {/* GRUPO ESQUERDA: Sidebar, Conferidos e Fullscreen (Ocultos no mobile quando a busca está aberta) */}
           <div className={`items-center gap-1.5 sm:gap-2 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-            {/* Abrir / Revelar Barra Lateral de Setores (Sem fundo, setinha verdinha da direita para a esquerda) */}
+            {/* Abrir / Revelar Barra Lateral de Setores (Sem fundo, setinha verdinha apontando para a DIREITA) */}
             {!isSidebarOpen && (
               <button
                 type="button"
@@ -212,8 +212,8 @@ export const Navbar = ({
                   {/* Retângulo externo e divisória vertical */}
                   <rect width="18" height="18" x="3" y="3" rx="2" />
                   <path d="M9 3v18" />
-                  {/* Setinha apontando da direita para a esquerda, centralizada verticalmente, em VERDINHO */}
-                  <path d="M16.5 9.5L14 12L16.5 14.5" stroke="#4ade80" strokeWidth="2.5" />
+                  {/* Setinha apontando para a DIREITA (>) em VERDINHO */}
+                  <path d="M14 9.5L16.5 12L14 14.5" stroke="#4ade80" strokeWidth="2.5" />
                 </svg>
               </button>
             )}
@@ -359,31 +359,33 @@ export const Navbar = ({
           {/* GRUPO DIREITA: Ações Desktop */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
-            {/* Botão Informática (TI) com Ícone de Computador - Exclusivo para Desktop (PC) */}
-            <button
-              type="button"
-              onClick={onToggleTiCard}
-              title={`Gestão Inteligente de Bens de Informática (TI) - ${tiAssetsCount || 0} equipamentos detectados`}
-              className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 hidden md:flex items-center gap-1.5 ${
-                isTiCardOpen
-                  ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/40 ring-2 ring-cyan-400 font-bold'
-                  : (tiAssetsCount || 0) > 0
-                    ? 'bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/70 hover:text-white shadow-md shadow-cyan-950/50'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-              }`}
-            >
-              <Laptop className={`w-4 h-4 shrink-0 transition-transform ${isTiCardOpen ? 'text-white scale-110' : 'text-cyan-400'}`} />
-              <span className="hidden lg:inline font-bold">TI</span>
-              {(tiAssetsCount || 0) > 0 && (
-                <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+            {/* Botão Informática (TI) com Ícone de Computador - Exclusivo para Desktop (PC) e Administrador */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={onToggleTiCard}
+                title={`Gestão Inteligente de Bens de Informática (TI) - ${tiAssetsCount || 0} equipamentos detectados`}
+                className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 hidden md:flex items-center gap-1.5 ${
                   isTiCardOpen
-                    ? 'bg-slate-950 text-cyan-300'
-                    : 'bg-cyan-500 text-slate-950 font-black shadow-sm shadow-cyan-500/40'
-                }`}>
-                  {tiAssetsCount}
-                </span>
-              )}
-            </button>
+                    ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/40 ring-2 ring-cyan-400 font-bold'
+                    : (tiAssetsCount || 0) > 0
+                      ? 'bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/70 hover:text-white shadow-md shadow-cyan-950/50'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                }`}
+              >
+                <Laptop className={`w-4 h-4 shrink-0 transition-transform ${isTiCardOpen ? 'text-white scale-110' : 'text-cyan-400'}`} />
+                <span className="hidden lg:inline font-bold">TI</span>
+                {(tiAssetsCount || 0) > 0 && (
+                  <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
+                    isTiCardOpen
+                      ? 'bg-slate-950 text-cyan-300'
+                      : 'bg-cyan-500 text-slate-950 font-black shadow-sm shadow-cyan-500/40'
+                  }`}>
+                    {tiAssetsCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Sino / Notificações de Envio ao DTIN (Visível em todas as telas) */}
             <button
