@@ -481,6 +481,9 @@ const AssetTableRowCardComponent = ({
   const isConferido = asset.status === 'CONFERIDO';
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
+  // Item marcado (cautelado ou aguardando aceite de transferência): Nº e descrição em vermelho fraco e itálico
+  const isItemMarcado = isEmCautela || !!pendingTransferTo;
+  const MARCADO_CLASS = 'text-rose-300/70 italic';
   const isEnviadoDtin = asset.status === 'ENVIADO_DTIN' || !!asset.enviadoDtin;
   const isInformática = asset.categoria === 'Equipamentos de Informática' || 
                         asset.setorId === 'sec-ti' || 
@@ -1340,7 +1343,7 @@ const AssetTableRowCardComponent = ({
 
           <div className="flex items-center truncate">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none truncate ${
-              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
+              (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -1435,7 +1438,7 @@ const AssetTableRowCardComponent = ({
 
           <DescriptionWithReveal 
             text={asset.descricao} 
-            colorClass={FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'}
+            colorClass={isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300')}
             searchTerm={searchTerm}
             isDtin={false}
             isOpen={isDescOpen}
@@ -2552,7 +2555,7 @@ const AssetTableRowCardComponent = ({
 
             {/* Nº Patrimônio */}
             <span className={`font-mono text-[15px] font-black tracking-tight select-all leading-none shrink-0 ${
-              FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
+              (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -2736,7 +2739,7 @@ const AssetTableRowCardComponent = ({
 
           <DescriptionWithReveal 
             text={asset.descricao} 
-            colorClass={FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'}
+            colorClass={isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white')}
             searchTerm={searchTerm}
             isDtin={false}
             isOpen={isDescOpen}
