@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   X, 
   Building2, 
@@ -129,6 +129,18 @@ export const SectorsManagementModal = ({
   const [deleteConfirmSector, setDeleteConfirmSector] = useState(null);
   const [reassignSectorId, setReassignSectorId] = useState('');
 
+  // Fechar modal ao pressionar ESC
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleStartCreate = () => {
@@ -187,8 +199,14 @@ export const SectorsManagementModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl py-5 px-3 sm:px-4 shadow-2xl relative max-h-[90vh] flex flex-col cursor-default"
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
@@ -482,30 +500,33 @@ export const SectorsManagementModal = ({
             return (
               <div
                 key={sector.id}
-                className="p-3.5 rounded-2xl bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="py-2.5 px-3 rounded-2xl bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
               >
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white text-sm">{sector.name}</span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700 font-mono">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700 font-mono shrink-0">
                       {linkedCount} bens
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                    <span className="flex items-center gap-1 text-slate-300">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-400">
+                    <span className="flex items-center gap-1 text-slate-300 shrink-0">
                       <User className="w-3.5 h-3.5 text-indigo-400" />
                       Resp: <strong className="text-white">{sector.responsavel}</strong>
                     </span>
                     {sector.sala && (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 shrink-0">
                         <MapPin className="w-3.5 h-3.5 text-slate-500" />
                         {sector.sala}
                       </span>
                     )}
                     {sector.email && (
-                      <span className="text-slate-500">
-                        {sector.email}
+                      <span 
+                        className="text-slate-500 truncate max-w-[145px] inline-block align-bottom font-mono text-[11px]"
+                        title={sector.email}
+                      >
+                        {sector.email.length > 15 ? `${sector.email.slice(0, 14)}...` : sector.email}
                       </span>
                     )}
                   </div>
