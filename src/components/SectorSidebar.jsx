@@ -251,14 +251,15 @@ export const SectorSidebar = ({
               </button>
             )}
 
-            {/* Botão Gerenciar Setores (+) Verde e Brilhoso (Reduzido em 20%) */}
+            {/* Botão Gerenciar Setores: Setores */}
             {userRole === 'admin' && (
               <button
                 onClick={onOpenManageSectors}
-                title="Adicionar ou Configurar Setores"
-                className="w-6 h-6 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_10px_rgba(16,185,129,0.7)] hover:shadow-[0_0_16px_rgba(16,185,129,0.9)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center border border-emerald-300/40"
+                title="Cadastrar e Configurar Setores"
+                className="h-6 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] shadow-[0_0_10px_rgba(16,185,129,0.7)] hover:shadow-[0_0_16px_rgba(16,185,129,0.9)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1 border border-emerald-300/40 shrink-0"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <Plus className="w-3 h-3 stroke-[2.5]" />
+                <span>Setores</span>
               </button>
             )}
 

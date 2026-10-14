@@ -2992,6 +2992,15 @@ export function App() {
 
   // Retorno / Reintegração do DTIN
   const handleReturnDtin = (assetId) => {
+    const item = assets.find(a => a.id === assetId);
+    if (!item) return;
+
+    // Regra de segurança: somente admin ou o responsável pela carga do setor do item pode retornar
+    if (!canUserManageAsset(item)) {
+      showToast('Apenas o responsável pela carga deste setor pode retornar este item.', 'error');
+      return;
+    }
+
     const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(a => {
       if (a.id === assetId) {
@@ -3005,7 +3014,7 @@ export function App() {
             { 
               data: nowStr, 
               acao: 'Retorno do DTIN: Equipamento reintegrado ao setor', 
-              usuario: currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
+              usuario: effectiveUser?.displayName || currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
             }
           ]
         };
@@ -4147,7 +4156,7 @@ export function App() {
                         activeSector={activeSector}
                         sectors={sectors}
                         servidores={servidores}
-                        currentUserName={currentUser?.displayName || currentUser?.email}
+                        currentUserName={effectiveUser?.displayName || effectiveUser?.email || currentUser?.displayName || currentUser?.email}
                         isGeneralView={filterMode === 'ALL_SECTORS' || filterMode === 'DUPLICATES'}
                         isSelected={selectedAssetIds.has(asset.id)}
                         onToggleSelect={handleToggleSelectAsset}

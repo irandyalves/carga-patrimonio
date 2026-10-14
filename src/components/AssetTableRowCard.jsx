@@ -1264,44 +1264,46 @@ const AssetTableRowCardComponent = ({
                     )}
                   </div>
 
-                  {/* Retorno do Item */}
-                  {showReturnDtinConfirm ? (
-                    <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                      <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsActionsOpen(false);
-                            setShowReturnDtinConfirm(false);
-                            onReturnDtin && onReturnDtin(asset.id);
-                          }}
-                          className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
-                        >
-                          Retornar
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowReturnDtinConfirm(false);
-                          }}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
-                        >
-                          Cancelar
-                        </button>
+                  {/* Retorno do Item (Apenas Responsável pela Carga do Setor ou Admin) */}
+                  {canManageAsset && onReturnDtin && (
+                    showReturnDtinConfirm ? (
+                      <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                        <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsActionsOpen(false);
+                              setShowReturnDtinConfirm(false);
+                              onReturnDtin && onReturnDtin(asset.id);
+                            }}
+                            className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                          >
+                            Retornar
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowReturnDtinConfirm(false);
+                            }}
+                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowReturnDtinConfirm(true);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Retorno do Item</span>
-                    </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowReturnDtinConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Retorno do Item</span>
+                      </button>
+                    )
                   )}
 
                   <div className="h-px bg-slate-800 my-0.5" />
@@ -2345,57 +2347,61 @@ const AssetTableRowCardComponent = ({
                               <span>Ver Detalhes DTIN</span>
                             </button>
 
-                            {showReturnDtinConfirm ? (
-                              <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                                <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setIsActionsOpen(false);
-                                      setShowReturnDtinConfirm(false);
-                                      onReturnDtin && onReturnDtin(asset.id);
-                                    }}
-                                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
-                                  >
-                                    Retornar
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowReturnDtinConfirm(false);
-                                    }}
-                                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
-                                  >
-                                    Cancelar
-                                  </button>
+                            {canManageAsset && onReturnDtin && (
+                              showReturnDtinConfirm ? (
+                                <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                                  <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsActionsOpen(false);
+                                        setShowReturnDtinConfirm(false);
+                                        onReturnDtin && onReturnDtin(asset.id);
+                                      }}
+                                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Retornar
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowReturnDtinConfirm(false);
+                                      }}
+                                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowReturnDtinConfirm(true);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                <span>Confirmar o Retorno do Item</span>
-                              </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowReturnDtinConfirm(true);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>Confirmar o Retorno do Item</span>
+                                </button>
+                              )
                             )}
                           </>
                         ) : (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsActionsOpen(false);
-                              onOpenDtin && onOpenDtin(asset);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
-                          >
-                            <Server className="w-3.5 h-3.5 text-cyan-400" />
-                            <span>Enviar DTIN</span>
-                          </button>
+                          canManageAsset && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsActionsOpen(false);
+                                onOpenDtin && onOpenDtin(asset);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                            >
+                              <Server className="w-3.5 h-3.5 text-cyan-400" />
+                              <span>Enviar DTIN</span>
+                            </button>
+                          )
                         )
                       )}
 
@@ -3560,45 +3566,47 @@ const AssetTableRowCardComponent = ({
 
             {/* Rodapé */}
             <div className="flex items-center justify-between gap-2 mt-5 pt-3.5 border-t border-slate-800">
-              {showModalReturnConfirm ? (
-                <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl animate-in zoom-in-95 duration-100">
-                  <span className="text-xs text-emerald-300 font-bold">Confirma o retorno do item?</span>
+              {canManageAsset && onReturnDtin && (
+                showModalReturnConfirm ? (
+                  <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1.5 rounded-xl animate-in zoom-in-95 duration-100">
+                    <span className="text-xs text-emerald-300 font-bold">Confirma o retorno do item?</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDtinResumoOpen(false);
+                        setShowModalReturnConfirm(false);
+                        onReturnDtin && onReturnDtin(asset.id);
+                      }}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
+                    >
+                      Sim, Retornar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowModalReturnConfirm(false);
+                      }}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsDtinResumoOpen(false);
-                      setShowModalReturnConfirm(false);
-                      onReturnDtin && onReturnDtin(asset.id);
+                      setShowModalReturnConfirm(true);
                     }}
-                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Confirmar o retorno do item e reintegrar ao setor"
                   >
-                    Sim, Retornar
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Confirmar o Retorno do Item</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowModalReturnConfirm(false);
-                    }}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowModalReturnConfirm(true);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Confirmar o retorno do item e reintegrar ao setor"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Confirmar o Retorno do Item</span>
-                </button>
+                )
               )}
 
               <button
@@ -3607,7 +3615,9 @@ const AssetTableRowCardComponent = ({
                   setShowModalReturnConfirm(false);
                   setIsDtinResumoOpen(false);
                 }}
-                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                className={`px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer ${
+                  !canManageAsset ? 'w-full' : ''
+                }`}
               >
                 Fechar
               </button>

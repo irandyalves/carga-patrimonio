@@ -171,13 +171,14 @@ export const SectorTabs = ({
             );
           })}
 
-          {/* Botão de Adicionar / Gerenciar Setor (+) estilo Print 2 */}
+          {/* Botão de Adicionar / Gerenciar Setor: Setores */}
           <button
             onClick={onOpenManageSectors}
             title="Adicionar ou Configurar Setores"
-            className="shrink-0 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+            className="shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
+            <span>Setores</span>
           </button>
 
         </div>
