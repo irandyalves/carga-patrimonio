@@ -286,19 +286,19 @@ export const generateInventoryReportPDF = (
 
   // Configuração das colunas com larguras enxutas e otimizadas
   const ALL_COLS_DEF_MAP = {
-    patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 16, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
-    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 62, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao },
-    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.setorNome || (sec ? sec.name : '')) },
-    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.responsavel || (sec ? sec.responsavel : '') || '-') },
-    localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
-    comQuemEsta: { id: 'comQuemEsta', header: 'Com quem está', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => extractComQuemEsta(a) },
-    marca: { id: 'marca', header: 'Marca', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
-    modelo: { id: 'modelo', header: 'Modelo', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
-    dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 15, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
-    status: { id: 'status', header: 'Status', baseWidth: 15, fontSize: 5.8, fontStyle: 'normal', halign: 'center', getValue: a => a.status === 'CONFERIDO' ? 'Conferido' : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')) },
-    valorOriginal: { id: 'valorOriginal', header: 'Valor Original', baseWidth: 17, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
-    valorAtual: { id: 'valorAtual', header: 'Valor Atual', baseWidth: 17, fontSize: 6.0, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorAtual || a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
-    depreciacao: { id: 'depreciacao', header: 'Depreciação', baseWidth: 13, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.depreciacao ? (String(a.depreciacao).includes('%') ? a.depreciacao : `${a.depreciacao}%`) : '-' }
+    patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 16, fontSize: 6.3, fontStyle: 'bold', halign: 'left', getValue: a => a.numeroPatrimonio },
+    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 55, fontSize: 4.3, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao },
+    setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.setorNome || (sec ? sec.name : '')) },
+    responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.responsavel || (sec ? sec.responsavel : '') || '-') },
+    localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 16, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
+    comQuemEsta: { id: 'comQuemEsta', header: 'Com quem está', baseWidth: 20, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => extractComQuemEsta(a) },
+    marca: { id: 'marca', header: 'Marca', baseWidth: 14, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
+    modelo: { id: 'modelo', header: 'Modelo', baseWidth: 14, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
+    dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 15, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
+    status: { id: 'status', header: 'Status', baseWidth: 15, fontSize: 4.9, fontStyle: 'normal', halign: 'center', getValue: a => a.status === 'CONFERIDO' ? 'Conferido' : (a.status === 'BAIXADO' ? 'Baixado' : (a.status === 'EM_CAUTELA' ? 'Em Cautela' : 'Pendente')) },
+    valorOriginal: { id: 'valorOriginal', header: 'Valor Original', baseWidth: 17, fontSize: 5.1, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    valorAtual: { id: 'valorAtual', header: 'Valor Atual', baseWidth: 17, fontSize: 5.1, fontStyle: 'normal', halign: 'right', getValue: a => `R$ ${Number(a.valorAtual || a.valorOriginal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    depreciacao: { id: 'depreciacao', header: 'Depreciação', baseWidth: 13, fontSize: 4.7, fontStyle: 'normal', halign: 'center', getValue: a => a.depreciacao ? (String(a.depreciacao).includes('%') ? a.depreciacao : `${a.depreciacao}%`) : '-' }
   };
 
   // Respeita a ordem exata definida pelo usuário via Drag & Drop
@@ -315,7 +315,7 @@ export const generateInventoryReportPDF = (
 
   const tableHeaders = activeColDefs.map(c => c.header);
 
-  // Calcula larguras: a coluna do item (descricao) absorve toda a redução
+  // Calcula larguras: reduz a coluna do item em 10% e puxa as demais colunas para a esquerda
   const totalAvailableWidth = 190;
   const flexCol = activeColDefs.find(c => c.isFlex);
   const fixedCols = activeColDefs.filter(c => !c.isFlex);
@@ -324,7 +324,10 @@ export const generateInventoryReportPDF = (
   let finalColStyles = {};
 
   if (flexCol) {
-    const flexWidth = Math.max(16, totalAvailableWidth - fixedWidthSum);
+    const rawFlexWidth = Math.max(16, totalAvailableWidth - fixedWidthSum);
+    // Reduz a largura da coluna item em 10%
+    const flexWidth = Number((rawFlexWidth * 0.90).toFixed(1));
+    
     activeColDefs.forEach((c, idx) => {
       finalColStyles[idx] = {
         cellWidth: c.isFlex ? flexWidth : c.baseWidth,
@@ -334,6 +337,15 @@ export const generateInventoryReportPDF = (
         valign: 'middle'
       };
     });
+
+    const totalTableWidth = fixedWidthSum + flexWidth;
+    if (totalTableWidth > totalAvailableWidth) {
+      const scale = totalAvailableWidth / totalTableWidth;
+      activeColDefs.forEach((c, idx) => {
+        const w = c.isFlex ? flexWidth : c.baseWidth;
+        finalColStyles[idx].cellWidth = Number((w * scale).toFixed(1));
+      });
+    }
   } else {
     const baseSum = activeColDefs.reduce((acc, c) => acc + c.baseWidth, 0) || 1;
     activeColDefs.forEach((c, idx) => {
@@ -478,15 +490,15 @@ export const generateInventoryReportPDF = (
         fillColor: [51, 65, 85], 
         textColor: 255, 
         fontStyle: 'bold', 
-        fontSize: 7.2, 
+        fontSize: 6.3, // Reduzido em 12% (de 7.2 para 6.3)
         valign: 'middle',
-        cellPadding: { top: 2, right: 1.2, bottom: 2, left: 1.2 } 
+        cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 } 
       },
       styles: { 
         font: 'helvetica', 
-        fontSize: 6.4, 
+        fontSize: 5.4, // Reduzido em 15% (de 6.4 para 5.4)
         valign: 'middle',
-        cellPadding: { top: 1.8, right: 1.0, bottom: 1.8, left: 1.0 },
+        cellPadding: { top: 1.5, right: 0.8, bottom: 1.5, left: 0.8 },
         overflow: 'linebreak'
       },
       columnStyles: finalColStyles

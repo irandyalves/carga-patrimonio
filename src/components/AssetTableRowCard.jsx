@@ -35,7 +35,8 @@ import {
   Laptop,
   Bell,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Eraser
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
@@ -674,10 +675,29 @@ const AssetTableRowCardComponent = ({
 
   const handleSaveLocation = (e, directVal = null, servidorData = null) => {
     e?.stopPropagation();
-    const val = (directVal !== null ? directVal : locationValue).trim();
+    const raw = (directVal !== null ? directVal : locationValue).trim();
+    if (!raw) {
+      closeLocEdit();
+      return;
+    }
+
+    // O setor digitado DEVE estar cadastrado na lista oficial de setores
+    const matched = (sectors || []).find(s => s.name?.toLowerCase().trim() === raw.toLowerCase())
+      || (sectors || []).find(s => s.name?.toLowerCase().trim().startsWith(raw.toLowerCase()))
+      || (sectors || []).find(s => s.name?.toLowerCase().trim().includes(raw.toLowerCase()));
+
+    if (!matched) {
+      // Se o texto digitado não pertencer à lista de setores, descarta a alteração e mantém o anterior
+      setLocationValue(asset.localizacao || currentSectorName || '');
+      closeLocEdit();
+      return;
+    }
+
+    const val = matched.name;
     if (onUpdateLocation && val) {
       onUpdateLocation(asset.id, val, servidorData);
     }
+    setLocationValue(val);
     closeLocEdit();
   };
 
@@ -1363,21 +1383,6 @@ const AssetTableRowCardComponent = ({
           </div>
         </div>
 
-        {/* Coluna 2: Quantidade */}
-        {visibleColumns?.quantidade !== false && (
-          <div className="w-12 max-w-[48px] shrink-0 flex items-center justify-center animate-in fade-in duration-150 border-r border-slate-800/80 pr-1 overflow-hidden">
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-[9px] text-slate-400 lg:hidden">Qtde:</span>
-              <span className={`font-black text-sm sm:text-[15px] leading-none ${
-                FONT_COLOR_MAP[asset.cardColor]?.quantidade || 'text-cyan-300'
-              }`}>
-                {asset.quantidade || 1}
-              </span>
-              <span className="text-[8.5px] font-medium text-slate-400">un</span>
-            </div>
-          </div>
-        )}
-
         {/* Coluna 3: Item / Descrição (Largura reduzida com flex-1 min-w-[165px]) */}
         <div className={`flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 whitespace-nowrap transition-all border-r border-slate-800/80 pr-2 ${
           isDtinPopupOpen || isDescOpen ? 'overflow-visible z-50 relative' : 'overflow-hidden'
@@ -1502,7 +1507,14 @@ const AssetTableRowCardComponent = ({
                     }}
                     onKeyDown={(e) => {
                       resetLocTimer();
-                      if (e.key === 'Enter') handleSaveLocation(e);
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const clean = (locationValue || '').trim().toLowerCase();
+                        const filtered = (sectors || []).filter(s => !clean || s.name?.toLowerCase().includes(clean));
+                        if (filtered.length > 0) {
+                          handleSaveLocation(e, filtered[0].name);
+                        }
+                      }
                       if (e.key === 'Escape') closeLocEdit();
                     }}
                     placeholder="Digite ou escolha o setor..."
@@ -1529,59 +1541,49 @@ const AssetTableRowCardComponent = ({
                       <div className="text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-1.5 border-b border-slate-800 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Setores ({sectors?.length || 0})</span>
+                          <span>Setores Cadastrados ({sectors?.length || 0})</span>
                         </span>
                       </div>
 
                       <div className="max-h-[460px] overflow-y-auto scrollbar-thin p-0.5 space-y-0.5">
-                        {/* Atalho para salvar nome customizado digitado */}
-                        {locationValue && !sectors?.some(s => s.name.toLowerCase() === locationValue.trim().toLowerCase()) && (
-                          <button
-                            type="button"
-                            onClick={(e) => handleSaveLocation(e, locationValue.trim())}
-                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-200 transition-all flex items-center justify-between cursor-pointer mb-1"
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                              <span className="truncate">Usar: <strong>"{locationValue}"</strong></span>
-                            </div>
-                            <span className="text-[9px] text-emerald-400 bg-emerald-500/20 px-1 py-0.5 rounded font-mono shrink-0 ml-1">Enter ↵</span>
-                          </button>
-                        )}
+                        {(() => {
+                          const cleanQuery = (locationValue || '').trim().toLowerCase();
+                          const filtered = (sectors || []).filter(s => !cleanQuery || s.name?.toLowerCase().includes(cleanQuery));
 
-                        {/* Lista de Setores da Tabela Setor */}
-                        {sectors && sectors.length > 0 ? (
-                          sectors
-                            .filter(s => !locationValue || !locationValue.trim() || s.name?.toLowerCase().includes(locationValue.toLowerCase().trim()))
-                            .map((s) => (
-                              <button
-                                key={`loc-sec-${s.id}`}
-                                type="button"
-                                onClick={(e) => {
-                                  setLocationValue(s.name);
-                                  handleSaveLocation(e, s.name);
-                                }}
-                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-emerald-950/40 hover:border-emerald-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)] truncate">
-                                    {s.name}
+                          if (filtered.length === 0) {
+                            return (
+                              <div className="p-3 text-center text-amber-300 text-xs bg-amber-950/40 rounded-xl border border-amber-500/30">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                                <p className="font-bold">Setor não encontrado</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">O setor precisa estar cadastrado na lista oficial.</p>
+                              </div>
+                            );
+                          }
+
+                          return filtered.map((s) => (
+                            <button
+                              key={`loc-sec-${s.id}`}
+                              type="button"
+                              onClick={(e) => {
+                                setLocationValue(s.name);
+                                handleSaveLocation(e, s.name);
+                              }}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-emerald-950/40 hover:border-emerald-500/30 border border-transparent transition-all flex items-center justify-between cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-emerald-400 font-bold tracking-wide drop-shadow-[0_0_6px_rgba(52,211,153,0.4)] truncate">
+                                  {s.name}
+                                </span>
+                                {s.responsavel && (
+                                  <span className="text-[10px] text-slate-400 truncate">
+                                    ({s.responsavel})
                                   </span>
-                                  {s.responsavel && (
-                                    <span className="text-[10px] text-slate-400 truncate">
-                                      ({s.responsavel})
-                                    </span>
-                                  )}
-                                </div>
-                                <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
-                              </button>
-                            ))
-                        ) : (
-                          <div className="p-3 text-center text-slate-400 text-xs">
-                            <Building2 className="w-5 h-5 text-slate-500 mx-auto mb-1 opacity-60" />
-                            <p className="font-semibold text-slate-300">Nenhum setor cadastrado</p>
-                          </div>
-                        )}
+                                )}
+                              </div>
+                              <Check className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1" />
+                            </button>
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1799,22 +1801,6 @@ const AssetTableRowCardComponent = ({
                   </div>
                 )}
               </div>
-
-              {/* Botão de Voz */}
-              <div className="inline-flex items-center ml-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={startObservationVoice}
-                  title="Ditar observação por voz"
-                  className={`p-1 rounded-lg border transition-all cursor-pointer shadow-sm ${
-                    isListeningObs 
-                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                      : 'bg-slate-800 hover:bg-slate-700 text-blue-400 border-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Mic className="w-3 h-3" />
-                </button>
-              </div>
             </div>
           ) : isEmCautela ? (
             <div 
@@ -1910,7 +1896,7 @@ const AssetTableRowCardComponent = ({
                       }
                     }}
                     title={!canManageAsset ? `Sob responsabilidade de outro setor (${asset.responsavel || 'Responsável'}). Clique para solicitar pedido de carga.` : asset.observacao}
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[175px] min-w-0 overflow-hidden ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-all cursor-pointer max-w-[185px] min-w-0 overflow-hidden ${
                       hasBadges
                         ? 'bg-slate-900 border border-slate-700/50 hover:border-transparent'
                         : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white'
@@ -1928,7 +1914,7 @@ const AssetTableRowCardComponent = ({
                     {officialServidor && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9.5px] font-bold shrink-0 shadow-sm" title={`Nosso Servidor Vinculado: ${officialServidor.nome}`}>
                         <User className="w-2.5 h-2.5 text-cyan-300 shrink-0" />
-                        <span className="truncate max-w-[125px]">{officialServidor.nome}</span>
+                        <span className="truncate max-w-[135px]">{officialServidor.nome}</span>
                       </span>
                     )}
 
@@ -1936,7 +1922,7 @@ const AssetTableRowCardComponent = ({
                     {pessoaLivre && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9.5px] font-bold shrink-0 shadow-sm" title={`Com quem está (Texto livre / Não vinculado ao rol): ${pessoaLivre}`}>
                         <User className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-                        <span className="truncate max-w-[125px]">{pessoaLivre}</span>
+                        <span className="truncate max-w-[135px]">{pessoaLivre}</span>
                       </span>
                     )}
 
@@ -1951,24 +1937,6 @@ const AssetTableRowCardComponent = ({
                       <Edit3 className="w-2.5 h-2.5 text-slate-400 opacity-60 group-hover/obs:opacity-100 ml-0.5 shrink-0" />
                     )}
                   </button>
-
-                  {canManageAsset && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        openObsEdit(e);
-                        startObservationVoice(e);
-                      }}
-                      title="Ditar observação por voz"
-                      className={`p-1 rounded transition-all cursor-pointer shrink-0 ${
-                        isListeningObs 
-                          ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
-                          : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
-                      }`}
-                    >
-                      <Mic className="w-3 h-3" />
-                    </button>
-                  )}
                 </div>
               );
             })()
@@ -1991,24 +1959,6 @@ const AssetTableRowCardComponent = ({
                   <Edit3 className="w-2.5 h-2.5 opacity-40 group-hover/obs:opacity-100 text-slate-400 ml-0.5" />
                 )}
               </button>
-
-              {canManageAsset && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    openObsEdit(e);
-                    startObservationVoice(e);
-                  }}
-                  title="Ditar observação por voz"
-                  className={`p-1 rounded opacity-0 group-hover/obs:opacity-100 hover:opacity-100 transition-all cursor-pointer ${
-                    isListeningObs 
-                      ? 'opacity-100 bg-rose-500/20 text-rose-400 animate-pulse' 
-                      : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-blue-400'
-                  }`}
-                >
-                  <Mic className="w-3 h-3" />
-                </button>
-              )}
             </div>
           )}
         </div>
@@ -2327,23 +2277,10 @@ const AssetTableRowCardComponent = ({
                         {(isHoveringColor || isColorSubmenuOpen) && (
                           <div 
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute right-full top-0 mr-0 w-44 bg-slate-900/98 backdrop-blur-xl border border-r-0 border-slate-700/80 rounded-l-2xl rounded-r-none shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-right-2 duration-150 flex flex-col gap-1.5"
+                            className="absolute right-full top-0 mr-0 w-48 bg-slate-900/98 backdrop-blur-xl border border-r-0 border-slate-700/80 rounded-l-2xl rounded-r-none shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-right-2 duration-150 flex flex-col gap-2"
                           >
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center justify-between">
                               <span>Cores do Card</span>
-                              {asset.cardColor && (
-                                <button 
-                                  onClick={() => {
-                                    onUpdateCardColor?.(asset.id, 'default');
-                                    setIsActionsOpen(false);
-                                    setIsHoveringColor(false);
-                                    setIsColorSubmenuOpen(false);
-                                  }}
-                                  className="text-[9.5px] text-rose-400 hover:underline cursor-pointer font-semibold"
-                                >
-                                  Limpar
-                                </button>
-                              )}
                             </div>
                             <div className="grid grid-cols-4 gap-1.5 p-1">
                               {COLOR_OPTIONS.map((opt) => {
@@ -2368,6 +2305,26 @@ const AssetTableRowCardComponent = ({
                                 );
                               })}
                             </div>
+                            
+                            {/* Botão Dedicado: Retirar Cor */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onUpdateCardColor?.(asset.id, 'default');
+                                setIsActionsOpen(false);
+                                setIsHoveringColor(false);
+                                setIsColorSubmenuOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                !asset.cardColor || asset.cardColor === 'default'
+                                  ? 'bg-slate-800/80 text-slate-400 border-slate-700/60'
+                                  : 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-rose-500/40 hover:border-rose-400 shadow-sm'
+                              }`}
+                              title="Retirar cor do card e restaurar para a cor padrão"
+                            >
+                              <Eraser className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                              <span>Retirar Cor (Padrão)</span>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -3098,23 +3055,12 @@ const AssetTableRowCardComponent = ({
                   )}
 
                   {/* Cores no Mobile */}
-                  <div className="col-span-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 my-0.5">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <div className="col-span-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 my-0.5 flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       <span className="flex items-center gap-1">
                         <Palette className="w-3 h-3 text-indigo-400" />
                         <span>Destacar Cor</span>
                       </span>
-                      {asset.cardColor && (
-                        <button 
-                          onClick={() => {
-                            onUpdateCardColor?.(asset.id, 'default');
-                            setIsActionsOpen(false);
-                          }}
-                          className="text-[9.5px] text-rose-400 hover:underline cursor-pointer font-semibold"
-                        >
-                          Limpar
-                        </button>
-                      )}
                     </div>
                     <div className="grid grid-cols-8 gap-1">
                       {COLOR_OPTIONS.map((opt) => {
@@ -3137,6 +3083,21 @@ const AssetTableRowCardComponent = ({
                         );
                       })}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateCardColor?.(asset.id, 'default');
+                        setIsActionsOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        !asset.cardColor || asset.cardColor === 'default'
+                          ? 'bg-slate-900 text-slate-500 border-slate-800'
+                          : 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                      }`}
+                    >
+                      <Eraser className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <span>Retirar Cor (Padrão)</span>
+                    </button>
                   </div>
 
                   {/* Excluir (ocupa as 2 colunas na parte inferior) */}

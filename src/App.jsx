@@ -255,7 +255,6 @@ export function App() {
   // Padrões de Visibilidade de Colunas:
   // 1. DENTRO DE SETORES: Setor visível por padrão, Responsável retirado
   const DEFAULT_SECTOR_COLUMNS = useMemo(() => ({
-    quantidade: false,
     marca: true,
     modelo: true,
     localizacao: true,
@@ -269,7 +268,6 @@ export function App() {
 
   // 2. VISUALIZAÇÃO GERAL (Todos os Setores): Todas as colunas visíveis por padrão (true)
   const DEFAULT_GENERAL_COLUMNS = useMemo(() => ({
-    quantidade: true,
     marca: true,
     modelo: true,
     localizacao: true,
@@ -398,7 +396,6 @@ export function App() {
   const showAllColumns = () => {
     if (filterMode === 'MY_SECTOR') {
       const allSec = {
-        quantidade: true,
         marca: true,
         modelo: true,
         localizacao: true,
@@ -414,7 +411,6 @@ export function App() {
       } catch (e) {}
     } else {
       const allGen = {
-        quantidade: true,
         marca: true,
         modelo: true,
         localizacao: true,
@@ -447,7 +443,6 @@ export function App() {
 
   const hiddenColumnsCount = useMemo(() => {
     let count = 0;
-    if (visibleColumns.quantidade === false) count++;
     if (visibleColumns.marca === false) count++;
     if (visibleColumns.modelo === false) count++;
     if (visibleColumns.localizacao === false) count++;
@@ -461,7 +456,6 @@ export function App() {
 
   const tableMinWidth = useMemo(() => {
     let base = 600;
-    if (visibleColumns.quantidade !== false) base += 48;
     if (visibleColumns.marca !== false) base += 112;
     if (visibleColumns.modelo !== false) base += 112;
     if (visibleColumns.localizacao !== false) base += 192;
@@ -2133,6 +2127,7 @@ export function App() {
       return item;
     });
     setAssets(updated);
+    saveLocalAssets(updated);
   };
 
   // Criar Pedido / Solicitação de Carga de Bem de Outro Setor
@@ -3455,30 +3450,6 @@ export function App() {
                     </span>
                   </button>
 
-                  {/* Coluna 2: Quantidade */}
-                  {visibleColumns.quantidade !== false && (
-                    <div className="w-12 shrink-0 flex items-center justify-center border-r border-slate-800/80 pr-1">
-                      <button
-                        onClick={() => handleSort('quantidade')}
-                        title="Clique para ordenar por quantidade"
-                        className={`flex items-center justify-center gap-0.5 transition-colors cursor-pointer group ${
-                          sortField === 'quantidade' ? 'text-cyan-300 font-bold' : 'hover:text-slate-200'
-                        }`}
-                      >
-                        <span>Qtde</span>
-                        <span className="shrink-0">
-                          {sortField === 'quantidade' ? (
-                            <span className="text-[10px] leading-none text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.7)] select-none">
-                              {sortDirection === 'asc' ? '▲' : '▼'}
-                            </span>
-                          ) : (
-                            <ArrowUpDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400" />
-                          )}
-                        </span>
-                      </button>
-                    </div>
-                  )}
-
                   {/* Coluna 3: Item (Largura reduzida com flex-1 min-w-[165px]) */}
                   <button
                     onClick={() => handleSort('descricao')}
@@ -3758,7 +3729,6 @@ export function App() {
 
                         <div className="space-y-1 pt-0.5">
                           {[
-                            { key: 'quantidade', label: 'Qtde (Quantidade)' },
                             { key: 'marca', label: 'Marca' },
                             { key: 'localizacao', label: 'Setor' },
                             ...(filterMode === 'ALL_SECTORS' ? [{ key: 'responsavel', label: 'Resp. Carga' }] : []),
