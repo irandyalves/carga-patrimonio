@@ -235,18 +235,20 @@ export const BackupModal = ({
           </div>
 
           {/* Backup Destinations Progress / Status */}
-          <div className={`grid grid-cols-1 ${isCommonUser ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             
             {/* Destination 1: Local JSON */}
-            <div className="bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <HardDrive className="w-4 h-4 text-emerald-400" />
-                <div>
-                  <div className="text-xs font-semibold text-white">1. Arquivo Local (.JSON)</div>
-                  <div className="text-[11px] text-slate-400">{isCommonUser ? 'Bens do setor' : 'Download no PC/celular'}</div>
+            <div className={`bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between ${
+              isCommonUser ? 'sm:col-span-4' : 'sm:col-span-6'
+            }`}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <HardDrive className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">1. Arquivo Local (.JSON)</div>
+                  <div className="text-[11px] text-slate-400 truncate">{isCommonUser ? 'Bens do setor' : 'Download no PC/celular'}</div>
                 </div>
               </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                 stepsStatus.local === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
                 stepsStatus.local === 'running' ? 'bg-indigo-500/20 text-indigo-400 animate-pulse' : 'text-slate-500'
               }`}>
@@ -255,15 +257,17 @@ export const BackupModal = ({
             </div>
 
             {/* Destination 2: Local Excel */}
-            <div className="bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <FolderDown className="w-4 h-4 text-cyan-400" />
-                <div>
-                  <div className="text-xs font-semibold text-white">2. Planilha (.XLSX)</div>
-                  <div className="text-[11px] text-slate-400">{isCommonUser ? 'Planilha do setor' : 'Tabela de auditoria'}</div>
+            <div className={`bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between ${
+              isCommonUser ? 'sm:col-span-4' : 'sm:col-span-6'
+            }`}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FolderDown className="w-4 h-4 text-cyan-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">2. Planilha (.XLSX)</div>
+                  <div className="text-[11px] text-slate-400 truncate">{isCommonUser ? 'Planilha do setor' : 'Tabela de auditoria'}</div>
                 </div>
               </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                 stepsStatus.excel === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
                 stepsStatus.excel === 'running' ? 'bg-indigo-500/20 text-indigo-400 animate-pulse' : 'text-slate-500'
               }`}>
@@ -271,17 +275,17 @@ export const BackupModal = ({
               </span>
             </div>
 
-            {/* Destination 3: Firebase Cloud (SOMENTE ADMIN - JAMAIS PARA USUÁRIO COMUM) */}
+            {/* Destination 3: Firebase Cloud (SOMENTE ADMIN - Reduzido em 40% / sm:col-span-4) */}
             {!isCommonUser && (
-              <div className="bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Cloud className="w-4 h-4 text-amber-400" />
-                  <div>
-                    <div className="text-xs font-semibold text-white">3. Nuvem Firebase</div>
-                    <div className="text-[11px] text-slate-400">Snapshot no Firestore</div>
+              <div className="bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between sm:col-span-4 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Cloud className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white truncate">3. Nuvem Firebase</div>
+                    <div className="text-[11px] text-slate-400 truncate">Snapshot Firestore</div>
                   </div>
                 </div>
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                   stepsStatus.firebase === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
                   stepsStatus.firebase === 'skipped' ? 'bg-slate-800 text-slate-500' :
                   stepsStatus.firebase === 'running' ? 'bg-amber-500/20 text-amber-400 animate-pulse' :
@@ -292,16 +296,18 @@ export const BackupModal = ({
               </div>
             )}
 
-            {/* Destination 4: Google Drive */}
-            <div className="bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Cloud className="w-4 h-4 text-blue-400" />
-                <div>
-                  <div className="text-xs font-semibold text-white">{isCommonUser ? '3. Google Drive' : '4. Google Drive do Órgão'}</div>
-                  <div className="text-[11px] text-slate-400">Pasta segura na nuvem</div>
+            {/* Destination 4: Google Drive (Aumentado na proporção / sm:col-span-8) */}
+            <div className={`bg-slate-850 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between ${
+              isCommonUser ? 'sm:col-span-4' : 'sm:col-span-8'
+            }`}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Cloud className="w-4 h-4 text-blue-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white whitespace-nowrap">{isCommonUser ? '3. Google Drive' : '4. Google Drive do Órgão'}</div>
+                  <div className="text-[11px] text-slate-400 whitespace-nowrap">Pasta segura na nuvem</div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsHelpModalOpen(true)}
