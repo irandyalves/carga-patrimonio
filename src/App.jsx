@@ -1144,6 +1144,40 @@ export function App() {
     };
   }, [sectors, activeSectorId]);
 
+  // Mapa assetId -> dados da transferência pendente (para destacar o bem enviado aguardando aceite)
+  const pendingTransferByAssetId = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(pedidosCarga)) {
+      pedidosCarga.forEach(p => {
+        const isTransfer = p.tipo === 'TRANSFERENCIA' || String(p.motivo || '').startsWith('Transferência de carga:');
+        if (p.status === 'PENDENTE' && p.assetId && isTransfer) {
+          map.set(p.assetId, {
+            ...p,
+            setor: p.setorDestinoNome || 'outro setor',
+            responsavel: p.responsavelDestino || ''
+          });
+        }
+      });
+    }
+    return map;
+  }, [pedidosCarga]);
+
+  // Mapa assetId -> transferência pendente destinada ao setor ativo (para exibir no setor destinatário, ex: Studio)
+  const incomingTransfersByAssetId = useMemo(() => {
+    const map = new Map();
+    if (filterMode === 'MY_SECTOR' && activeSectorId && Array.isArray(pedidosCarga)) {
+      pedidosCarga.forEach(p => {
+        const isTransfer = p.tipo === 'TRANSFERENCIA' || String(p.motivo || '').startsWith('Transferência de carga:');
+        const isTarget = p.setorDestinoId === activeSectorId ||
+                         (activeSector?.name && p.setorDestinoNome && p.setorDestinoNome.toLowerCase().trim() === activeSector.name.toLowerCase().trim());
+        if (p.status === 'PENDENTE' && p.assetId && isTransfer && isTarget) {
+          map.set(p.assetId, p);
+        }
+      });
+    }
+    return map;
+  }, [pedidosCarga, filterMode, activeSectorId, activeSector?.name]);
+
   // Somente o Santana dentro do departamento dele (TI) ou Admin Geral pode criar novo envio para DTIN
   const isTISector = (activeSector?.name || '').toLowerCase().trim() === 'ti' || 
                      (activeSector?.name || '').toLowerCase().includes('tecnologia') ||
@@ -1159,9 +1193,11 @@ export function App() {
   // Conference Statistics Calculation (Calcula por setor ou em TODOS os setores dinamicamente)
   const stats = useMemo(() => {
     const isAllSectors = filterMode === 'ALL_SECTORS';
-    const targetAssets = isAllSectors ? assets : assets.filter(a => a.setorId === activeSectorId);
+    const targetAssets = isAllSectors 
+      ? assets 
+      : [...assets.filter(a => a.setorId === activeSectorId), ...assets.filter(a => incomingTransfersByAssetId.has(a.id))];
     const total = targetAssets.length;
-    const conferidos = targetAssets.filter(a => a.status === 'CONFERIDO').length;
+    const conferidos = targetAssets.filter(a => a.status === 'CONFERIDO' && !incomingTransfersByAssetId.has(a.id)).length;
     const cautelasCount = targetAssets.filter(a => a.status === 'EM_CAUTELA').length;
     const baixados = targetAssets.filter(a => a.status === 'BAIXADO' || a.baixado).length;
     const pendentes = total - conferidos - baixados;
@@ -1500,16 +1536,22 @@ export function App() {
           if (item.setorId !== activeSectorId) return false;
         }
       } else {
-        // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado
+        // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado OU transferência recebida pendente
+        const isIncoming = incomingTransfersByAssetId.has(item.id);
         if (filterMode === 'MY_SECTOR') {
-          if (item.setorId !== activeSectorId) return false;
+          const isMySector = item.setorId === activeSectorId;
+          if (!isMySector && !isIncoming) return false;
         }
 
         // Demais filtros de Status
-        if (statusFilter === 'PENDENTES' && (item.status === 'CONFERIDO' || item.status === 'BAIXADO')) return false;
-        if (statusFilter === 'CONFERIDOS' && item.status !== 'CONFERIDO') return false;
-        if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
-        if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
+        if (isIncoming) {
+          if (statusFilter === 'CONFERIDOS' || statusFilter === 'CAUTELAS' || statusFilter === 'BAIXADOS') return false;
+        } else {
+          if (statusFilter === 'PENDENTES' && (item.status === 'CONFERIDO' || item.status === 'BAIXADO')) return false;
+          if (statusFilter === 'CONFERIDOS' && item.status !== 'CONFERIDO') return false;
+          if (statusFilter === 'CAUTELAS' && item.status !== 'EM_CAUTELA') return false;
+          if (statusFilter === 'BAIXADOS' && item.status !== 'BAIXADO' && !item.baixado) return false;
+        }
       }
 
       // Text search filter (busca flexível, não exata, multi-termos, com e sem ponto, sem acentos)
@@ -1521,7 +1563,7 @@ export function App() {
 
       return true;
     });
-  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, deferredSearchTerm, duplicateMap]);
+  }, [assets, activeSectorId, activeSector?.name, filterMode, statusFilter, deferredSearchTerm, duplicateMap, incomingTransfersByAssetId]);
 
   // Ordenação do Dashboard com ícones ordenadores no cabeçalho (para Pendentes e Baixados)
   const [sortField, setSortField] = useState('numeroPatrimonio');
@@ -1640,20 +1682,6 @@ export function App() {
       });
     }
     return set;
-  }, [pedidosCarga]);
-
-  // Mapa assetId -> setor destino para transferências enviadas pelo dono e ainda aguardando aceite
-  const pendingTransferByAssetId = useMemo(() => {
-    const map = new Map();
-    if (Array.isArray(pedidosCarga)) {
-      pedidosCarga.forEach(p => {
-        const isTransfer = p.tipo === 'TRANSFERENCIA' || String(p.motivo || '').startsWith('Transferência de carga:');
-        if (p.status === 'PENDENTE' && p.assetId && isTransfer) {
-          map.set(p.assetId, { setor: p.setorDestinoNome || 'outro setor', responsavel: p.responsavelDestino || '' });
-        }
-      });
-    }
-    return map;
   }, [pedidosCarga]);
 
   // Limite progressivo de itens renderizados para ultra performance (60fps mesmo com milhares de itens)
@@ -1863,7 +1891,64 @@ export function App() {
     setIsTransferModalOpen(true);
   };
 
-  // Confirm Transfer
+  // Iniciar Pedido de Transferência de Carga (aguardando aceite do responsável do setor de destino)
+  const handleInitiateTransfer = (assetId, transferDetails) => {
+    const asset = assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    const solicitanteNome = effectiveUser?.displayName || currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador';
+    const nowStr = new Date().toLocaleString('pt-BR');
+
+    const newPedido = {
+      id: `ped-${Date.now()}`,
+      tipo: 'TRANSFERENCIA',
+      assetId: asset.id,
+      numeroPatrimonio: asset.numeroPatrimonio,
+      descricao: asset.descricao,
+      setorOrigemId: asset.setorId,
+      setorOrigemNome: asset.setorNome || activeSector?.name || '',
+      responsavelOrigem: asset.responsavel || activeSector?.responsavel || '',
+      solicitanteNome: solicitanteNome,
+      setorDestinoId: transferDetails.setorId,
+      setorDestinoNome: transferDetails.setorNome,
+      responsavelDestino: transferDetails.responsavel,
+      localizacaoFisica: transferDetails.localizacao,
+      motivo: transferDetails.motivo || 'Transferência de carga entre setores',
+      status: 'PENDENTE',
+      dataSolicitacao: new Date().toISOString()
+    };
+
+    // Atualiza o histórico do bem informando o envio
+    const updatedAssets = assets.map(item => {
+      if (item.id === assetId) {
+        const updatedItem = {
+          ...item,
+          historico: [
+            ...(item.historico || []),
+            { 
+              data: nowStr, 
+              acao: `Transferência de Carga iniciada: de ${item.setorNome} para ${transferDetails.setorNome}. Aguardando aceite de ${transferDetails.responsavel}. Motivo: ${transferDetails.motivo}`, 
+              usuario: solicitanteNome 
+            }
+          ]
+        };
+        saveAssetToCloud(updatedItem);
+        return updatedItem;
+      }
+      return item;
+    });
+
+    setAssets(updatedAssets);
+    setPedidosCarga(prev => [newPedido, ...prev]);
+    savePedidoToCloud(newPedido);
+    try {
+      localStorage.setItem('carga_patrimonio_pedidos', JSON.stringify([newPedido, ...pedidosCarga]));
+    } catch (e) {}
+
+    showToast(`Transferência enviada! Aguardando aceite de ${(transferDetails.responsavel || 'responsável').toUpperCase()} [${transferDetails.setorNome}].`, 'success');
+  };
+
+  // Confirm Transfer (Efetiva a transferência de carga após aceite do destinatário)
   const handleConfirmTransfer = (assetId, transferDetails) => {
     const nowStr = new Date().toLocaleString('pt-BR');
     const updated = assets.map(item => {
@@ -1890,7 +1975,7 @@ export function App() {
     });
 
     setAssets(updated);
-    showToast(`Bem transferido com sucesso para ${transferDetails.setorNome}!`);
+    showToast(`Bem transferido com sucesso para ${transferDetails.setorNome}!`, 'success');
   };
 
   // Atualizar localização rápida do bem (por digitação, escolha ou microfone)
@@ -3235,7 +3320,13 @@ export function App() {
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenPedidos={() => setIsPedidosModalOpen(true)}
-        pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE' && (effectiveUserRole === 'admin' || effectiveUserSectorIds.includes(p.setorDestinoId) || effectiveUserSectorIds.includes(p.setorOrigemId))).length}
+        pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE' && (
+          effectiveUserRole === 'admin' ||
+          effectiveUserSectorIds.includes(p.setorDestinoId) ||
+          effectiveUserSectorIds.includes(p.setorOrigemId) ||
+          p.setorDestinoId === activeSectorId ||
+          p.setorOrigemId === activeSectorId
+        )).length}
         onOpenServidores={() => setIsServidoresModalOpen(true)}
         servidoresCount={servidores.length}
         onOpenDtinPendencias={() => setIsPendenciasDtinOpen(true)}
@@ -4186,6 +4277,10 @@ export function App() {
                         }}
                         hasPendingPedido={pendingPedidoAssetIds.has(asset.id)}
                         pendingTransferTo={pendingTransferByAssetId.get(asset.id) || null}
+                        incomingTransfer={incomingTransfersByAssetId.get(asset.id) || null}
+                        onAcceptTransfer={handleAprovarPedido}
+                        onRejectTransfer={handleRecusarPedido}
+                        onCancelTransfer={handleCancelarPedido}
                         searchTerm={deferredSearchTerm}
                         statusFilter={statusFilter}
                         filterMode={filterMode}
@@ -4293,7 +4388,7 @@ export function App() {
         }}
         asset={assetForTransfer}
         sectors={sectors}
-        onConfirmTransfer={handleConfirmTransfer}
+        onConfirmTransfer={handleInitiateTransfer}
       />
 
       <SectorsManagementModal
@@ -4425,6 +4520,7 @@ export function App() {
         onCancelarPedido={handleCancelarPedido}
         currentUserName={effectiveUser?.displayName || effectiveUser?.email || ''}
         userSectorIds={effectiveUserSectorIds}
+        activeSectorId={activeSectorId}
       />
 
       {/* Modal de Notificações e Autorizações de Envio ao DTIN pelo Detentor */}

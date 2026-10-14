@@ -14,8 +14,10 @@ export const TransferModal = ({
 
   if (!isOpen || !asset) return null;
 
+  const availableSectors = sectors.filter(s => s.id !== asset.setorId);
   const currentSector = sectors.find(s => s.id === asset.setorId) || { name: asset.setorNome, responsavel: asset.responsavel };
-  const targetSector = sectors.find(s => s.id === (destSectorId || sectors[0]?.id));
+  const effectiveDestId = destSectorId || availableSectors[0]?.id || '';
+  const targetSector = availableSectors.find(s => s.id === effectiveDestId) || availableSectors[0];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -75,20 +77,23 @@ export const TransferModal = ({
               Setor de Destino (Novo Proprietário da Carga) *
             </label>
             <select
-              value={destSectorId || (sectors[0]?.id || '')}
+              value={effectiveDestId}
               onChange={(e) => {
                 setDestSectorId(e.target.value);
-                const s = sectors.find(sec => sec.id === e.target.value);
+                const s = availableSectors.find(sec => sec.id === e.target.value);
                 if (s) setNovaLocalizacao(s.sala || '');
               }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
             >
-              {sectors.map(s => (
+              {availableSectors.map(s => (
                 <option key={s.id} value={s.id} className="bg-slate-900 text-emerald-400 font-semibold py-1">
                   🏢 {s.name} — Resp: {s.responsavel}
                 </option>
               ))}
             </select>
+            <p className="text-[10.5px] text-amber-400/90 mt-1 flex items-center gap-1 font-medium">
+              ℹ️ O item aguardará o aceite do responsável de carga do setor de destino.
+            </p>
           </div>
 
           {/* New Location */}
@@ -124,10 +129,10 @@ export const TransferModal = ({
           <div className="pt-3 border-t border-slate-800 flex gap-2.5">
             <button
               type="submit"
-              className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all"
+              className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
               <ArrowRightLeft className="w-4 h-4" />
-              <span>Confirmar Transferência</span>
+              <span>Enviar Transferência p/ Aceite</span>
             </button>
             <button
               type="button"

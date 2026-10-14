@@ -30,7 +30,8 @@ export const PedidosCargaModal = ({
   onLimparHistorico,
   onCancelarPedido,
   currentUserName = '',
-  userSectorIds = []
+  userSectorIds = [],
+  activeSectorId = null
 }) => {
   const [activeTab, setActiveTab] = useState('pendentes'); // 'pendentes' | 'historico'
   const [showConfirmAll, setShowConfirmAll] = useState(false);
@@ -43,11 +44,14 @@ export const PedidosCargaModal = ({
   // Quem enviou o pedido (remetente): só pode cancelar
   const isRemetente = (p) =>
     (myName && normName(p.solicitanteNome) === myName) ||
-    (userSectorIds.length > 0 && userSectorIds.includes(p.setorOrigemId));
+    (userSectorIds.length > 0 && userSectorIds.includes(p.setorOrigemId)) ||
+    (activeSectorId && p.setorOrigemId === activeSectorId && p.setorDestinoId !== activeSectorId);
 
-  // Quem recebe (resp. carga do setor destino) ou admin em pedidos de terceiros: aceita/rejeita
+  // Quem recebe (resp. carga do setor destino) ou quem está com o setor de destino aberto, ou admin em pedidos de terceiros: aceita/rejeita
   const podeAceitar = (p) =>
-    userSectorIds.includes(p.setorDestinoId) || (isAdmin && !isRemetente(p));
+    userSectorIds.includes(p.setorDestinoId) ||
+    (activeSectorId && p.setorDestinoId === activeSectorId) ||
+    (isAdmin && !isRemetente(p));
 
   const allPending = pedidos.filter(p => p.status === 'PENDENTE');
   // Usuário comum só vê pedidos em que está envolvido; admin vê todos

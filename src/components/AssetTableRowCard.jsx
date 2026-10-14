@@ -36,7 +36,9 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  Eraser
+  Eraser,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import { STATUS } from '../constants/sectors';
 import { HighlightText } from './HighlightText';
@@ -220,6 +222,10 @@ const AssetTableRowCardComponent = ({
   onOpenSolicitacao,
   hasPendingPedido = false,
   pendingTransferTo = null,
+  incomingTransfer = null,
+  onAcceptTransfer = null,
+  onRejectTransfer = null,
+  onCancelTransfer = null,
   searchTerm = '',
   visibleColumns = {
     responsavel: true,
@@ -242,6 +248,7 @@ const AssetTableRowCardComponent = ({
   const [showCancelBaixaConfirm, setShowCancelBaixaConfirm] = useState(false);
   const [showReturnDtinConfirm, setShowReturnDtinConfirm] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isDescOpen, setIsDescOpen] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
@@ -495,8 +502,14 @@ const AssetTableRowCardComponent = ({
   const isConferido = asset.status === 'CONFERIDO';
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
-  // Item marcado (cautelado ou aguardando aceite de transferência): Nº e descrição em vermelho fraco e itálico
-  const isItemMarcado = isEmCautela || !!pendingTransferTo;
+  // Transferência pendente (enviada pelo remetente ou recebida pelo destinatário): Nº e descrição em amarelo
+  const isOutgoingTransfer = !!pendingTransferTo;
+  const isIncomingTransfer = !!incomingTransfer;
+  const isPendingTransfer = isOutgoingTransfer || isIncomingTransfer;
+  const PENDING_TRANSFER_NUM_CLASS = 'text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]';
+  const PENDING_TRANSFER_DESC_CLASS = 'text-amber-300 font-bold hover:text-amber-200 drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]';
+  // Item marcado por cautela: Nº e descrição em vermelho fraco e itálico
+  const isItemMarcado = isEmCautela;
   const MARCADO_CLASS = 'text-rose-300/70 italic';
   const isEnviadoDtin = asset.status === 'ENVIADO_DTIN' || !!asset.enviadoDtin;
   const isInformática = asset.categoria === 'Equipamentos de Informática' || 
@@ -862,7 +875,9 @@ const AssetTableRowCardComponent = ({
     }
   };
 
-  const cardColorClass = asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null;
+  const cardColorClass = isPendingTransfer 
+    ? 'bg-amber-950/20 border-l-4 border-l-amber-400 hover:bg-amber-950/30' 
+    : (asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null);
   const isRowElevated = isDescOpen || isMotivoOpen || isDtinPopupOpen || isActionsOpen || isEditingLocation || isEditingObs || isColorPickerOpen;
 
   // Modalzinho / Popover do DTIN (Reutilizado sobre tudo)
@@ -1378,7 +1393,9 @@ const AssetTableRowCardComponent = ({
 
           <div className="flex items-center truncate">
             <span className={`font-mono text-base sm:text-[18px] font-black tracking-tight select-all leading-none truncate ${
-              (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
+              isPendingTransfer 
+                ? PENDING_TRANSFER_NUM_CLASS 
+                : (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -1389,13 +1406,14 @@ const AssetTableRowCardComponent = ({
         <div className={`flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 whitespace-nowrap transition-all border-r border-slate-800/80 pr-2 ${
           isDtinPopupOpen || isDescOpen ? 'overflow-visible z-50 relative' : 'overflow-hidden'
         }`}>
-          {/* Sinalizador de Patrimônio Duplicado */}
-          {pendingTransferTo && (
-            <span
-              title={`Aguardando ${pendingTransferTo.responsavel || 'o responsável'}, resp. carga do ${pendingTransferTo.setor}, dar o aceite por lá.`}
-              className="px-2 py-0.5 rounded-md bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[10px] flex items-center gap-1 shadow-sm shrink-0 animate-pulse"
+          {/* Prefixo de Transferência Recebida: ->> Setor de onde está vindo */}
+          {incomingTransfer && (
+            <span 
+              className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] shrink-0 border border-amber-400/40 shadow-sm flex items-center gap-1 select-none"
+              title={`Transferência vinda de: ${incomingTransfer.setorOrigemNome} (Enviado por ${incomingTransfer.solicitanteNome})`}
             >
-              ⏳ <span className="truncate">Aguardando {pendingTransferTo.responsavel || 'o responsável'}, resp. carga do {pendingTransferTo.setor}, dar o aceite por lá.</span>
+              <span className="text-amber-400 font-mono font-black">-&gt;&gt;</span>
+              <span>{incomingTransfer.setorOrigemNome}</span>
             </span>
           )}
           {duplicateInfo?.isDuplicate && (
@@ -1458,7 +1476,11 @@ const AssetTableRowCardComponent = ({
 
           <DescriptionWithReveal 
             text={asset.descricao} 
-            colorClass={isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300')}
+            colorClass={
+              isPendingTransfer 
+                ? PENDING_TRANSFER_DESC_CLASS 
+                : (isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-100 group-hover:text-white hover:text-indigo-300'))
+            }
             searchTerm={searchTerm}
             isDtin={false}
             isOpen={isDescOpen}
@@ -1877,6 +1899,40 @@ const AssetTableRowCardComponent = ({
                 </div>
               </div>
             </div>
+          ) : isOutgoingTransfer ? (
+            <div className="inline-flex items-center justify-center max-w-full overflow-hidden">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsTransferModalOpen(true);
+                }}
+                title={`Aguardando aceite ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'o responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toLowerCase()}] - Enviado por ${pendingTransferTo.solicitanteNome || 'Alex'}. Clique para ver tudo.`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold max-w-[180px] hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm group/transfer text-left"
+              >
+                <Clock className="w-2.5 h-2.5 text-amber-400 shrink-0 animate-pulse" />
+                <span className="truncate">
+                  Aguardando aceite {(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'RESPONSÁVEL').toUpperCase()} [{(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toLowerCase()}]
+                </span>
+              </button>
+            </div>
+          ) : isIncomingTransfer ? (
+            <div className="inline-flex items-center justify-center max-w-full overflow-hidden">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsTransferModalOpen(true);
+                }}
+                title={`${incomingTransfer.solicitanteNome || 'Alex'} mandando o item do setor ${incomingTransfer.setorOrigemNome}. Clique para ver tudo.`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold max-w-[180px] hover:bg-amber-500/30 transition-all cursor-pointer shadow-sm group/transfer text-left"
+              >
+                <Send className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                <span className="truncate">
+                  {incomingTransfer.solicitanteNome || 'Alex'} mandando o item
+                </span>
+              </button>
+            </div>
           ) : asset.observacao ? (
             (() => {
               const detectedSector = detectSectorInText(asset.observacao);
@@ -2017,8 +2073,48 @@ const AssetTableRowCardComponent = ({
           isDtinPopupOpen || showUncheckConfirm || isActionsOpen ? 'z-50' : 'z-20'
         }`}>
           
-          {/* Bloqueado / Conferência / Pedido */}
-          {!canManageAsset ? (
+          {/* Bloqueado / Conferência / Pedido / Transferência */}
+          {isIncomingTransfer ? (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Botão Aceitar (Mãozinho com polegar positivo / ThumbsUp) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAcceptTransfer && onAcceptTransfer(incomingTransfer);
+                }}
+                title="Aceitar transferência e assumir carga patrimonial"
+                className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-md shadow-emerald-950/40 transition-all cursor-pointer hover:scale-110 active:scale-95 flex items-center justify-center"
+              >
+                <ThumbsUp className="w-4 h-4 stroke-[2.5]" />
+              </button>
+
+              {/* Botão Rejeitar (ThumbsDown) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRejectTransfer && onRejectTransfer(incomingTransfer.id);
+                }}
+                title="Rejeitar transferência de carga"
+                className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-600 transition-all cursor-pointer hover:scale-110 active:scale-95 flex items-center justify-center shadow-sm"
+              >
+                <ThumbsDown className="w-4 h-4 stroke-[2.2]" />
+              </button>
+            </div>
+          ) : isOutgoingTransfer ? (
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsTransferModalOpen(true);
+              }}
+              title={`Transferência enviada. Aguardando aceite de ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toLowerCase()}]. Clique para ver detalhes.`}
+              className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer hover:bg-amber-500/25 transition-all"
+            >
+              <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
+              <span>Enviado</span>
+            </span>
+          ) : !canManageAsset ? (
             hasPendingPedido ? (
               <span className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none">
                 Enviado
@@ -2203,7 +2299,7 @@ const AssetTableRowCardComponent = ({
                           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer text-left"
                         >
                           <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>Transferir Setor</span>
+                          <span>Transferir p/ o setor</span>
                         </button>
                       )}
 
@@ -2526,7 +2622,9 @@ const AssetTableRowCardComponent = ({
 
             {/* Nº Patrimônio */}
             <span className={`font-mono text-[15px] font-black tracking-tight select-all leading-none shrink-0 ${
-              (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
+              isPendingTransfer
+                ? PENDING_TRANSFER_NUM_CLASS
+                : (isItemMarcado ? MARCADO_CLASS : null) || FONT_COLOR_MAP[asset.cardColor]?.patrimonio || (isConferido ? (appSettings?.checkedPatrimonioColor || 'text-emerald-400') : (appSettings?.uncheckPatrimonioColor || 'text-indigo-400'))
             }`}>
               <HighlightText text={formattedXX} query={searchTerm} />
             </span>
@@ -2615,7 +2713,45 @@ const AssetTableRowCardComponent = ({
 
           {/* Botão de Conferência Mobile e Menus */}
           <div className="flex items-center gap-1 shrink-0">
-            {!isBaixado && (
+            {isIncomingTransfer ? (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAcceptTransfer && onAcceptTransfer(incomingTransfer);
+                  }}
+                  title="Aceitar transferência e assumir carga patrimonial"
+                  className="p-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-md shadow-emerald-950/40 transition-all cursor-pointer active:scale-95 flex items-center justify-center"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRejectTransfer && onRejectTransfer(incomingTransfer.id);
+                  }}
+                  title="Rejeitar transferência de carga"
+                  className="p-1 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 transition-all cursor-pointer active:scale-95 flex items-center justify-center shadow-sm"
+                >
+                  <ThumbsDown className="w-3.5 h-3.5 stroke-[2.2]" />
+                </button>
+              </div>
+            ) : isOutgoingTransfer ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsTransferModalOpen(true);
+                }}
+                title={`Transferência enviada. Aguardando aceite de ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toLowerCase()}]. Clique para ver detalhes.`}
+                className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer active:scale-95"
+              >
+                <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
+                <span>Enviado</span>
+              </button>
+            ) : !isBaixado && (
               showUncheckConfirm ? (
                 <div className="flex items-center gap-2 bg-slate-950/95 px-3 py-1.5 rounded-xl border-2 border-amber-500/70 shadow-xl shadow-black animate-in zoom-in-95 duration-150">
                   <span className="text-xs text-amber-300 font-black">Desmarcar?</span>
@@ -2690,12 +2826,13 @@ const AssetTableRowCardComponent = ({
 
         {/* Linha 2: Descrição com Detecção Real de Truncamento e Revelação */}
         <div className="flex items-center justify-between gap-1.5 py-0.5 min-w-0">
-          {pendingTransferTo && (
-            <span
-              title={`Aguardando ${pendingTransferTo.responsavel || 'o responsável'}, resp. carga do ${pendingTransferTo.setor}, dar o aceite por lá.`}
-              className="px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 font-bold border border-fuchsia-500/50 text-[9px] flex items-center gap-0.5 shrink-0 animate-pulse"
+          {incomingTransfer && (
+            <span 
+              className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px] shrink-0 border border-amber-400/40 shadow-sm flex items-center gap-0.5 select-none"
+              title={`Transferência vinda de: ${incomingTransfer.setorOrigemNome} (Enviado por ${incomingTransfer.solicitanteNome})`}
             >
-              ⏳ <span className="truncate">Aguardando {pendingTransferTo.responsavel || 'o responsável'}, resp. carga do {pendingTransferTo.setor}, dar o aceite por lá.</span>
+              <span className="text-amber-400 font-mono font-black">-&gt;&gt;</span>
+              <span>{incomingTransfer.setorOrigemNome}</span>
             </span>
           )}
           {duplicateInfo?.isDuplicate && (
@@ -2710,7 +2847,11 @@ const AssetTableRowCardComponent = ({
 
           <DescriptionWithReveal 
             text={asset.descricao} 
-            colorClass={isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white')}
+            colorClass={
+              isPendingTransfer
+                ? PENDING_TRANSFER_DESC_CLASS
+                : (isItemMarcado ? MARCADO_CLASS : (FONT_COLOR_MAP[asset.cardColor]?.descricao || 'text-slate-200 group-hover/mdesc:text-white'))
+            }
             searchTerm={searchTerm}
             isDtin={false}
             isOpen={isDescOpen}
@@ -2718,7 +2859,33 @@ const AssetTableRowCardComponent = ({
           />
         </div>
 
-        {/* Avisos Compactos de Cautela / DTIN quando houver */}
+        {/* Avisos Compactos de Cautela / DTIN / Transferência quando houver */}
+        {isOutgoingTransfer && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsTransferModalOpen(true);
+            }}
+            className="text-[9.5px] text-amber-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
+          >
+            <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-pulse" />
+            <span className="truncate">Aguardando aceite {(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'RESPONSÁVEL').toUpperCase()} [{(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toLowerCase()}]</span>
+          </button>
+        )}
+        {isIncomingTransfer && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsTransferModalOpen(true);
+            }}
+            className="text-[9.5px] text-amber-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
+          >
+            <Send className="w-3 h-3 text-amber-400 shrink-0" />
+            <span className="truncate">{incomingTransfer.solicitanteNome || 'Alex'} mandando o item</span>
+          </button>
+        )}
         {isEmCautela && (
           <div className="text-[9.5px] text-purple-300 flex items-center gap-1 font-medium truncate pt-0.5">
             <Handshake className="w-3 h-3 text-purple-400 shrink-0" />
@@ -2958,7 +3125,7 @@ const AssetTableRowCardComponent = ({
                       className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-slate-200 hover:bg-slate-700 bg-slate-800/80 font-medium transition-all cursor-pointer active:scale-95 truncate"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span className="truncate">Transferir</span>
+                      <span className="truncate">Transferir p/ o setor</span>
                     </button>
                   )}
 
@@ -3624,6 +3791,149 @@ const AssetTableRowCardComponent = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Detalhes da Transferência (Ao clicar no badge "Aguardando aceite..." ou "Alex mandando o item") */}
+      {isTransferModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsTransferModalOpen(false);
+          }}
+        >
+          <div 
+            className="bg-slate-900 border border-slate-700/80 w-full max-w-md rounded-2xl p-4 shadow-2xl shadow-black/80 relative text-left animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                  <ArrowRightLeft className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">Transferência de Carga</h3>
+                  <p className="text-[11px] text-amber-400 font-semibold">
+                    {isIncomingTransfer ? 'Aguardando sua confirmação (setor destino)' : 'Aguardando aceite do responsável de destino'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTransferModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Informações do Bem */}
+            <div className="my-3 p-3 rounded-xl bg-slate-850 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-base font-black text-amber-400 select-all">
+                  {formattedXX}
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {formatDisplayDate(incomingTransfer?.dataSolicitacao || pendingTransferTo?.dataSolicitacao)}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-slate-200">
+                {asset.descricao}
+              </p>
+            </div>
+
+            {/* Origem e Destino */}
+            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+              <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Origem:</span>
+                <span className="text-slate-100 font-bold block truncate">
+                  {incomingTransfer?.setorOrigemNome || pendingTransferTo?.setorOrigemNome || asset.setorNome}
+                </span>
+                <span className="text-[10px] text-slate-400 block truncate">
+                  Resp: {incomingTransfer?.responsavelOrigem || pendingTransferTo?.responsavelOrigem || asset.responsavel}
+                </span>
+                <span className="text-[10px] text-cyan-400 block truncate mt-1">
+                  Enviado por: {incomingTransfer?.solicitanteNome || pendingTransferTo?.solicitanteNome || 'Alex'}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Destino:</span>
+                <span className="text-amber-300 font-bold block truncate">
+                  {incomingTransfer?.setorDestinoNome || pendingTransferTo?.setorDestinoNome || pendingTransferTo?.setor}
+                </span>
+                <span className="text-[10px] text-slate-300 block truncate">
+                  Resp: {(incomingTransfer?.responsavelDestino || pendingTransferTo?.responsavelDestino || pendingTransferTo?.responsavel || '').toUpperCase()}
+                </span>
+                {(incomingTransfer?.localizacaoFisica || pendingTransferTo?.localizacaoFisica) && (
+                  <span className="text-[10px] text-slate-400 block truncate mt-1">
+                    Local: {incomingTransfer?.localizacaoFisica || pendingTransferTo?.localizacaoFisica}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Motivo */}
+            {(incomingTransfer?.motivo || pendingTransferTo?.motivo) && (
+              <div className="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs mb-3">
+                <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">Motivo / Despacho:</span>
+                <p className="text-slate-200 text-[11px] italic">
+                  "{incomingTransfer?.motivo || pendingTransferTo?.motivo}"
+                </p>
+              </div>
+            )}
+
+            {/* Botões de Ação */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-end gap-2">
+              {isIncomingTransfer ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTransferModalOpen(false);
+                      onRejectTransfer && onRejectTransfer(incomingTransfer.id);
+                    }}
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 bg-rose-500/20 hover:bg-rose-600 hover:text-white border border-rose-500/40 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <span>Rejeitar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTransferModalOpen(false);
+                      onAcceptTransfer && onAcceptTransfer(incomingTransfer);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-md shadow-emerald-950/40 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span>Aceitar Transferência</span>
+                  </button>
+                </>
+              ) : isOutgoingTransfer && onCancelTransfer ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTransferModalOpen(false);
+                    onCancelTransfer(pendingTransferTo.id);
+                  }}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-rose-600 hover:text-white border border-slate-700 hover:border-rose-600 transition-all cursor-pointer"
+                >
+                  Cancelar Envio
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsTransferModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
     </div>
