@@ -313,9 +313,14 @@ export const generateInventoryReportPDF = (
     .filter(id => cols[id] && ALL_COLS_DEF_MAP[id])
     .map(id => ALL_COLS_DEF_MAP[id]);
 
-  const tableHeaders = activeColDefs.map(c => c.header);
+  const tableHeaders = activeColDefs.map(c => ({
+    content: c.header,
+    styles: { halign: c.halign }
+  }));
 
-  // Calcula larguras: reduz a coluna do item em 10% e puxa as demais colunas para a esquerda
+  // Calcula larguras para totalizar rigorosamente totalAvailableWidth (190mm),
+  // garantindo que a distância da coluna Valor Atual até a margem direita (10mm)
+  // seja exatamente igual à distância do Patrimônio até a margem esquerda (10mm).
   const totalAvailableWidth = 190;
   const flexCol = activeColDefs.find(c => c.isFlex);
   const fixedCols = activeColDefs.filter(c => !c.isFlex);
@@ -324,26 +329,32 @@ export const generateInventoryReportPDF = (
   let finalColStyles = {};
 
   if (flexCol) {
-    const rawFlexWidth = Math.max(16, totalAvailableWidth - fixedWidthSum);
-    // Reduz a largura da coluna item em 10%
-    const flexWidth = Number((rawFlexWidth * 0.90).toFixed(1));
-    
-    activeColDefs.forEach((c, idx) => {
-      finalColStyles[idx] = {
-        cellWidth: c.isFlex ? flexWidth : c.baseWidth,
-        fontSize: c.fontSize,
-        fontStyle: c.fontStyle,
-        halign: c.halign,
-        valign: 'middle'
-      };
-    });
-
-    const totalTableWidth = fixedWidthSum + flexWidth;
-    if (totalTableWidth > totalAvailableWidth) {
-      const scale = totalAvailableWidth / totalTableWidth;
+    const rawFlexWidth = totalAvailableWidth - fixedWidthSum;
+    if (rawFlexWidth >= 25) {
+      // flexCol (Descrição do item) absorve com precisão o espaço restante até a margem direita
       activeColDefs.forEach((c, idx) => {
-        const w = c.isFlex ? flexWidth : c.baseWidth;
-        finalColStyles[idx].cellWidth = Number((w * scale).toFixed(1));
+        finalColStyles[idx] = {
+          cellWidth: c.isFlex ? rawFlexWidth : c.baseWidth,
+          fontSize: c.fontSize,
+          fontStyle: c.fontStyle,
+          halign: c.halign,
+          valign: 'middle'
+        };
+      });
+    } else {
+      // Se muitas colunas forem ativadas e o espaço flex for apertado, distribui proporcionalmente
+      const baseFlex = 35;
+      const totalBase = fixedWidthSum + baseFlex;
+      const scale = totalAvailableWidth / totalBase;
+      activeColDefs.forEach((c, idx) => {
+        const base = c.isFlex ? baseFlex : c.baseWidth;
+        finalColStyles[idx] = {
+          cellWidth: Number((base * scale).toFixed(2)),
+          fontSize: c.fontSize,
+          fontStyle: c.fontStyle,
+          halign: c.halign,
+          valign: 'middle'
+        };
       });
     }
   } else {
@@ -351,13 +362,21 @@ export const generateInventoryReportPDF = (
     activeColDefs.forEach((c, idx) => {
       const assigned = (c.baseWidth / baseSum) * totalAvailableWidth;
       finalColStyles[idx] = {
-        cellWidth: Number(assigned.toFixed(1)),
+        cellWidth: Number(assigned.toFixed(2)),
         fontSize: c.fontSize,
         fontStyle: c.fontStyle,
         halign: c.halign,
         valign: 'middle'
       };
     });
+  }
+
+  // Ajuste fino para cravar exatamente 190.00mm, compensando arredondamento
+  const currentSum = Object.values(finalColStyles).reduce((acc, s) => acc + s.cellWidth, 0);
+  const diff = Number((totalAvailableWidth - currentSum).toFixed(2));
+  if (diff !== 0 && activeColDefs.length > 0) {
+    const lastIdx = activeColDefs.length - 1;
+    finalColStyles[lastIdx].cellWidth = Number((finalColStyles[lastIdx].cellWidth + diff).toFixed(2));
   }
 
   // Agrupamento dos setores:
@@ -501,7 +520,14 @@ export const generateInventoryReportPDF = (
         cellPadding: { top: 1.5, right: 0.8, bottom: 1.5, left: 0.8 },
         overflow: 'linebreak'
       },
-      columnStyles: finalColStyles
+      tableWidth: totalAvailableWidth,
+      columnStyles: finalColStyles,
+      didParseCell: (data) => {
+        const colDef = activeColDefs[data.column.index];
+        if (colDef && colDef.halign) {
+          data.cell.styles.halign = colDef.halign;
+        }
+      }
     });
 
     // Mapeia todas as páginas geradas por este setor
