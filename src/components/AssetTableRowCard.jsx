@@ -513,12 +513,16 @@ const AssetTableRowCardComponent = ({
   const isConferido = asset.status === 'CONFERIDO';
   const isBaixado = asset.baixado || asset.status === 'BAIXADO';
   const isEmCautela = asset.status === 'EM_CAUTELA' || !!asset.cautelaAtual;
-  // Transferência pendente (enviada pelo remetente ou recebida pelo destinatário): Nº e descrição em amarelo
   const isOutgoingTransfer = !!pendingTransferTo;
   const isIncomingTransfer = !!incomingTransfer;
   const isPendingTransfer = isOutgoingTransfer || isIncomingTransfer;
-  const PENDING_TRANSFER_NUM_CLASS = 'text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]';
-  const PENDING_TRANSFER_DESC_CLASS = 'text-amber-300 font-bold hover:text-amber-200 drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]';
+  // QUEM MANDA EM AMARELO, QUEM RECEBE EM VERDE. toda a linha
+  const PENDING_TRANSFER_NUM_CLASS = isOutgoingTransfer
+    ? 'text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+    : 'text-emerald-400 font-black drop-shadow-[0_0_8px_rgba(52,211,153,0.6)]';
+  const PENDING_TRANSFER_DESC_CLASS = isOutgoingTransfer
+    ? 'text-amber-300 font-bold hover:text-amber-200 drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]'
+    : 'text-emerald-300 font-bold hover:text-emerald-200 drop-shadow-[0_0_4px_rgba(52,211,153,0.3)]';
   // Item marcado por cautela: Nº e descrição em vermelho fraco e itálico
   const isItemMarcado = isEmCautela;
   const MARCADO_CLASS = 'text-rose-300/70 italic';
@@ -886,9 +890,12 @@ const AssetTableRowCardComponent = ({
     }
   };
 
-  const cardColorClass = isPendingTransfer 
-    ? 'bg-amber-950/20 border-l-4 border-l-amber-400 hover:bg-amber-950/30' 
-    : (asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null);
+  // QUEM MANDA EM AMARELO, QUEM RECEBE EM VERDE. toda a linha
+  const cardColorClass = isOutgoingTransfer
+    ? 'bg-amber-950/30 border-l-4 border-l-amber-400 hover:bg-amber-950/45' 
+    : isIncomingTransfer
+      ? 'bg-emerald-950/30 border-l-4 border-l-emerald-400 hover:bg-emerald-950/45'
+      : (asset.cardColor ? CARD_COLOR_CLASSES[asset.cardColor] : null);
   const isRowElevated = isDescOpen || isMotivoOpen || isDtinPopupOpen || isActionsOpen || isEditingLocation || isEditingObs || isColorPickerOpen;
 
   // Modalzinho / Popover do DTIN (Reutilizado sobre tudo)
@@ -1417,13 +1424,13 @@ const AssetTableRowCardComponent = ({
         <div className={`flex-1 min-w-[165px] shrink-0 flex items-center gap-1.5 whitespace-nowrap transition-all border-r border-slate-800/80 pr-2 ${
           isDtinPopupOpen || isDescOpen ? 'overflow-visible z-50 relative' : 'overflow-hidden'
         }`}>
-          {/* Prefixo de Transferência Recebida: ->> Setor de onde está vindo */}
+          {/* Prefixo de Transferência Recebida (QUEM RECEBE EM VERDE): ->> Setor de onde está vindo */}
           {incomingTransfer && (
             <span 
-              className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] shrink-0 border border-amber-400/40 shadow-sm flex items-center gap-1 select-none"
-              title={`Transferência vinda de: ${incomingTransfer.setorOrigemNome} (Enviado por ${incomingTransfer.solicitanteNome})`}
+              className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] shrink-0 border border-emerald-400/40 shadow-sm flex items-center gap-1 select-none"
+              title={`Transferência vinda de: ${incomingTransfer.setorOrigemNome} (Enviado por ${incomingTransfer.solicitanteNome} [${incomingTransfer.setorOrigemNome}])`}
             >
-              <span className="text-amber-400 font-mono font-black">-&gt;&gt;</span>
+              <span className="text-emerald-400 font-mono font-black">-&gt;&gt;</span>
               <span>{incomingTransfer.setorOrigemNome}</span>
             </span>
           )}
@@ -1921,7 +1928,7 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'}${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
+                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold max-w-[185px] hover:bg-amber-500/30 group-hover/transfer:border-amber-400 transition-all cursor-pointer shadow-sm text-left"
               >
                 <Clock className="w-2.5 h-2.5 text-amber-400 shrink-0 animate-pulse" />
@@ -1989,7 +1996,7 @@ const AssetTableRowCardComponent = ({
                   {pendingTransferTo.solicitanteNome && (
                     <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px]">
                       <span className="text-slate-400">Enviado por:</span>
-                      <span className="text-cyan-300 font-semibold">{pendingTransferTo.solicitanteNome}</span>
+                      <span className="text-amber-300 font-semibold">{pendingTransferTo.solicitanteNome} [{(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]</span>
                     </div>
                   )}
                 </div>
@@ -2019,24 +2026,24 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`📥 ITEM RECEBIDO - AGUARDANDO SUA CONFIRMAÇÃO\n• De: ${(incomingTransfer.setorOrigemNome || 'Setor de Origem').toUpperCase()} (${incomingTransfer.solicitanteNome || 'Alex'})\n• Destinado a você: ${(incomingTransfer.responsavelDestino || 'Você').toUpperCase()}\n${incomingTransfer.motivo ? `• Motivo: ${incomingTransfer.motivo}\n` : ''}👉 Clique para aceitar ou rejeitar a transferência`}
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold max-w-[185px] hover:bg-amber-500/30 group-hover/transfer-in:border-amber-400 transition-all cursor-pointer shadow-sm text-left"
+                title={`📥 ITEM RECEBIDO - AGUARDANDO SUA CONFIRMAÇÃO\n• De: ${(incomingTransfer.setorOrigemNome || 'Setor de Origem').toUpperCase()}\n• Enviado por: ${incomingTransfer.solicitanteNome || 'Alex'} [${(incomingTransfer.setorOrigemNome || '').toUpperCase()}]\n• Destinado a você: ${(incomingTransfer.responsavelDestino || 'Você').toUpperCase()}\n${incomingTransfer.motivo ? `• Motivo: ${incomingTransfer.motivo}\n` : ''}👉 Clique para aceitar ou rejeitar a transferência`}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-bold max-w-[185px] hover:bg-emerald-500/30 group-hover/transfer-in:border-emerald-400 transition-all cursor-pointer shadow-sm text-left"
               >
-                <Send className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                <Send className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
                 <span className="truncate">
                   {incomingTransfer.solicitanteNome || 'Alex'} mandando o item
                 </span>
               </button>
 
-              {/* Floating Transfer Hint Popover on Hover (Incoming) */}
+              {/* Floating Transfer Hint Popover on Hover (Incoming - VERDE) */}
               <div className={`absolute left-0 sm:left-1/2 sm:-translate-x-1/2 ${
                 transferPlacement === 'bottom' 
                   ? 'top-full mt-2' 
                   : 'bottom-full mb-2'
-              } hidden group-hover/transfer-in:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-2xl p-3 shadow-2xl shadow-amber-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left`}>
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-amber-500/25">
+              } hidden group-hover/transfer-in:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-3 shadow-2xl shadow-emerald-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left`}>
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-emerald-500/25">
                   <div className="flex items-center gap-1.5">
-                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                       <Send className="w-3.5 h-3.5" />
                     </div>
                     <div>
@@ -2063,7 +2070,7 @@ const AssetTableRowCardComponent = ({
                       </span>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center px-1 text-amber-400 shrink-0">
+                    <div className="flex flex-col items-center justify-center px-1 text-emerald-400 shrink-0">
                       <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-top" />
                       <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-bottom" />
                     </div>
@@ -2082,14 +2089,14 @@ const AssetTableRowCardComponent = ({
                   {incomingTransfer.solicitanteNome && (
                     <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px]">
                       <span className="text-slate-400">Enviado por:</span>
-                      <span className="text-cyan-300 font-semibold">{incomingTransfer.solicitanteNome}</span>
+                      <span className="text-emerald-300 font-semibold">{incomingTransfer.solicitanteNome} [{(incomingTransfer.setorOrigemNome || '').toUpperCase()}]</span>
                     </div>
                   )}
                 </div>
 
                 {incomingTransfer.motivo && (
-                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[10.5px] text-amber-200/90 mb-2">
-                    <span className="font-semibold text-amber-300 mr-1 not-italic">Motivo:</span>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-[10.5px] text-emerald-200/90 mb-2">
+                    <span className="font-semibold text-emerald-300 mr-1 not-italic">Motivo:</span>
                     <span className="italic">"{incomingTransfer.motivo}"</span>
                   </div>
                 )}
@@ -2274,7 +2281,7 @@ const AssetTableRowCardComponent = ({
                 e.stopPropagation();
                 setIsTransferModalOpen(true);
               }}
-              title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'}${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
+              title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
               className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer hover:bg-amber-500/25 transition-all"
             >
               <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
@@ -2911,7 +2918,7 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'}${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
+                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
                 className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer active:scale-95"
               >
                 <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
@@ -3033,7 +3040,7 @@ const AssetTableRowCardComponent = ({
               e.stopPropagation();
               setIsTransferModalOpen(true);
             }}
-            title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'}${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
+            title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
             className="text-[9.5px] text-amber-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
           >
             <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-pulse" />
@@ -3047,10 +3054,10 @@ const AssetTableRowCardComponent = ({
               e.stopPropagation();
               setIsTransferModalOpen(true);
             }}
-            title={`📥 ITEM RECEBIDO - AGUARDANDO SUA CONFIRMAÇÃO\n• De: ${(incomingTransfer.setorOrigemNome || 'Setor de Origem').toUpperCase()} (${incomingTransfer.solicitanteNome || 'Alex'})\n• Destinado a você: ${(incomingTransfer.responsavelDestino || 'Você').toUpperCase()}\n${incomingTransfer.motivo ? `• Motivo: ${incomingTransfer.motivo}\n` : ''}👉 Clique para aceitar ou rejeitar a transferência`}
-            className="text-[9.5px] text-amber-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
+            title={`📥 ITEM RECEBIDO - AGUARDANDO SUA CONFIRMAÇÃO\n• De: ${(incomingTransfer.setorOrigemNome || 'Setor de Origem').toUpperCase()}\n• Enviado por: ${incomingTransfer.solicitanteNome || 'Alex'} [${(incomingTransfer.setorOrigemNome || '').toUpperCase()}]\n• Destinado a você: ${(incomingTransfer.responsavelDestino || 'Você').toUpperCase()}\n${incomingTransfer.motivo ? `• Motivo: ${incomingTransfer.motivo}\n` : ''}👉 Clique para aceitar ou rejeitar a transferência`}
+            className="text-[9.5px] text-emerald-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
           >
-            <Send className="w-3 h-3 text-amber-400 shrink-0" />
+            <Send className="w-3 h-3 text-emerald-400 shrink-0" />
             <span className="truncate">{incomingTransfer.solicitanteNome || 'Alex'} mandando o item</span>
           </button>
         )}
@@ -4012,45 +4019,70 @@ const AssetTableRowCardComponent = ({
             </div>
 
             {/* Origem e Destino com Setinhas Animadas da Esquerda para a Direita */}
+            <style>{`
+              @keyframes transfer-arrow-right {
+                0% { transform: translateX(-8px) scale(0.92); opacity: 0.25; }
+                50% { transform: translateX(8px) scale(1.1); opacity: 1; }
+                100% { transform: translateX(-8px) scale(0.92); opacity: 0.25; }
+              }
+            `}</style>
+
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs mb-3">
-              {/* Caixinha Origem */}
-              <div className="flex-1 min-w-0 p-2.5 rounded-xl bg-slate-800/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Origem:</span>
-                <span className="text-slate-100 font-bold block truncate">
+              {/* Caixinha Origem (QUEM MANDA - AMARELO) */}
+              <div className="flex-1 min-w-0 p-2.5 rounded-xl bg-amber-950/20 border border-amber-500/40 shadow-sm shadow-amber-950/40">
+                <span className="text-[10px] text-amber-400/90 block mb-0.5 font-medium">Setor de Origem:</span>
+                <span className="text-amber-300 font-bold block truncate">
                   {incomingTransfer?.setorOrigemNome || pendingTransferTo?.setorOrigemNome || asset.setorNome}
                 </span>
-                <span className="text-[10px] text-slate-400 block truncate">
+                <span className="text-[10px] text-slate-300 block truncate">
                   Resp: {incomingTransfer?.responsavelOrigem || pendingTransferTo?.responsavelOrigem || asset.responsavel}
                 </span>
-                <span className="text-[10px] text-cyan-400 block truncate mt-1">
-                  Enviado por: {incomingTransfer?.solicitanteNome || pendingTransferTo?.solicitanteNome || 'Alex'}
+                <span className="text-[10px] text-amber-300 font-semibold block truncate mt-1">
+                  Enviado por: {incomingTransfer?.solicitanteNome || pendingTransferTo?.solicitanteNome || 'Alex'} [{(incomingTransfer?.setorOrigemNome || pendingTransferTo?.setorOrigemNome || asset.setorNome || '').toUpperCase()}]
                 </span>
               </div>
 
               {/* Setinhas animadas da esquerda para a direita (uma em cima, outra embaixo) */}
               <div 
-                className="flex flex-col items-center justify-center gap-1.5 px-0.5 sm:px-1 py-1 shrink-0 select-none"
-                title="Fluxo da Origem para o Destino"
+                className="flex flex-col items-center justify-center gap-2 px-1 sm:px-2 py-1 shrink-0 select-none overflow-visible"
+                title="Fluxo da Origem (Amarelo) para o Destino (Verde)"
               >
-                <div className="animate-transfer-arrow-top flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] stroke-[2.5]" />
+                {/* Seta de Cima (Amarela - Origem) */}
+                <div 
+                  className="animate-transfer-arrow-top flex items-center justify-center"
+                  style={{
+                    display: 'inline-flex',
+                    animation: 'transfer-arrow-right 1s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                    willChange: 'transform, opacity'
+                  }}
+                >
+                  <ArrowRight className="w-5 h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] stroke-[2.8]" />
                 </div>
-                <div className="animate-transfer-arrow-bottom flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 text-amber-400/80 drop-shadow-[0_0_6px_rgba(251,191,36,0.4)] stroke-[2.5]" />
+
+                {/* Seta de Baixo (Verde - Destino) */}
+                <div 
+                  className="animate-transfer-arrow-bottom flex items-center justify-center"
+                  style={{
+                    display: 'inline-flex',
+                    animation: 'transfer-arrow-right 1s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.35s',
+                    willChange: 'transform, opacity'
+                  }}
+                >
+                  <ArrowRight className="w-5 h-5 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)] stroke-[2.8]" />
                 </div>
               </div>
 
-              {/* Caixinha Destino */}
-              <div className="flex-1 min-w-0 p-2.5 rounded-xl bg-slate-800/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block mb-0.5">Setor de Destino:</span>
-                <span className="text-amber-300 font-bold block truncate">
+              {/* Caixinha Destino (QUEM RECEBE - VERDE) */}
+              <div className="flex-1 min-w-0 p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/40 shadow-sm shadow-emerald-950/40">
+                <span className="text-[10px] text-emerald-400/90 block mb-0.5 font-medium">Setor de Destino:</span>
+                <span className="text-emerald-300 font-bold block truncate">
                   {incomingTransfer?.setorDestinoNome || pendingTransferTo?.setorDestinoNome || pendingTransferTo?.setor}
                 </span>
-                <span className="text-[10px] text-slate-300 block truncate">
+                <span className="text-[10px] text-slate-200 block truncate">
                   Resp: {(incomingTransfer?.responsavelDestino || pendingTransferTo?.responsavelDestino || pendingTransferTo?.responsavel || '').toUpperCase()}
                 </span>
                 {(incomingTransfer?.localizacaoFisica || pendingTransferTo?.localizacaoFisica) && (
-                  <span className="text-[10px] text-slate-400 block truncate mt-1">
+                  <span className="text-[10px] text-emerald-300/80 block truncate mt-1">
                     Local: {incomingTransfer?.localizacaoFisica || pendingTransferTo?.localizacaoFisica}
                   </span>
                 )}

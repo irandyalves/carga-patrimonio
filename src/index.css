@@ -242,31 +242,28 @@
 /* Efeito de fluxo das setas de transferência da esquerda para a direita */
 @keyframes transfer-arrow-right {
   0% {
-    transform: translateX(-4px);
-    opacity: 0.35;
+    transform: translateX(-8px) scale(0.92);
+    opacity: 0.3;
   }
   50% {
-    transform: translateX(4px);
+    transform: translateX(8px) scale(1.1);
     opacity: 1;
   }
   100% {
-    transform: translateX(-4px);
-    opacity: 0.35;
+    transform: translateX(-8px) scale(0.92);
+    opacity: 0.3;
   }
 }
 
 .animate-transfer-arrow-top {
-  animation: transfer-arrow-right 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: transfer-arrow-right 1s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  display: inline-flex !important;
+  will-change: transform, opacity !important;
 }
 
 .animate-transfer-arrow-bottom {
-  animation: transfer-arrow-right 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: 0.35s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-transfer-arrow-top,
-  .animate-transfer-arrow-bottom {
-    animation: none;
-  }
+  animation: transfer-arrow-right 1s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  animation-delay: 0.35s !important;
+  display: inline-flex !important;
+  will-change: transform, opacity !important;
 }
