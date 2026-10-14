@@ -50,7 +50,7 @@ export const GoogleDriveHelpModal = ({ isOpen, onClose }) => {
       }}
     >
       <div 
-        className="bg-slate-900 border border-slate-750 w-full max-w-2xl rounded-3xl p-5 sm:p-6 shadow-2xl shadow-black/90 relative text-left max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
+        className="bg-slate-900 border border-slate-750 w-full max-w-4xl rounded-3xl p-5 sm:p-6 shadow-2xl shadow-black/90 relative text-left max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

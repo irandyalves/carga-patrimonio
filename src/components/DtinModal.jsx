@@ -28,7 +28,7 @@ const MOTIVOS_DTIN = [
   'Instalação e Configuração de Software / Sistema Operacional',
   'Laudo Técnico de Defeito / Inviabilidade de Reparo',
   'Substituição por Novo Equipamento',
-  'Outros Serviços de TI / DTIN'
+  'Outros Serviços de TI / DITIN'
 ];
 
 const SUGESTOES_OBS = [
@@ -141,12 +141,12 @@ export const DtinModal = ({
         return;
       }
     } else if (!targetAsset) {
-      alert('Por favor, selecione ou cadastre o equipamento que será enviado para a DTIN.');
+      alert('Por favor, selecione ou cadastre o equipamento que será enviado para o DITIN.');
       return;
     }
 
     if (!observacoes.trim()) {
-      alert('Por favor, informe a descrição do serviço / observações para a DTIN.');
+      alert('Por favor, informe a descrição do serviço / observações para o DITIN.');
       return;
     }
 
@@ -198,7 +198,7 @@ export const DtinModal = ({
           </div>
           <div>
             <h2 className="text-base font-bold text-white leading-tight">
-              Envio de Equipamento para a DTIN
+              Envio de Equipamento para o DITIN
             </h2>
             <p className="text-[11px] text-slate-400">
               Diretoria de Tecnologia da Informação (Manutenção, reparos e laudos)
@@ -281,7 +281,7 @@ export const DtinModal = ({
                             </span>
                             {(a.status === 'ENVIADO_DTIN' || a.enviadoDtin) && (
                               <span className="text-[9.5px] uppercase font-bold text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-500/30">
-                                No DTIN
+                                -&gt;DITIN
                               </span>
                             )}
                           </div>
@@ -419,7 +419,7 @@ export const DtinModal = ({
           {/* Motivo do Envio */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 mb-1">
-              Finalidade / Motivo do Envio ao DTIN <span className="text-cyan-400">*</span>
+              Finalidade / Motivo do Envio ao DITIN <span className="text-cyan-400">*</span>
             </label>
             <select
               value={motivo}
@@ -574,7 +574,7 @@ export const DtinModal = ({
               className="flex-1 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-600/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isCreatingNew ? 'Cadastrar e Enviar ao DTIN' : 'Confirmar Envio ao DTIN'}</span>
+              <span>{isCreatingNew ? 'Cadastrar e Enviar ao DITIN' : 'Confirmar Envio ao DITIN'}</span>
             </button>
           </div>
 

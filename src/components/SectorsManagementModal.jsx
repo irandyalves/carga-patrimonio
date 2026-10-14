@@ -38,7 +38,8 @@ export const SectorsManagementModal = ({
     name: '',
     responsavel: '',
     email: '',
-    sala: ''
+    sala: '',
+    isExterno: false
   });
 
   // Lista unificada de responsáveis disponíveis para puxar (usuários do sistema + responsáveis de setores + servidores)
@@ -121,9 +122,14 @@ export const SectorsManagementModal = ({
     return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
   }, [users, sectors, servidores]);
 
-  // Lista de setores ordenada em ordem alfabética (A-Z)
+  // Lista de setores ordenada: Internos primeiro (A-Z) e Externos por último (A-Z)
   const sortedSectors = useMemo(() => {
-    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    return [...sectors].sort((a, b) => {
+      const aExt = !!a.isExterno;
+      const bExt = !!b.isExterno;
+      if (aExt !== bExt) return aExt ? 1 : -1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    });
   }, [sectors]);
 
   const [deleteConfirmSector, setDeleteConfirmSector] = useState(null);
@@ -151,7 +157,8 @@ export const SectorsManagementModal = ({
       name: '',
       responsavel: '',
       email: '',
-      sala: ''
+      sala: '',
+      isExterno: false
     });
   };
 
@@ -163,7 +170,8 @@ export const SectorsManagementModal = ({
       name: sector.name,
       responsavel: sector.responsavel,
       email: sector.email || '',
-      sala: sector.sala || ''
+      sala: sector.sala || '',
+      isExterno: !!sector.isExterno
     });
   };
 
@@ -416,21 +424,41 @@ export const SectorsManagementModal = ({
               return null;
             })()}
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              {/* Botão Laranja Setor Externo (Padrão: Interno) */}
               <button
                 type="button"
-                onClick={handleCancelForm}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                onClick={() => setFormData(prev => ({ ...prev, isExterno: !prev.isExterno }))}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+                  formData.isExterno
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-amber-500/30'
+                    : 'bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-amber-300 border border-slate-700'
+                }`}
+                title={formData.isExterno ? 'Setor marcado como EXTERNO (vai para o fim da lista de uma cor diferente)' : 'Clique para marcar como Setor Externo (Padrão: Interno)'}
               >
-                Cancelar
+                <span className={`w-2 h-2 rounded-full ${formData.isExterno ? 'bg-slate-950 animate-pulse' : 'bg-slate-500'}`} />
+                <span>Setor Externo</span>
+                {formData.isExterno && (
+                  <span className="text-[10px] bg-slate-950/20 px-1 rounded font-black">ATIVO</span>
+                )}
               </button>
-              <button
-                type="submit"
-                className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1 shadow-sm"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>Salvar Setor</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelForm}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1 shadow-sm cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Salvar Setor</span>
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -495,17 +523,33 @@ export const SectorsManagementModal = ({
         {/* Sectors List */}
         <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
           {sortedSectors.map((sector) => {
-            const linkedCount = assets.filter(a => a.setorId === sector.id).length;
+            const isExt = !!sector.isExterno;
+            const linkedCount = isExt
+              ? assets.filter(a => a.setorId === sector.id || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin).length
+              : assets.filter(a => a.setorId === sector.id).length;
 
             return (
               <div
                 key={sector.id}
-                className="py-2.5 px-3 rounded-2xl bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                className={`py-2.5 px-3 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                  isExt
+                    ? 'bg-amber-950/20 border-2 border-amber-500/50 hover:border-amber-400 shadow-md shadow-amber-950/20'
+                    : 'bg-slate-850 border border-slate-800 hover:border-slate-700'
+                }`}
               >
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-sm">{sector.name}</span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700 font-mono shrink-0">
+                    <span className={`font-bold text-sm ${isExt ? 'text-amber-200' : 'text-white'}`}>{sector.name}</span>
+                    {isExt && (
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 shadow-sm border border-amber-400">
+                        Externo
+                      </span>
+                    )}
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-mono shrink-0 ${
+                      isExt
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
+                        : 'bg-slate-800 text-indigo-300 border border-slate-700'
+                    }`}>
                       {linkedCount} bens
                     </span>
                   </div>

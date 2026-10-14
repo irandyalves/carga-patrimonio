@@ -1452,11 +1452,11 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsDtinPopupOpen(!isDtinPopupOpen);
                 }}
-                title="Equipamento enviado ao DTIN (Clique para ver detalhes)"
+                title="Equipamento enviado ao DITIN (Clique para ver detalhes)"
                 className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 text-[10px] flex items-center gap-1 hover:bg-cyan-500/30 transition-all cursor-pointer shrink-0 shadow-sm animate-pulse hover:animate-none"
               >
                 <Server className="w-3 h-3 text-cyan-400" />
-                <span>No DTIN</span>
+                <span>-&gt;DITIN</span>
               </button>
 
               {/* Modalzinho / Popover por cima sobre tudo */}
@@ -1466,11 +1466,11 @@ const AssetTableRowCardComponent = ({
 
           {asset.pendenciaDtin?.status === 'PENDENTE' && (
             <div
-              title="Santana (TI) solicitou o envio deste equipamento ao DTIN (Aguardando autorização do detentor)"
+              title="Santana (TI) solicitou o envio deste equipamento ao DITIN (Aguardando autorização do detentor)"
               className="px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 font-bold border border-cyan-500/50 text-[10px] flex items-center gap-1 shrink-0 shadow-sm animate-pulse"
             >
               <Bell className="w-3 h-3 text-cyan-400" />
-              <span>DTIN Pendente</span>
+              <span>DITIN Pendente</span>
             </div>
           )}
 
@@ -2320,11 +2320,11 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsDtinPopupOpen(!isDtinPopupOpen);
                 }}
-                title="Equipamento no DTIN (Clique para ver detalhes)"
+                title="Equipamento no DITIN (Clique para ver detalhes)"
                 className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
               >
                 <Server className="w-3 h-3 text-cyan-400" />
-                <span>No DTIN</span>
+                <span>-&gt;DITIN</span>
               </button>
               {renderDtinPopover('right-0')}
             </div>
@@ -3069,9 +3069,9 @@ const AssetTableRowCardComponent = ({
         )}
 
         {isEnviadoDtin && (
-          <div className="text-[9.5px] text-cyan-300 flex items-center gap-1 font-medium truncate pt-0.5">
+          <div className="text-[9.5px] text-cyan-300 flex items-center gap-1 font-bold truncate pt-0.5">
             <Server className="w-3 h-3 text-cyan-400 shrink-0" />
-            <span>Equipamento no DTIN</span>
+            <span>-&gt;DITIN</span>
           </div>
         )}
       </div>

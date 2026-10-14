@@ -122,7 +122,11 @@ export const SectorSidebar = ({
   };
 
   const getSectorStats = (sectorId) => {
-    const sectorAssets = assets.filter(a => a.setorId === sectorId);
+    const sec = sectors.find(s => s.id === sectorId);
+    const isExt = !!sec?.isExterno || sectorId === 'sec-dtin' || sectorId === 'sec-ditin' || (sec?.name || '').toUpperCase().trim() === 'DITIN';
+    const sectorAssets = isExt
+      ? assets.filter(a => a.setorId === sectorId || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin)
+      : assets.filter(a => a.setorId === sectorId);
     const total = sectorAssets.length;
     const conferidos = sectorAssets.filter(a => a.status === 'CONFERIDO').length;
     const pendentes = sectorAssets.filter(a => a.status === 'PENDENTE').length;
@@ -200,7 +204,12 @@ export const SectorSidebar = ({
       }
     });
 
-    const sortFn = (a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    const sortFn = (a, b) => {
+      const aExt = !!a.isExterno;
+      const bExt = !!b.isExterno;
+      if (aExt !== bExt) return aExt ? 1 : -1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    };
     my.sort(sortFn);
     others.sort(sortFn);
 
@@ -412,6 +421,7 @@ export const SectorSidebar = ({
               const isMySector = isUserOwned;
               const isOtherSector = !isMySector;
               const canManageSector = userRole === 'admin' || isMySector;
+              const isExt = !!sec.isExterno;
 
               return (
                 <div key={sec.id} className="space-y-0.5">
@@ -423,10 +433,14 @@ export const SectorSidebar = ({
                     }}
                     className={`group w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
                       isSelected
-                        ? 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm'
-                        : isOtherSector
-                          ? 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-l-4 border-l-transparent'
-                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
+                        ? (isExt 
+                            ? 'bg-gradient-to-r from-amber-600/40 via-amber-600/15 to-transparent text-white font-bold border-l-4 border-l-amber-400 shadow-sm'
+                            : 'bg-gradient-to-r from-blue-600/40 via-blue-600/15 to-transparent text-white font-bold border-l-4 border-l-blue-400 shadow-sm')
+                        : isExt
+                          ? 'text-amber-300/90 hover:bg-amber-950/30 hover:text-amber-100 border-l-4 border-l-amber-500/40'
+                          : isOtherSector
+                            ? 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-l-4 border-l-transparent'
+                            : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border-l-4 border-l-transparent'
                     }`}
                   >
                     {/* Nome do Setor */}
@@ -435,20 +449,27 @@ export const SectorSidebar = ({
 
                       <div className="truncate min-w-0">
                         <div className="flex items-center gap-1.5 truncate">
-                          <span className={isSelected ? 'font-bold text-white' : isOtherSector ? 'font-medium text-slate-400' : 'font-medium text-slate-200'}>
+                          <span className={isSelected ? 'font-bold text-white' : isExt ? 'font-semibold text-amber-200' : isOtherSector ? 'font-medium text-slate-400' : 'font-medium text-slate-200'}>
                             {sec.name}
                           </span>
+                          {isExt && (
+                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                              Externo
+                            </span>
+                          )}
                           {sec.responsavel && (
                             <span className={`flex items-center gap-1.5 ${
-                              isOtherSector
-                                ? (isSelected ? 'text-slate-300 font-medium' : 'text-slate-400 font-normal')
-                                : `${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold`
+                              isExt
+                                ? (isSelected ? 'text-amber-200 font-medium' : 'text-amber-400/80 font-normal')
+                                : isOtherSector
+                                  ? (isSelected ? 'text-slate-300 font-medium' : 'text-slate-400 font-normal')
+                                  : `${displaySettings?.sectorResponsavelColor || 'text-orange-400'} font-semibold`
                             } text-[11px] truncate shrink-0`}>
-                              <span className={`w-1 h-1 rounded-full ${isOtherSector ? 'bg-slate-600' : 'bg-slate-500'} shrink-0`} />
+                              <span className={`w-1 h-1 rounded-full ${isExt ? 'bg-amber-500' : isOtherSector ? 'bg-slate-600' : 'bg-slate-500'} shrink-0`} />
                               <span>{sec.responsavel}</span>
                             </span>
                           )}
-                          {isOtherSector && userRole === 'operador' && (
+                          {isOtherSector && !isExt && userRole === 'operador' && (
                             <span className="text-slate-500 shrink-0" title="Outro departamento (Apenas consulta)">
                               <Lock className="w-3 h-3 inline" />
                             </span>
@@ -464,10 +485,12 @@ export const SectorSidebar = ({
                       )}
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
                         isSelected
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold'
-                          : isOtherSector
-                            ? 'bg-slate-800/70 text-slate-400 border border-slate-700/40'
-                            : 'bg-slate-800 text-slate-300'
+                          ? (isExt ? 'bg-amber-500/25 text-amber-300 border border-amber-400/40 font-bold' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold')
+                          : isExt
+                            ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold'
+                            : isOtherSector
+                              ? 'bg-slate-800/70 text-slate-400 border border-slate-700/40'
+                              : 'bg-slate-800 text-slate-300'
                       }`}>
                         {stats.total}
                       </span>
@@ -556,7 +579,7 @@ export const SectorSidebar = ({
                             <button
                               type="button"
                               onClick={() => onSelectStatusFilter('ENVIADOS_DTIN')}
-                              title="Filtrar equipamentos enviados para a DTIN"
+                              title="Filtrar equipamentos enviados para o DITIN"
                               className={`w-full mt-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer text-left group ${
                                 statusFilter === 'ENVIADOS_DTIN'
                                   ? 'bg-gradient-to-r from-cyan-600/40 via-cyan-600/15 to-transparent text-white font-bold border-l-[3px] border-l-cyan-400 shadow-sm'
@@ -565,7 +588,7 @@ export const SectorSidebar = ({
                             >
                               <div className="flex items-center gap-1.5 truncate">
                                 <Server className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 shrink-0" />
-                                <span className="truncate">Enviados para a DTIN</span>
+                                <span className="truncate">Enviados para o DITIN</span>
                               </div>
                               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
                                 statusFilter === 'ENVIADOS_DTIN'

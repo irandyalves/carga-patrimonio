@@ -61,7 +61,13 @@ export const SectorTabs = ({
   };
 
   // Cores de abas
-  const getTabColor = (index, isSelected) => {
+  const getTabColor = (index, isSelected, isExterno = false) => {
+    if (isExterno) {
+      if (isSelected) {
+        return 'bg-amber-600 text-white font-bold shadow-md shadow-amber-600/40 border-b-2 border-white ring-1 ring-amber-400';
+      }
+      return 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 border-amber-600/50 border-t border-x';
+    }
     if (isSelected) {
       return 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 border-b-2 border-white ring-1 ring-blue-400';
     }
@@ -76,12 +82,26 @@ export const SectorTabs = ({
   };
 
   const getSectorStats = (sectorId) => {
-    const sectorAssets = assets.filter(a => a.setorId === sectorId);
+    const sec = sectors.find(s => s.id === sectorId);
+    const isExt = !!sec?.isExterno || sectorId === 'sec-dtin' || sectorId === 'sec-ditin' || (sec?.name || '').toUpperCase().trim() === 'DITIN';
+    const sectorAssets = isExt
+      ? assets.filter(a => a.setorId === sectorId || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin)
+      : assets.filter(a => a.setorId === sectorId);
     const total = sectorAssets.length;
     const conferidos = sectorAssets.filter(a => a.status === 'CONFERIDO').length;
     const isCompleted = total > 0 && conferidos === total;
     return { total, conferidos, isCompleted };
   };
+
+  // Setores ordenados: Internos primeiro e Externos por último
+  const sortedSectors = useMemo(() => {
+    return [...sectors].sort((a, b) => {
+      const aExt = !!a.isExterno;
+      const bExt = !!b.isExterno;
+      if (aExt !== bExt) return aExt ? 1 : -1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [sectors]);
 
   const totalAssetsCount = assets.length;
 
@@ -126,10 +146,10 @@ export const SectorTabs = ({
               - Inativa: Apenas o NOME DIRETO do setor (ex: Studio, Auditório, SACADI)
               - Ativa: Ícone + Nome do Setor - Responsável (ex: [Icon] Studio - Tadeu)
           */}
-          {sectors.map((sec, idx) => {
+          {sortedSectors.map((sec, idx) => {
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
-            const colorClass = getTabColor(idx, isSelected);
+            const colorClass = getTabColor(idx, isSelected, !!sec.isExterno);
 
             return (
               <button

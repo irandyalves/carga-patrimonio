@@ -76,7 +76,7 @@ export const PendenciasDtinModal = ({
                     {detentorName},
                   </span>
                   <span className="text-slate-200 text-sm sm:text-base font-bold block mt-0.5">
-                    - o <span className="text-emerald-400 font-black">SANTANA</span> está solicitando autorização para enviar para DTIN os equipamentos abaixo.
+                    - o <span className="text-emerald-400 font-black">SANTANA</span> está solicitando autorização para enviar para o DITIN os equipamentos abaixo.
                   </span>
                 </h3>
               </div>
@@ -108,7 +108,7 @@ export const PendenciasDtinModal = ({
               <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center text-slate-500">
                 <CheckCircle2 className="w-7 h-7 text-emerald-400/70" />
               </div>
-              <p className="text-sm font-semibold text-slate-300">Nenhuma autorização pendente de DTIN no momento.</p>
+              <p className="text-sm font-semibold text-slate-300">Nenhuma autorização pendente de DITIN no momento.</p>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 Quando o responsável pela TI solicitar o envio de um equipamento sob sua responsabilidade, o aviso aparecerá aqui para sua confirmação.
               </p>
@@ -137,7 +137,7 @@ export const PendenciasDtinModal = ({
                     {/* Badge Destino DTIN */}
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold shrink-0 self-start">
                       <Server className="w-4 h-4 text-cyan-400" />
-                      <span>Destino: DTIN</span>
+                      <span>Destino: DITIN</span>
                     </div>
                   </div>
 
@@ -201,7 +201,7 @@ export const PendenciasDtinModal = ({
                       type="button"
                       onClick={() => handleRejectItem(item.id)}
                       className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 transition-all cursor-pointer active:scale-95"
-                      title="Recusar a saída deste equipamento para o DTIN"
+                      title="Recusar a saída deste equipamento para o DITIN"
                     >
                       Recusar Envio
                     </button>
@@ -210,7 +210,7 @@ export const PendenciasDtinModal = ({
                       type="button"
                       onClick={() => handleConfirmItem(item.id)}
                       className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-all cursor-pointer active:scale-95"
-                      title="Confirmar e autorizar o envio deste equipamento para o DTIN"
+                      title="Confirmar e autorizar o envio deste equipamento para o DITIN"
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>Confirmar e Autorizar Envio</span>

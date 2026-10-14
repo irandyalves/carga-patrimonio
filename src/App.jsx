@@ -679,6 +679,16 @@ export function App() {
     }
   };
 
+  // Helper para ordenar setores: internos primeiro (A-Z) e externos por último (A-Z)
+  const sortSectorsList = (list) => {
+    return [...list].sort((a, b) => {
+      const aExt = !!a.isExterno;
+      const bExt = !!b.isExterno;
+      if (aExt !== bExt) return aExt ? 1 : -1;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+    });
+  };
+
   // 1. Initial Load & Auth Listener
   useEffect(() => {
     try {
@@ -694,7 +704,7 @@ export function App() {
     setIsFirebaseActive(isConfigured);
 
     const { assets: initialAssets, cautelas: initialCautelas, sectors: initialSectors } = loadLocalData();
-    const sortedSectors = [...initialSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    const sortedSectors = sortSectorsList(initialSectors);
     setSectors(sortedSectors);
     setAssets(initialAssets);
     setCautelas(initialCautelas);
@@ -715,7 +725,7 @@ export function App() {
     if (isConfigured) {
       unsubSectors = subscribeToCloudSectors((cloudSectors) => {
         if (cloudSectors && cloudSectors.length > 0) {
-          const sorted = [...cloudSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+          const sorted = sortSectorsList(cloudSectors);
           setSectors(sorted);
         }
       });
@@ -1539,8 +1549,15 @@ export function App() {
         // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado OU transferência recebida pendente
         const isIncoming = incomingTransfersByAssetId.has(item.id);
         if (filterMode === 'MY_SECTOR') {
-          const isMySector = item.setorId === activeSectorId;
-          if (!isMySector && !isIncoming) return false;
+          const isExternalSector = !!activeSector?.isExterno || activeSectorId === 'sec-dtin' || activeSectorId === 'sec-ditin' || (activeSector?.name || '').toUpperCase().trim() === 'DITIN';
+          if (isExternalSector) {
+            // Setor externo (DITIN): tudo que o Santana TI mandar para lá!
+            const isEnviadoAoDtin = item.status === 'ENVIADO_DTIN' || !!item.enviadoDtin || item.setorId === activeSectorId;
+            if (!isEnviadoAoDtin && !isIncoming) return false;
+          } else {
+            const isMySector = item.setorId === activeSectorId;
+            if (!isMySector && !isIncoming) return false;
+          }
         }
 
         // Demais filtros de Status
@@ -1710,7 +1727,7 @@ export function App() {
   const handleResetOfficialData = () => {
     if (confirm('Deseja recarregar a lista oficial de setores e patrimônios das áreas (Studio, Foyer, SACADI, TI, etc.)?')) {
       const { assets: newAssets, cautelas: newCautelas, sectors: newSectors } = resetToDefaultData();
-      const sorted = [...newSectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+      const sorted = sortSectorsList(newSectors);
       setSectors(sorted);
       setAssets(newAssets);
       setCautelas(newCautelas);
@@ -2479,7 +2496,7 @@ export function App() {
       setFilterMode('MY_SECTOR');
       showToast(`Novo setor "${savedSec.name}" cadastrado com sucesso!`);
     }
-    updated.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    updated = sortSectorsList(updated);
     setSectors(updated);
     saveLocalSectors(updated);
     saveSectorToCloud(savedSec);
@@ -2512,8 +2529,7 @@ export function App() {
       }
     }
 
-    const updatedSectors = sectors.filter(s => s.id !== sectorId);
-    updatedSectors.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+    const updatedSectors = sortSectorsList(sectors.filter(s => s.id !== sectorId));
     setSectors(updatedSectors);
     saveLocalSectors(updatedSectors);
     deleteSectorFromCloud(sectorId);
@@ -2926,7 +2942,7 @@ export function App() {
       saveLocalAssets(updatedList);
       saveAssetToCloud(newAsset);
       if (isTiSector) {
-        showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DTIN!`, 'success');
+        showToast(`Equipamento ${formatLast5Patrimonio(newAsset.numeroPatrimonio)} cadastrado e enviado ao DITIN!`, 'success');
       } else {
         showToast(`Equipamento cadastrado! Solicitação de envio enviada para confirmação do detentor da carga.`, 'info');
       }
@@ -2958,7 +2974,7 @@ export function App() {
               ...(a.historico || []),
               { 
                 data: dadosDtin.data || nowStr, 
-                acao: `Envio ao DTIN por Santana (TI): ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
+                acao: `Envio ao DITIN por Santana (TI): ${dadosDtin.motivo}${dadosDtin.chamado ? ` (Chamado/OS: ${dadosDtin.chamado})` : ''}`, 
                 usuario: dadosDtin.responsavel || 'Santana'
               }
             ]
@@ -2970,7 +2986,7 @@ export function App() {
       });
       setAssets(updated);
       saveLocalAssets(updated);
-      showToast('Equipamento da TI enviado ao DTIN com sucesso!', 'success');
+      showToast('Equipamento da TI enviado ao DITIN com sucesso!', 'success');
     } else {
       // Pertence a outro setor (ex: Studio - Tadeu, CADMI - Alex, etc.) -> Gera Pendência de Autorização
       const updated = assets.map(a => {
@@ -2988,7 +3004,7 @@ export function App() {
               ...(a.historico || []),
               { 
                 data: dadosDtin.data || nowStr, 
-                acao: `Solicitação de Envio ao DTIN por Santana (TI) - Aguardando autorização do detentor (${a.responsavel || a.setorNome})`, 
+                acao: `Solicitação de Envio ao DITIN por Santana (TI) - Aguardando autorização do detentor (${a.responsavel || a.setorNome})`, 
                 usuario: dadosDtin.responsavel || 'Santana'
               }
             ]
@@ -3000,7 +3016,7 @@ export function App() {
       });
       setAssets(updated);
       saveLocalAssets(updated);
-      showToast(`Solicitação de envio ao DTIN gerada! O detentor (${target.responsavel || target.setorNome}) foi notificado no sino do cabeçalho.`, 'info');
+      showToast(`Solicitação de envio ao DITIN gerada! O detentor (${target.responsavel || target.setorNome}) foi notificado no sino do cabeçalho.`, 'info');
     }
   };
 
@@ -3041,7 +3057,7 @@ export function App() {
     if (remainingPendencias.length === 0) {
       setIsPendenciasDtinOpen(false);
     }
-    showToast('Envio ao DTIN autorizado e confirmado com sucesso!', 'success');
+    showToast('Envio ao DITIN autorizado e confirmado com sucesso!', 'success');
   };
 
   // Recusa do Envio ao DTIN pelo Detentor
@@ -3056,7 +3072,7 @@ export function App() {
             ...(a.historico || []),
             {
               data: nowStr,
-              acao: `Envio ao DTIN recusado pelo detentor (${a.responsavel || a.setorNome})`,
+              acao: `Envio ao DITIN recusado pelo detentor (${a.responsavel || a.setorNome})`,
               usuario: currentUser?.displayName || currentUser?.email || a.responsavel || 'Detentor da Carga'
             }
           ]
@@ -3072,7 +3088,7 @@ export function App() {
     if (remainingPendencias.length === 0) {
       setIsPendenciasDtinOpen(false);
     }
-    showToast('Envio ao DTIN recusado. O equipamento permanece no setor.', 'info');
+    showToast('Envio ao DITIN recusado. O equipamento permanece no setor.', 'info');
   };
 
   // Retorno / Reintegração do DTIN
@@ -3098,7 +3114,7 @@ export function App() {
             ...(a.historico || []),
             { 
               data: nowStr, 
-              acao: 'Retorno do DTIN: Equipamento reintegrado ao setor', 
+              acao: 'Retorno do DITIN: Equipamento reintegrado ao setor', 
               usuario: effectiveUser?.displayName || currentUser?.displayName || currentUser?.email || activeSector?.responsavel || 'Operador'
             }
           ]
@@ -3110,7 +3126,7 @@ export function App() {
     });
     setAssets(updated);
     saveLocalAssets(updated);
-    showToast('Retorno do DTIN confirmado e equipamento reintegrado!');
+    showToast('Retorno do DITIN confirmado e equipamento reintegrado!');
   };
 
   // Single label print
@@ -3401,14 +3417,14 @@ export function App() {
                   /* Cabeçalho Especial da Aba: Enviados para a DTIN */
                   <div className="pl-4 sm:pl-5 pr-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none border border-transparent">
                     
-                    {/* Botão + Verdinho Brilhoso para Novo Envio DTIN (no lugar do checkbox) */}
+                    {/* Botão + Verdinho Brilhoso para Novo Envio DITIN (no lugar do checkbox) */}
                     <button
                       type="button"
                       onClick={() => {
                         setAssetForDtin(null);
                         setIsDtinModalOpen(true);
                       }}
-                      title="Cadastrar Novo Envio de Equipamento para a DTIN"
+                      title="Cadastrar Novo Envio de Equipamento para o DITIN"
                       className="w-5 h-5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/70 text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer transition-all shadow-[0_0_12px_rgba(16,185,129,0.45)] hover:shadow-[0_0_18px_rgba(16,185,129,0.75)] hover:scale-110 active:scale-95 shrink-0 group"
                     >
                       <Plus className="w-3.5 h-3.5 stroke-[3.5] drop-shadow-[0_0_6px_rgba(52,211,153,0.95)]" />
@@ -4321,7 +4337,7 @@ export function App() {
                     {searchTerm 
                       ? `Nenhum bem corresponde ao termo de busca "${searchTerm}".`
                       : statusFilter === 'ENVIADOS_DTIN'
-                        ? 'Nenhum equipamento foi enviado para a DTIN neste setor ainda.'
+                        ? 'Nenhum equipamento foi enviado para o DITIN neste setor ainda.'
                         : `Nenhum bem com o status selecionado neste setor.`}
                   </p>
                 </div>
@@ -4336,7 +4352,7 @@ export function App() {
                       className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
                     >
                       <Plus className="w-4 h-4 stroke-[3]" />
-                      <span>Registrar Envio para o DTIN</span>
+                      <span>Registrar Envio para o DITIN</span>
                     </button>
                   )}
                   {(searchTerm || statusFilter !== 'ALL') && (
