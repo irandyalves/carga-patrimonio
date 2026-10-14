@@ -17,7 +17,8 @@ import {
   Flame,
   PenTool,
   BookOpen,
-  Volume2
+  Volume2,
+  Settings
 } from 'lucide-react';
 
 export const SectorTabs = ({
@@ -171,14 +172,14 @@ export const SectorTabs = ({
             );
           })}
 
-          {/* Botão de Adicionar / Gerenciar Setor: Setores */}
+          {/* Botão de Adicionar / Gerenciar Setor: Engrenagem + Setor */}
           <button
             onClick={onOpenManageSectors}
-            title="Adicionar ou Configurar Setores"
-            className="shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+            title="Gerenciar Setores e Responsáveis"
+            className="shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold group"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Setores</span>
+            <Settings className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-45 transition-transform duration-300" />
+            <span>Setor</span>
           </button>
 
         </div>
