@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle2, 
@@ -258,6 +259,18 @@ const AssetTableRowCardComponent = ({
   const [cautelaPlacement, setCautelaPlacement] = useState(() => (index < 4 ? 'bottom' : 'top'));
   const [isCautelaModalViewOpen, setIsCautelaModalViewOpen] = useState(false);
   const [actionsPlacement, setActionsPlacement] = useState(() => (index < 3 ? 'bottom' : 'top'));
+
+  // ESC fecha modal de detalhes da cautela
+  useEffect(() => {
+    if (!isCautelaModalViewOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsCautelaModalViewOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCautelaModalViewOpen]);
 
   const handleCautelaMouseEnter = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -2048,8 +2061,8 @@ const AssetTableRowCardComponent = ({
         )}
 
         {/* Coluna 13: Ações & Conferência movidos para o limite da borda direita */}
-        <div className={`w-28 max-w-[112px] shrink-0 flex items-center justify-center gap-1.5 ${
-          isDtinPopupOpen || showUncheckConfirm ? 'overflow-visible z-50 relative' : 'overflow-hidden'
+        <div className={`w-28 max-w-[112px] shrink-0 flex items-center justify-center gap-1.5 relative overflow-visible ${
+          isDtinPopupOpen || showUncheckConfirm || isActionsOpen ? 'z-50' : 'z-20'
         }`}>
           
           {/* Bloqueado / Conferência / Pedido */}
@@ -2151,15 +2164,17 @@ const AssetTableRowCardComponent = ({
           {/* Menu Dropdown de Ações colado à direita - Revelando da direita para a esquerda */}
           <div className="relative">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = e.currentTarget.getBoundingClientRect();
-                if (rect.top < 260) {
-                  setActionsPlacement('bottom');
-                } else {
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < 280 && rect.top > spaceBelow) {
                   setActionsPlacement('top');
+                } else {
+                  setActionsPlacement('bottom');
                 }
-                setIsActionsOpen(!isActionsOpen);
+                setIsActionsOpen(prev => !prev);
                 setIsColorSubmenuOpen(false);
                 setIsHoveringColor(false);
               }}
@@ -2172,7 +2187,7 @@ const AssetTableRowCardComponent = ({
             {isActionsOpen && (
               <>
                 <div 
-                  className="fixed inset-0 z-40" 
+                  className="fixed inset-0 z-40 bg-transparent" 
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsActionsOpen(false);
@@ -2182,13 +2197,6 @@ const AssetTableRowCardComponent = ({
                   }} 
                 />
                 <div 
-                  onMouseLeave={() => {
-                    setIsActionsOpen(false);
-                    setIsHoveringColor(false);
-                    setIsColorSubmenuOpen(false);
-                    setShowDeleteConfirm(false);
-                    setShowReturnDtinConfirm(false);
-                  }}
                   className={`absolute right-0 ${
                     actionsPlacement === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'
                   } w-52 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in slide-in-from-right-2 duration-150`}
@@ -3150,10 +3158,10 @@ const AssetTableRowCardComponent = ({
         </div>
       )}
 
-      {/* Modal de Detalhes da Cautela */}
-      {isCautelaModalViewOpen && (
+      {/* Modal de Detalhes da Cautela (renderizado via Portal no body para garantir isolamento e sobreposição total) */}
+      {isCautelaModalViewOpen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-150"
           onClick={(e) => {
             e.stopPropagation();
             setIsCautelaModalViewOpen(false);
@@ -3241,7 +3249,8 @@ const AssetTableRowCardComponent = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Suspenso: Resumo da Baixa Patrimonial com Abertura Direta de PDF/Documento */}

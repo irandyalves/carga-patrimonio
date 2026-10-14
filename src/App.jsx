@@ -1333,6 +1333,15 @@ export function App() {
     });
   }, [selectedAssetIds, isTiModalOpen, effectiveUserRole, filterMode, canManageActiveSector, assets, canUserManageAsset]);
 
+  const selectedAssetsForBulkAction = useMemo(() => {
+    if (!selectedAssetIds || selectedAssetIds.size === 0) return [];
+    return assets.filter(a => 
+      selectedAssetIds.has(a.id) || 
+      selectedAssetIds.has(String(a.id)) || 
+      (typeof a.id === 'string' && selectedAssetIds.has(Number(a.id)))
+    );
+  }, [assets, selectedAssetIds]);
+
   // Atribuição em Massa de Setor (Gera Pedidos de Carga para Confirmação do Responsável)
   const handleBulkAssignSector = (targetSectorId) => {
     const targetSector = sectors.find(s => s.id === targetSectorId);
@@ -2060,6 +2069,7 @@ export function App() {
           servidorId: servidor ? servidor.id : null,
           servidorNome: servidor ? servidor.nome : null,
           servidorTelefone: servidor ? (servidor.telefone || null) : null,
+          observacao: servidor ? (item.observacao || servidor.nome) : '',
           localizacao: newLoc
         };
         updatedAssetsList.push(updatedItem);
@@ -3819,6 +3829,7 @@ export function App() {
                 >
                   <BulkActionBar
                     selectedCount={displaySelectedCount || selectedAssetIds.size}
+                    selectedAssets={selectedAssetsForBulkAction}
                     onClearSelection={handleClearSelection}
                     onAssignSector={handleBulkAssignSector}
                     sectors={sectors}
@@ -4695,13 +4706,14 @@ export function App() {
       >
         <BulkActionBar
           selectedCount={displaySelectedCount || selectedAssetIds.size}
+          selectedAssets={selectedAssetsForBulkAction}
           onClearSelection={handleClearSelection}
           onAssignTi={handleBulkAssignTi}
           onAssignSector={handleBulkAssignSector}
           sectors={sectors}
           servidores={servidores}
           onAssignServidor={handleBulkAssignServidor}
-                    onCautelarItem={handleCautelarSelecionados}
+          onCautelarItem={handleCautelarSelecionados}
         />
       </div>
 

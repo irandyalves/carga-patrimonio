@@ -19,6 +19,7 @@ export const AVAILABLE_REPORT_COLUMNS = [
   { id: 'setorNome', label: 'Setor Oficial', desc: 'Setor de lotação', isDefault: true },
   { id: 'responsavel', label: 'Resp. Carga', desc: 'Detentor patrimonial', isDefault: true },
   { id: 'localizacao', label: 'Onde Está', desc: 'Local físico do bem', isDefault: true },
+  { id: 'comQuemEsta', label: 'Com quem está', desc: 'Detentor atual / Servidor', isDefault: true },
   { id: 'status', label: 'Status', desc: 'Conferido / Pendente', isDefault: true },
   { id: 'valorAtual', label: 'Valor Atual', desc: 'Valor atual contábil', isDefault: true },
   // Demais colunas do sistema (exceto quantidade) - iniciam em cinza (desmarcadas)
@@ -29,21 +30,28 @@ export const AVAILABLE_REPORT_COLUMNS = [
   { id: 'depreciacao', label: 'Depreciação', desc: 'Percentual depreciado', isDefault: false }
 ];
 
-const STORAGE_KEY_SELECTIONS = 'carga_patrimonio_report_columns_v2';
-const STORAGE_KEY_ORDER = 'carga_patrimonio_report_columns_order_v2';
+const STORAGE_KEY_SELECTIONS = 'carga_patrimonio_report_columns_v3';
+const STORAGE_KEY_ORDER = 'carga_patrimonio_report_columns_order_v3';
 
 export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName }) {
   // Estado das colunas selecionadas
   const [selectedColumns, setSelectedColumns] = useState(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_SELECTIONS);
+      const stored = localStorage.getItem(STORAGE_KEY_SELECTIONS) || localStorage.getItem('carga_patrimonio_report_columns_v2');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object') return parsed;
+        if (parsed && typeof parsed === 'object') {
+          AVAILABLE_REPORT_COLUMNS.forEach(col => {
+            if (parsed[col.id] === undefined) {
+              parsed[col.id] = col.isDefault;
+            }
+          });
+          return parsed;
+        }
       }
     } catch (e) {}
     
-    // Padrão: 7 principais ativas, 5 adicionais desmarcadas (cinza)
+    // Padrão: 8 principais ativas, 5 adicionais desmarcadas (cinza)
     const initial = {};
     AVAILABLE_REPORT_COLUMNS.forEach(col => {
       initial[col.id] = col.isDefault;
@@ -54,10 +62,20 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
   // Estado da ordem das colunas (reordenável via Drag & Drop)
   const [columnList, setColumnList] = useState(() => {
     try {
-      const storedOrder = localStorage.getItem(STORAGE_KEY_ORDER);
+      const storedOrder = localStorage.getItem(STORAGE_KEY_ORDER) || localStorage.getItem('carga_patrimonio_report_columns_order_v2');
       if (storedOrder) {
         const orderIds = JSON.parse(storedOrder);
         if (Array.isArray(orderIds) && orderIds.length > 0) {
+          // Se comQuemEsta ainda não estiver na lista salva, insere após localizacao
+          if (!orderIds.includes('comQuemEsta')) {
+            const locIdx = orderIds.indexOf('localizacao');
+            if (locIdx !== -1) {
+              orderIds.splice(locIdx + 1, 0, 'comQuemEsta');
+            } else {
+              orderIds.push('comQuemEsta');
+            }
+          }
+
           const colMap = new Map(AVAILABLE_REPORT_COLUMNS.map(c => [c.id, c]));
           const reordered = [];
           orderIds.forEach(id => {
@@ -107,6 +125,7 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
     setColumnList(AVAILABLE_REPORT_COLUMNS);
     try {
       localStorage.removeItem(STORAGE_KEY_ORDER);
+      localStorage.removeItem('carga_patrimonio_report_columns_order_v2');
     } catch (e) {}
   };
 
@@ -170,15 +189,15 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
   const selectedCount = Object.values(selectedColumns).filter(Boolean).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      {/* Modal com largura aumentada em 15% (max-w-2xl) */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+      {/* Modal com largura aumentada em 10% (max-w-[740px]) */}
       <div 
-        className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 p-6 flex flex-col max-h-[92vh]"
+        className="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-[740px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 p-5 sm:p-6 flex flex-col max-h-[94vh]"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
               <FileText className="w-5 h-5" />
@@ -210,11 +229,11 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
         </div>
 
         {/* Content Scrollable */}
-        <div className="overflow-y-auto py-4 space-y-4 scrollbar-thin">
+        <div className="overflow-y-auto py-3 space-y-3.5 scrollbar-thin">
           
           {/* Seção 1: Seleção e Reordenação de Colunas via Drag & Drop */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -250,13 +269,13 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 mb-2.5 flex items-center gap-1.5">
+            <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1.5">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
               <span>Arraste os cards para reordenar a sequência das colunas (da esquerda para a direita no PDF).</span>
             </p>
 
-            {/* Grid com cards organizados via Drag & Drop */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Grid com cards organizados via Drag & Drop - compactados para caber confortavelmente */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
               {columnList.map((col, index) => {
                 const isChecked = !!selectedColumns[col.id];
                 const isBeingDragged = draggedIndex === index;
@@ -275,7 +294,7 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
                         toggleColumn(col.id);
                       }
                     }}
-                    className={`flex items-center justify-between p-2 rounded-xl border text-left transition-all select-none cursor-pointer group ${
+                    className={`flex items-center justify-between py-1.5 px-2 rounded-xl border text-left transition-all select-none cursor-pointer group ${
                       isBeingDragged 
                         ? 'opacity-40 border-dashed border-indigo-400 scale-[0.98]' 
                         : isOver 
@@ -285,7 +304,7 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
                             : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-slate-500 hover:bg-slate-800/70'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 min-w-0 pr-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0 pr-1">
                       {/* Drag Handle & Order Badge */}
                       <div 
                         className="cursor-grab active:cursor-grabbing text-slate-500 group-hover:text-indigo-300 p-0.5 -ml-0.5 shrink-0 transition-colors"
@@ -294,31 +313,31 @@ export function ExportReportModal({ isOpen, onClose, onConfirmExport, sectorName
                         <GripVertical className="w-3.5 h-3.5" />
                       </div>
                       
-                      <span className={`w-4 h-4 rounded text-[9.5px] font-bold flex items-center justify-center shrink-0 ${
+                      <span className={`w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center shrink-0 ${
                         isChecked ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'
                       }`}>
                         {index + 1}
                       </span>
 
                       <div className="min-w-0">
-                        <p className={`text-[11.5px] font-semibold truncate ${
+                        <p className={`text-[11px] font-semibold truncate leading-tight ${
                           isChecked ? 'text-indigo-200' : 'text-slate-300'
                         }`}>
                           {col.label}
                         </p>
-                        <p className="text-[9.5px] text-slate-500 truncate">
+                        <p className="text-[9px] text-slate-500 truncate leading-tight">
                           {col.desc}
                         </p>
                       </div>
                     </div>
 
                     {/* Checkbox indicator */}
-                    <div className={`w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                    <div className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition-colors ${
                       isChecked
                         ? 'bg-indigo-600 text-white shadow-xs'
                         : 'border border-slate-600 bg-slate-800/60 text-transparent'
                     }`}>
-                      <Check className="w-3 h-3 stroke-[3]" />
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
                     </div>
                   </div>
                 );

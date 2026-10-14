@@ -12,8 +12,97 @@ import {
   Phone
 } from 'lucide-react';
 
+// Helper para extrair o nome do servidor vinculado ao item (por servidorNome, servidorId, observação "Com quem está", localização ou cautela)
+const extractServidorFromAsset = (asset, servidoresList = []) => {
+  if (!asset) return null;
+
+  // 1. servidorNome explícito
+  if (asset.servidorNome && typeof asset.servidorNome === 'string' && asset.servidorNome.trim()) {
+    return asset.servidorNome.trim();
+  }
+
+  // 2. servidorId vinculado a servidores cadastrados
+  if (asset.servidorId && Array.isArray(servidoresList) && servidoresList.length > 0) {
+    const found = servidoresList.find(s => String(s.id) === String(asset.servidorId));
+    if (found && found.nome) return found.nome.trim();
+  }
+
+  // 3. Objeto ou string em asset.servidor
+  if (asset.servidor) {
+    if (typeof asset.servidor === 'string' && asset.servidor.trim()) {
+      return asset.servidor.trim();
+    }
+    if (typeof asset.servidor === 'object' && asset.servidor?.nome) {
+      return asset.servidor.nome.trim();
+    }
+  }
+
+  // 4. Observação (Coluna "Com quem está?")
+  if (asset.observacao && typeof asset.observacao === 'string') {
+    const rawObs = asset.observacao.trim();
+    const cleanObs = rawObs.replace(/^@/, '').trim();
+    
+    // Procura na lista de servidores cadastrados
+    if (Array.isArray(servidoresList) && servidoresList.length > 0) {
+      const matchServ = servidoresList.find(s => {
+        const sNome = (s.nome || '').toLowerCase().trim();
+        const obsLow = cleanObs.toLowerCase();
+        return sNome && (obsLow === sNome || obsLow.startsWith(sNome) || obsLow.includes(sNome));
+      });
+      if (matchServ && matchServ.nome) return matchServ.nome.trim();
+    }
+
+    // Se for texto livre de pessoa (ex: "Alex", "Jean pegou", etc.)
+    if (cleanObs && cleanObs.length <= 40 && !cleanObs.includes('\n')) {
+      const pessoaMatch = cleanObs.match(/\b([A-ZÀ-ÿ][a-zà-ÿ]+)\s+(pegou|levou|recebeu|ficou|guardou)\b/i)
+        || cleanObs.match(/\b(com|para|entregue a)\s+([A-ZÀ-ÿ][a-zà-ÿ]+(?:\s+[A-ZÀ-ÿ][a-zà-ÿ]+)*)\b/i);
+      if (pessoaMatch) {
+        const pName = pessoaMatch[1] && !['com', 'para', 'entregue a'].includes(pessoaMatch[1].toLowerCase()) ? pessoaMatch[1] : pessoaMatch[2];
+        if (pName) return pName.trim();
+      }
+      return cleanObs;
+    }
+  }
+
+  // 5. Localização (ex: "Mesa do Alex")
+  if (asset.localizacao && typeof asset.localizacao === 'string') {
+    const loc = asset.localizacao.trim();
+    const mesaMatch = loc.match(/Mesa\s+(?:d[aeo]\s+)?([A-ZÀ-ÿa-zà-ÿ]+(?:\s+[A-ZÀ-ÿa-zà-ÿ]+)?)/i);
+    if (mesaMatch && mesaMatch[1]) {
+      return mesaMatch[1].trim();
+    }
+    if (Array.isArray(servidoresList) && servidoresList.length > 0) {
+      const matchServ = servidoresList.find(s => {
+        const sNome = (s.nome || '').toLowerCase().trim();
+        return sNome && loc.toLowerCase().includes(sNome);
+      });
+      if (matchServ && matchServ.nome) return matchServ.nome.trim();
+    }
+  }
+
+  // 6. Cautela atual
+  if (asset.cautelaAtual) {
+    const resp = asset.cautelaAtual.responsavelRetirada || asset.cautelaAtual.responsavel;
+    if (resp && typeof resp === 'string' && resp.trim()) {
+      return resp.trim();
+    }
+  }
+
+  // 7. Responsável
+  if (asset.responsavel && typeof asset.responsavel === 'string') {
+    const resp = asset.responsavel.trim();
+    if (Array.isArray(servidoresList) && servidoresList.length > 0) {
+      const matchServ = servidoresList.find(s => (s.nome || '').toLowerCase().trim() === resp.toLowerCase());
+      if (matchServ && matchServ.nome) return matchServ.nome.trim();
+    }
+  }
+
+  return null;
+};
+
 export const BulkActionBar = ({
   selectedCount = 0,
+  selectedAssets = [],
   onClearSelection,
   onAssignSector,
   sectors = [],
@@ -114,6 +203,25 @@ export const BulkActionBar = ({
       return nome.includes(q) || mesa.includes(q) || (qDigits.length >= 2 && tel.includes(qDigits));
     });
   }, [servidores, servidorSearch]);
+
+  // Nomes dos servidores atualmente vinculados aos itens selecionados
+  const currentServidoresNames = useMemo(() => {
+    if (!selectedAssets || selectedAssets.length === 0) return [];
+    const names = new Set();
+    selectedAssets.forEach(a => {
+      const nome = extractServidorFromAsset(a, servidores);
+      if (nome && nome.trim()) {
+        names.add(nome.trim());
+      }
+    });
+    return Array.from(names);
+  }, [selectedAssets, servidores]);
+
+  const servidorLabel = useMemo(() => {
+    if (currentServidoresNames.length === 0) return null;
+    if (currentServidoresNames.length <= 2) return currentServidoresNames.join(', ');
+    return `${currentServidoresNames.slice(0, 2).join(', ')} +${currentServidoresNames.length - 2}`;
+  }, [currentServidoresNames]);
 
   const effectiveCount = selectedCount || 0;
 
@@ -296,17 +404,26 @@ export const BulkActionBar = ({
                     </button>
                   )}
 
-                  {/* Opção para desvincular */}
-                  {(!servidorSearch || normalizeText('desvincular uso geral').includes(normalizeText(servidorSearch))) && (
+                  {/* Opção para desvincular (Exibida APENAS se houver servidor vinculado aos itens selecionados) */}
+                  {servidorLabel && (!servidorSearch || 
+                    normalizeText('desvincular').includes(normalizeText(servidorSearch)) ||
+                    normalizeText(servidorLabel).includes(normalizeText(servidorSearch)) ||
+                    currentServidoresNames.some(n => normalizeText(n).includes(normalizeText(servidorSearch)))
+                  ) && (
                     <button
                       type="button"
                       onClick={() => {
                         setIsServidorDropdownOpen(false);
                         onAssignServidor(null);
                       }}
-                      className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer group"
+                      className="w-full text-left px-2.5 py-2 rounded-xl text-xs flex items-center justify-between hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer group mb-1"
                     >
-                      <span className="font-semibold italic">Desvincular servidor (Uso Geral)</span>
+                      <span className="font-semibold italic flex items-center gap-1.5 flex-wrap">
+                        <span>Desvincular servidor</span>
+                        <span className="text-emerald-400 font-bold not-italic drop-shadow-[0_0_8px_rgba(52,211,153,0.4)] group-hover:text-emerald-300 transition-colors">
+                          [{servidorLabel}]
+                        </span>
+                      </span>
                     </button>
                   )}
 

@@ -232,6 +232,32 @@ const calculateSectorStats = (secAssets) => {
   };
 };
 
+// Helper para extrair informação de "Com quem está" para o relatório PDF
+const extractComQuemEsta = (a) => {
+  if (!a) return '-';
+  // 1. Cautela ativa
+  if (a.cautelaAtual) {
+    const pess = a.cautelaAtual.responsavelRetirada || a.cautelaAtual.pessoa || '';
+    const dest = a.cautelaAtual.setorDestino || '';
+    if (dest && pess) return `${dest} (${pess})`;
+    if (pess) return pess;
+    if (dest) return dest;
+  }
+  // 2. Servidor oficial vinculado
+  if (a.servidorNome && typeof a.servidorNome === 'string' && a.servidorNome.trim()) {
+    return formatTitleCase(a.servidorNome.trim());
+  }
+  if (a.servidor) {
+    if (typeof a.servidor === 'string' && a.servidor.trim()) return formatTitleCase(a.servidor.trim());
+    if (typeof a.servidor === 'object' && a.servidor?.nome) return formatTitleCase(a.servidor.nome.trim());
+  }
+  // 3. Observação (onde o usuário escreve o nome da pessoa livremente)
+  if (a.observacao && typeof a.observacao === 'string' && a.observacao.trim()) {
+    return a.observacao.trim();
+  }
+  return '-';
+};
+
 // 3. Relatório de Conferência & Auditoria de Setor
 export const generateInventoryReportPDF = (
   sector, 
@@ -253,6 +279,7 @@ export const generateInventoryReportPDF = (
     setorNome: true,
     responsavel: true,
     localizacao: true,
+    comQuemEsta: true,
     status: true,
     valorAtual: true
   };
@@ -260,10 +287,11 @@ export const generateInventoryReportPDF = (
   // Configuração das colunas com larguras enxutas e otimizadas
   const ALL_COLS_DEF_MAP = {
     patrimonio: { id: 'patrimonio', header: 'Patrimônio', baseWidth: 16, fontSize: 7.4, fontStyle: 'bold', halign: 'right', getValue: a => a.numeroPatrimonio },
-    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 70, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao },
+    descricao: { id: 'descricao', header: 'Descrição do item', baseWidth: 62, fontSize: 5.1, fontStyle: 'normal', halign: 'left', isFlex: true, getValue: a => a.descricao },
     setorNome: { id: 'setorNome', header: 'Setor Oficial', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.setorNome || (sec ? sec.name : '')) },
     responsavel: { id: 'responsavel', header: 'Resp. Carga', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: (a, sec) => formatTitleCase(a.responsavel || (sec ? sec.responsavel : '') || '-') },
     localizacao: { id: 'localizacao', header: 'Onde Está', baseWidth: 16, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.localizacao || '-') },
+    comQuemEsta: { id: 'comQuemEsta', header: 'Com quem está', baseWidth: 18, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => extractComQuemEsta(a) },
     marca: { id: 'marca', header: 'Marca', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => formatTitleCase(a.marca || '-') },
     modelo: { id: 'modelo', header: 'Modelo', baseWidth: 14, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.modelo || '-' },
     dataAquisicao: { id: 'dataAquisicao', header: 'Data Aquisição', baseWidth: 15, fontSize: 5.5, fontStyle: 'normal', halign: 'center', getValue: a => a.dataAquisicao || a.anoAquisicao || '-' },
@@ -275,7 +303,7 @@ export const generateInventoryReportPDF = (
 
   // Respeita a ordem exata definida pelo usuário via Drag & Drop
   const defaultOrder = [
-    'patrimonio', 'descricao', 'setorNome', 'responsavel', 'localizacao', 
+    'patrimonio', 'descricao', 'setorNome', 'responsavel', 'localizacao', 'comQuemEsta',
     'status', 'valorAtual', 'marca', 'modelo', 'dataAquisicao', 'valorOriginal', 'depreciacao'
   ];
   const orderSeq = (Array.isArray(orderedColumnIds) && orderedColumnIds.length > 0) ? orderedColumnIds : defaultOrder;
