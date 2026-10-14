@@ -1928,7 +1928,6 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold max-w-[185px] hover:bg-amber-500/30 group-hover/transfer:border-amber-400 transition-all cursor-pointer shadow-sm text-left"
               >
                 <Clock className="w-2.5 h-2.5 text-amber-400 shrink-0 animate-pulse" />
@@ -1942,77 +1941,63 @@ const AssetTableRowCardComponent = ({
                 transferPlacement === 'bottom' 
                   ? 'top-full mt-2' 
                   : 'bottom-full mb-2'
-              } hidden group-hover/transfer:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-amber-500/50 rounded-2xl p-3 shadow-2xl shadow-amber-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left`}>
+              } hidden group-hover/transfer:flex flex-col z-[100] w-80 bg-slate-950/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3.5 shadow-2xl shadow-black/95 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left space-y-2`}>
+                
                 {/* Header */}
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-amber-500/25">
-                  <div className="flex items-center gap-1.5">
-                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                      <Clock className="w-3.5 h-3.5 animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-white text-[11.5px] leading-tight">Transferência de Carga</div>
-                      <div className="text-[9.5px] text-amber-400 font-semibold tracking-wide uppercase">Aguardando Aceite</div>
-                    </div>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">⏳</span>
+                    <span className="font-extrabold text-white text-xs tracking-wide">
+                      TRANSFERÊNCIA DE CARGA PENDENTE
+                    </span>
                   </div>
                   {pendingTransferTo.dataSolicitacao && (
-                    <span className="text-[9px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono border border-slate-700/60">
+                    <span className="text-[9.5px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono border border-slate-700/60 font-bold">
                       {formatDisplayDate(pendingTransferTo.dataSolicitacao)}
                     </span>
                   )}
                 </div>
 
-                {/* Fluxo Origem -> Destino com setas */}
-                <div className="p-2.5 rounded-xl bg-slate-800/70 border border-slate-700/60 mb-2">
-                  <div className="flex items-center justify-between gap-1.5">
-                    {/* Origem */}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[9px] text-slate-400 block font-medium">Origem:</span>
-                      <span className="text-slate-100 font-bold text-[11px] truncate block">
-                        {pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}
-                      </span>
-                      <span className="text-[9.5px] text-slate-400 truncate block">
-                        Resp: {pendingTransferTo.responsavelOrigem || asset.responsavel || 'Alex'}
-                      </span>
-                    </div>
+                {/* EM VERDE: Para STUDIO [Tadeu] */}
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-2.5 py-1.5 rounded-xl shadow-sm">
+                  <span className="text-emerald-400 font-black">•</span>
+                  <span>
+                    Para: <strong className="text-emerald-300 font-black uppercase">{(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'STUDIO').toUpperCase()}</strong> [{pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Tadeu'}]
+                  </span>
+                </div>
 
-                    {/* Setinhas animadas */}
-                    <div className="flex flex-col items-center justify-center px-1 text-amber-400 shrink-0">
-                      <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-top" />
-                      <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-bottom" />
-                    </div>
+                {/* EM AMARELO: Enviado por Alex [Administrativo] */}
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-500/40 px-2.5 py-1.5 rounded-xl shadow-sm">
+                  <span className="text-amber-400 font-black">•</span>
+                  <span>
+                    Enviado por: <strong className="text-amber-200 font-black">{pendingTransferTo.solicitanteNome || 'Alex'}</strong> [{pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}]
+                  </span>
+                </div>
 
-                    {/* Destino */}
-                    <div className="flex-1 min-w-0 text-right">
-                      <span className="text-[9px] text-amber-400/90 block font-medium">Destino:</span>
-                      <span className="text-amber-300 font-bold text-[11px] truncate block">
-                        {pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'Studio'}
-                      </span>
-                      <span className="text-[9.5px] text-slate-300 truncate block">
-                        Resp: {(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'TADEU').toUpperCase()}
-                      </span>
-                    </div>
+                {/* Fluxo com setinhas animadas da esquerda para a direita */}
+                <div className="px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[10.5px]">
+                  <span className="text-amber-300 font-bold truncate max-w-[105px]">{pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}</span>
+                  <div className="flex flex-col items-center justify-center px-1 text-amber-400 shrink-0">
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400 animate-transfer-arrow-top" />
+                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400 animate-transfer-arrow-bottom" />
                   </div>
-
-                  {pendingTransferTo.solicitanteNome && (
-                    <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400">Enviado por:</span>
-                      <span className="text-amber-300 font-semibold">{pendingTransferTo.solicitanteNome} [{(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]</span>
-                    </div>
-                  )}
+                  <span className="text-emerald-300 font-bold truncate max-w-[105px] text-right">{(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'Studio').toUpperCase()}</span>
                 </div>
 
                 {/* Motivo */}
-                {pendingTransferTo.motivo && (
-                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[10.5px] text-amber-200/90 mb-2">
-                    <span className="font-semibold text-amber-300 mr-1 not-italic">Motivo:</span>
-                    <span className="italic">"{pendingTransferTo.motivo}"</span>
-                  </div>
-                )}
-
-                {/* Rodapé */}
-                <div className="text-[9.5px] text-amber-300/90 flex items-center justify-center pt-1 border-t border-slate-800 font-medium">
-                  <span>👉 Clique no botão para ver tudo ou cancelar</span>
+                <div className="text-[10.5px] text-slate-300 px-1 flex items-start gap-1">
+                  <span className="text-slate-500 font-bold shrink-0">•</span>
+                  <span>
+                    Motivo: <span className="italic text-slate-200 font-medium">"{pendingTransferTo.motivo || 'Transferência de carga entre setores'}"</span>
+                  </span>
                 </div>
+
+                {/* Rodapé interativo */}
+                <div className="text-[10px] text-amber-400/90 font-semibold pt-1.5 border-t border-slate-800 flex items-center gap-1">
+                  <span>👉</span>
+                  <span>Clique para abrir detalhes e opções</span>
+                </div>
+
               </div>
             </div>
           ) : isIncomingTransfer ? (
@@ -2026,7 +2011,6 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`📥 ITEM RECEBIDO - AGUARDANDO SUA CONFIRMAÇÃO\n• De: ${(incomingTransfer.setorOrigemNome || 'Setor de Origem').toUpperCase()}\n• Enviado por: ${incomingTransfer.solicitanteNome || 'Alex'} [${(incomingTransfer.setorOrigemNome || '').toUpperCase()}]\n• Destinado a você: ${(incomingTransfer.responsavelDestino || 'Você').toUpperCase()}\n${incomingTransfer.motivo ? `• Motivo: ${incomingTransfer.motivo}\n` : ''}👉 Clique para aceitar ou rejeitar a transferência`}
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-bold max-w-[185px] hover:bg-emerald-500/30 group-hover/transfer-in:border-emerald-400 transition-all cursor-pointer shadow-sm text-left"
               >
                 <Send className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
@@ -2040,70 +2024,65 @@ const AssetTableRowCardComponent = ({
                 transferPlacement === 'bottom' 
                   ? 'top-full mt-2' 
                   : 'bottom-full mb-2'
-              } hidden group-hover/transfer-in:flex flex-col z-50 w-72 sm:w-80 bg-slate-900/98 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-3 shadow-2xl shadow-emerald-950/80 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left`}>
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-emerald-500/25">
-                  <div className="flex items-center gap-1.5">
-                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      <Send className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-white text-[11.5px] leading-tight">Transferência Recebida</div>
-                      <div className="text-[9.5px] text-emerald-400 font-semibold tracking-wide uppercase">Aguardando Seu Aceite</div>
-                    </div>
+              } hidden group-hover/transfer-in:flex flex-col z-[100] w-80 bg-slate-950/98 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-3.5 shadow-2xl shadow-black/95 text-[11px] text-slate-200 animate-in fade-in zoom-in-95 duration-150 pointer-events-none text-left space-y-2`}>
+                
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">📥</span>
+                    <span className="font-extrabold text-white text-xs tracking-wide">
+                      TRANSFERÊNCIA RECEBIDA
+                    </span>
                   </div>
                   {incomingTransfer.dataSolicitacao && (
-                    <span className="text-[9px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono border border-slate-700/60">
+                    <span className="text-[9.5px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono border border-slate-700/60 font-bold">
                       {formatDisplayDate(incomingTransfer.dataSolicitacao)}
                     </span>
                   )}
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-slate-800/70 border border-slate-700/60 mb-2">
-                  <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[9px] text-slate-400 block font-medium">De (Origem):</span>
-                      <span className="text-slate-100 font-bold text-[11px] truncate block">
-                        {incomingTransfer.setorOrigemNome}
-                      </span>
-                      <span className="text-[9.5px] text-slate-400 truncate block">
-                        Resp: {incomingTransfer.responsavelOrigem}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center px-1 text-emerald-400 shrink-0">
-                      <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-top" />
-                      <ArrowRight className="w-3.5 h-3.5 animate-transfer-arrow-bottom" />
-                    </div>
-
-                    <div className="flex-1 min-w-0 text-right">
-                      <span className="text-[9px] text-emerald-400/90 block font-medium">Para Seu Setor:</span>
-                      <span className="text-emerald-300 font-bold text-[11px] truncate block">
-                        {incomingTransfer.setorDestinoNome}
-                      </span>
-                      <span className="text-[9.5px] text-slate-300 truncate block">
-                        Resp: {(incomingTransfer.responsavelDestino || '').toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {incomingTransfer.solicitanteNome && (
-                    <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400">Enviado por:</span>
-                      <span className="text-emerald-300 font-semibold">{incomingTransfer.solicitanteNome} [{(incomingTransfer.setorOrigemNome || '').toUpperCase()}]</span>
-                    </div>
-                  )}
+                {/* EM VERDE: Para SEU SETOR [Você] */}
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-2.5 py-1.5 rounded-xl shadow-sm">
+                  <span className="text-emerald-400 font-black">•</span>
+                  <span>
+                    Para: <strong className="text-emerald-300 font-black uppercase">{(incomingTransfer.setorDestinoNome || 'SEU SETOR').toUpperCase()}</strong> [{incomingTransfer.responsavelDestino || 'Você'}]
+                  </span>
                 </div>
 
+                {/* EM AMARELO: Enviado por Alex [Administrativo] */}
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-500/40 px-2.5 py-1.5 rounded-xl shadow-sm">
+                  <span className="text-amber-400 font-black">•</span>
+                  <span>
+                    Enviado por: <strong className="text-amber-200 font-black">{incomingTransfer.solicitanteNome || 'Alex'}</strong> [{incomingTransfer.setorOrigemNome || 'Administrativo'}]
+                  </span>
+                </div>
+
+                {/* Fluxo com setinhas animadas da esquerda para a direita */}
+                <div className="px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-[10.5px]">
+                  <span className="text-amber-300 font-bold truncate max-w-[105px]">{incomingTransfer.setorOrigemNome || 'Administrativo'}</span>
+                  <div className="flex flex-col items-center justify-center px-1 text-amber-400 shrink-0">
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400 animate-transfer-arrow-top" />
+                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400 animate-transfer-arrow-bottom" />
+                  </div>
+                  <span className="text-emerald-300 font-bold truncate max-w-[105px] text-right">{(incomingTransfer.setorDestinoNome || 'Seu Setor').toUpperCase()}</span>
+                </div>
+
+                {/* Motivo */}
                 {incomingTransfer.motivo && (
-                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-[10.5px] text-emerald-200/90 mb-2">
-                    <span className="font-semibold text-emerald-300 mr-1 not-italic">Motivo:</span>
-                    <span className="italic">"{incomingTransfer.motivo}"</span>
+                  <div className="text-[10.5px] text-slate-300 px-1 flex items-start gap-1">
+                    <span className="text-slate-500 font-bold shrink-0">•</span>
+                    <span>
+                      Motivo: <span className="italic text-slate-200 font-medium">"{incomingTransfer.motivo}"</span>
+                    </span>
                   </div>
                 )}
 
-                <div className="text-[9.5px] text-emerald-300/90 flex items-center justify-center pt-1 border-t border-slate-800 font-medium">
-                  <span>👉 Clique no botão para aceitar ou rejeitar</span>
+                {/* Rodapé interativo */}
+                <div className="text-[10px] text-emerald-400/90 font-semibold pt-1.5 border-t border-slate-800 flex items-center gap-1">
+                  <span>👉</span>
+                  <span>Clique para aceitar ou rejeitar</span>
                 </div>
+
               </div>
             </div>
           ) : asset.observacao ? (
@@ -2281,7 +2260,7 @@ const AssetTableRowCardComponent = ({
                 e.stopPropagation();
                 setIsTransferModalOpen(true);
               }}
-              title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
+              title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'STUDIO').toUpperCase()} [${pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Tadeu'}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
               className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer hover:bg-amber-500/25 transition-all"
             >
               <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
@@ -2918,7 +2897,7 @@ const AssetTableRowCardComponent = ({
                   e.stopPropagation();
                   setIsTransferModalOpen(true);
                 }}
-                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
+                title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'STUDIO').toUpperCase()} [${pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Tadeu'}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para ver detalhes e opções`}
                 className="px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 select-none cursor-pointer active:scale-95"
               >
                 <Clock className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
@@ -3040,7 +3019,7 @@ const AssetTableRowCardComponent = ({
               e.stopPropagation();
               setIsTransferModalOpen(true);
             }}
-            title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Responsável').toUpperCase()} [${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || '').toUpperCase()}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${(pendingTransferTo.setorOrigemNome || asset.setorNome || '').toUpperCase()}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
+            title={`⏳ TRANSFERÊNCIA DE CARGA PENDENTE\n• Para: ${(pendingTransferTo.setorDestinoNome || pendingTransferTo.setor || 'STUDIO').toUpperCase()} [${pendingTransferTo.responsavelDestino || pendingTransferTo.responsavel || 'Tadeu'}]\n• Enviado por: ${pendingTransferTo.solicitanteNome || 'Alex'} [${pendingTransferTo.setorOrigemNome || asset.setorNome || 'Administrativo'}]${pendingTransferTo.motivo ? `\n• Motivo: ${pendingTransferTo.motivo}` : ''}\n👉 Clique para abrir detalhes e opções`}
             className="text-[9.5px] text-amber-300 flex items-center gap-1 font-medium truncate pt-0.5 text-left cursor-pointer"
           >
             <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-pulse" />
