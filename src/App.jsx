@@ -160,7 +160,8 @@ import {
   Laptop,
   Monitor,
   Cpu,
-  ChevronDown
+  ChevronDown,
+  UploadCloud
 } from 'lucide-react';
 
 export function App() {
@@ -545,6 +546,9 @@ export function App() {
   const [isManageSectorsOpen, setIsManageSectorsOpen] = useState(false);
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [importInitialFile, setImportInitialFile] = useState(null);
+  const [isEmptyDropActive, setIsEmptyDropActive] = useState(false);
+  const emptyFileInputRef = useRef(null);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   
@@ -4448,46 +4452,131 @@ export function App() {
           })()}
         </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500">
-                  <PackageSearch className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-slate-200">Nenhum patrimônio encontrado</h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                    {searchTerm 
-                      ? `Nenhum bem corresponde ao termo de busca "${searchTerm}".`
-                      : statusFilter === 'ENVIADOS_DTIN'
-                        ? 'Nenhum equipamento foi enviado para o DITIN neste setor ainda.'
-                        : `Nenhum bem com o status selecionado neste setor.`}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {statusFilter === 'ENVIADOS_DTIN' && canCreateNovoEnvioDtin && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAssetForDtin(null);
-                        setIsDtinModalOpen(true);
+              <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center">
+                {searchTerm || statusFilter === 'ENVIADOS_DTIN' ? (
+                  <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-500 mx-auto">
+                      <PackageSearch className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-200">Nenhum patrimônio encontrado</h3>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                        {searchTerm 
+                          ? `Nenhum bem corresponde ao termo de busca "${searchTerm}".`
+                          : 'Nenhum equipamento foi enviado para o DITIN neste setor ainda.'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                      {statusFilter === 'ENVIADOS_DTIN' && canCreateNovoEnvioDtin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssetForDtin(null);
+                            setIsDtinModalOpen(true);
+                          }}
+                          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <Plus className="w-4 h-4 stroke-[3]" />
+                          <span>Registrar Envio para o DITIN</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSearchTerm('');
+                          setStatusFilter('ALL');
+                        }}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        Ver todos os bens do setor
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Setor sem bens: Área de Arrastar e Soltar ou Clicar para Importar Lista */
+                  <div className="max-w-xl w-full flex flex-col items-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsEmptyDropActive(true);
                       }}
-                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-cyan-600/30 flex items-center gap-2 cursor-pointer active:scale-95"
-                    >
-                      <Plus className="w-4 h-4 stroke-[3]" />
-                      <span>Registrar Envio para o DITIN</span>
-                    </button>
-                  )}
-                  {(searchTerm || statusFilter !== 'ALL') && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('ALL');
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsEmptyDropActive(false);
                       }}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsEmptyDropActive(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) {
+                          setImportInitialFile(file);
+                          setIsExcelModalOpen(true);
+                        }
+                      }}
+                      onClick={() => emptyFileInputRef.current?.click()}
+                      className={`w-full p-8 sm:p-12 rounded-3xl border-2 border-dashed transition-all cursor-pointer group flex flex-col items-center justify-center text-center shadow-2xl relative select-none ${
+                        isEmptyDropActive
+                          ? 'border-indigo-400 bg-indigo-500/15 scale-[1.02] shadow-indigo-500/20'
+                          : 'border-slate-750 hover:border-indigo-500/80 bg-slate-900/50 hover:bg-slate-900/90 hover:shadow-indigo-950/40'
+                      }`}
                     >
-                      Ver todos os bens do setor
-                    </button>
-                  )}
-                </div>
+                      <input
+                        ref={emptyFileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.docx,.csv,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setImportInitialFile(file);
+                            setIsExcelModalOpen(true);
+                          }
+                          e.target.value = '';
+                        }}
+                        className="hidden"
+                      />
+
+                      {/* Ícone de Arrastar e Soltar / Upload */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all shadow-lg shadow-indigo-950/50">
+                        <UploadCloud className="w-8 h-8 sm:w-10 sm:h-10 transition-transform group-hover:-translate-y-1" />
+                      </div>
+
+                      {/* Títulos e instruções */}
+                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                        Arraste e solte sua planilha aqui
+                      </h3>
+                      
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-sm leading-relaxed">
+                        ou <span className="text-indigo-400 font-semibold underline underline-offset-4 group-hover:text-indigo-300">clique para importar lista</span> de bens para este setor
+                      </p>
+
+                      {/* Formatos Suportados */}
+                      <div className="flex flex-wrap items-center justify-center gap-1.5 mt-5 pt-3.5 border-t border-slate-800/80 text-[11px] text-slate-400">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 font-mono text-emerald-400 font-bold">.XLSX</span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 font-mono text-emerald-400 font-bold">.XLS</span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 font-mono text-amber-400 font-bold">.CSV</span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 font-mono text-blue-400 font-bold">.DOCX</span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 font-mono text-purple-400 font-bold">.TXT</span>
+                      </div>
+                    </div>
+
+                    {/* Botão Secundário: Cadastrar Manualmente */}
+                    <div className="flex items-center gap-2 text-xs pt-1">
+                      <span className="text-slate-500">ou</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAssetToEdit(null);
+                          setIsAssetModalOpen(true);
+                        }}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold hover:underline cursor-pointer"
+                      >
+                        + cadastrar bem individualmente
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -4592,7 +4681,11 @@ export function App() {
 
       <SmartImportModal
         isOpen={isExcelModalOpen}
-        onClose={() => setIsExcelModalOpen(false)}
+        onClose={() => {
+          setIsExcelModalOpen(false);
+          setImportInitialFile(null);
+        }}
+        initialFile={importInitialFile}
         sectors={sectors}
         activeSectorId={activeSectorId}
         assets={assets}

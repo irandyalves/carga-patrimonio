@@ -43,7 +43,8 @@ export const SmartImportModal = ({
   activeSectorId,
   assets = [],
   onImportSuccess,
-  onOpenManageSectors
+  onOpenManageSectors,
+  initialFile = null
 }) => {
   // Passos: 'SETUP_AND_UPLOAD' | 'COLUMN_PREVIEW' | 'SUCCESS'
   const [step, setStep] = useState('SETUP_AND_UPLOAD');
@@ -193,6 +194,13 @@ export const SmartImportModal = ({
       setIsLoading(false);
     }
   };
+
+  // Processa arquivo inicial se passado via drop na tela principal
+  useEffect(() => {
+    if (isOpen && initialFile) {
+      handleProcessFile(initialFile);
+    }
+  }, [isOpen, initialFile]);
 
   const handleFileInputChange = (e) => {
     const file = e.target.files?.[0];
