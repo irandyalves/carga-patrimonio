@@ -116,6 +116,7 @@ export const BulkActionBar = ({
   const sectorDropdownRef = useRef(null);
   const servidorDropdownRef = useRef(null);
   const servidorSearchInputRef = useRef(null);
+  const barRef = useRef(null);
 
   // Estado do popup "Cautelar item"
   const [isCautelaOpen, setIsCautelaOpen] = useState(false);
@@ -142,6 +143,60 @@ export const BulkActionBar = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Ao clicar fora da barra de ações em lote, desmarca e recolhe a cortina
+  useEffect(() => {
+    if (effectiveCount === 0) return;
+
+    const handleOutsideBarClick = (event) => {
+      // Se clicou dentro da barra flutuante
+      if (barRef.current && barRef.current.contains(event.target)) {
+        return;
+      }
+
+      // Se clicou em um checkbox de seleção da tabela ou no botão "selecionar todos", deixa o clique de seleção agir
+      if (
+        event.target.closest('input[type="checkbox"]') ||
+        event.target.closest('[data-selection-checkbox]') ||
+        event.target.closest('.selection-checkbox') ||
+        event.target.closest('button[title*="marcar"]') ||
+        event.target.closest('button[title*="Marcar"]')
+      ) {
+        return;
+      }
+
+      // Se clicou em um modal/diálogo aberto
+      if (event.target.closest('[role="dialog"]') || event.target.closest('.modal-content')) {
+        return;
+      }
+
+      // Clicou fora -> desmarca todos os itens para recolher a cortina
+      if (onClearSelection) {
+        onClearSelection();
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleOutsideBarClick);
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleOutsideBarClick);
+    };
+  }, [effectiveCount, onClearSelection]);
+
+  // Tecla ESC recolhe a cortina
+  useEffect(() => {
+    if (effectiveCount === 0) return;
+    const handleEscKey = (e) => {
+      if (e.key === 'Escape') {
+        onClearSelection && onClearSelection();
+      }
+    };
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [effectiveCount, onClearSelection]);
 
   // Ao abrir o popup de cautela: limpa campos e foca no nome
   useEffect(() => {
@@ -241,7 +296,7 @@ export const BulkActionBar = ({
   };
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white">
+    <div ref={barRef} className="flex items-center gap-2 sm:gap-3 p-1.5 px-3 bg-slate-900/98 backdrop-blur-2xl border-2 border-indigo-500/85 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.9)] text-white">
       
       {/* Contador de Itens Selecionados */}
       <div className="flex items-center gap-2 shrink-0">

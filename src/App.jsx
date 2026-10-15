@@ -4644,12 +4644,14 @@ export function App() {
         onSubmitPedido={handleCreatePedido}
       />
 
-      {/* Modal Central de Pedidos de Carga (Visualização e Aprovação) */}
+      {/* Modal Central de Pedidos de Carga & Históricos (Visualização e Aprovação) */}
       <PedidosCargaModal
         isOpen={isPedidosModalOpen}
         onClose={() => setIsPedidosModalOpen(false)}
         initialTab={pedidosModalInitialTab}
         pedidos={pedidosCarga}
+        cautelas={cautelas}
+        assets={assets}
         isAdmin={effectiveUserRole === 'admin'}
         onAprovarPedido={handleAprovarPedido}
         onRecusarPedido={handleRecusarPedido}
@@ -4657,6 +4659,7 @@ export function App() {
         onExcluirHistorico={handleExcluirHistoricoPedido}
         onLimparHistorico={handleLimparHistoricoPedidos}
         onCancelarPedido={handleCancelarPedido}
+        onReturnCautela={handleReturnCautela}
         currentUserName={effectiveUser?.displayName || effectiveUser?.email || ''}
         userSectorIds={effectiveUserSectorIds}
         activeSectorId={activeSectorId}

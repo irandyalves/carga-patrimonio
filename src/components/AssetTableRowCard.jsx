@@ -254,7 +254,9 @@ const AssetTableRowCardComponent = ({
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBaixaResumoOpen, setIsBaixaResumoOpen] = useState(false);
   const [isDtinResumoOpen, setIsDtinResumoOpen] = useState(false);
-  const [isDtinPopupOpen, setIsDtinPopupOpen] = useState(false);
+  const [dtinPopupAnchor, setDtinPopupAnchor] = useState(null); // 'left' | 'right' | null
+  const isDtinPopupOpen = Boolean(dtinPopupAnchor);
+  const setIsDtinPopupOpen = (open) => setDtinPopupAnchor(open ? 'left' : null);
   const [isMotivoOpen, setIsMotivoOpen] = useState(false);
   const [showModalReturnConfirm, setShowModalReturnConfirm] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
@@ -1000,13 +1002,13 @@ const AssetTableRowCardComponent = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsDtinPopupOpen(false);
+                    setDtinPopupAnchor(null);
                     onReturnDtin(asset.id);
                   }}
                   className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Retornar</span>
+                  <span>Receber o item de volta</span>
                 </button>
               )}
             </div>
@@ -1473,7 +1475,7 @@ const AssetTableRowCardComponent = ({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsDtinPopupOpen(!isDtinPopupOpen);
+                  setDtinPopupAnchor(prev => prev === 'left' ? null : 'left');
                 }}
                 title="Equipamento enviado ao DITIN (Clique para ver detalhes)"
                 className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 text-[10px] flex items-center gap-1 hover:bg-cyan-500/30 transition-all cursor-pointer shrink-0 shadow-sm animate-pulse hover:animate-none"
@@ -1483,7 +1485,7 @@ const AssetTableRowCardComponent = ({
               </button>
 
               {/* Modalzinho / Popover por cima sobre tudo */}
-              {renderDtinPopover('left-0')}
+              {dtinPopupAnchor === 'left' && renderDtinPopover('left-0')}
             </div>
           )}
 
@@ -2320,7 +2322,7 @@ const AssetTableRowCardComponent = ({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsDtinPopupOpen(!isDtinPopupOpen);
+                  setDtinPopupAnchor(prev => prev === 'right' ? null : 'right');
                 }}
                 title="Equipamento no DITIN (Clique para ver detalhes)"
                 className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm animate-pulse hover:animate-none"
@@ -2328,7 +2330,7 @@ const AssetTableRowCardComponent = ({
                 <Server className="w-3 h-3 text-cyan-400" />
                 <span>-&gt;DITIN</span>
               </button>
-              {renderDtinPopover('right-0')}
+              {dtinPopupAnchor === 'right' && renderDtinPopover('right-0')}
             </div>
           ) : showUncheckConfirm ? (
             <div className="z-20 flex items-center gap-2 bg-slate-950/95 border-2 border-amber-500 px-3.5 py-1.5 rounded-xl shadow-2xl shadow-black select-none whitespace-nowrap animate-in zoom-in-95 duration-150">
