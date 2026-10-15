@@ -71,7 +71,7 @@ export const SectorTabs = ({
       if (isSelected) {
         return 'bg-amber-600 text-white font-bold shadow-md shadow-amber-600/40 border-b-2 border-white ring-1 ring-amber-400';
       }
-      return 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 border-amber-600/50 border-t border-x';
+      return 'bg-amber-950/20 hover:bg-amber-900/35 text-amber-200/60 font-normal border-amber-600/30 border-t border-x';
     }
     if (isSelected) {
       return 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/40 border-b-2 border-white ring-1 ring-blue-400';
@@ -88,8 +88,8 @@ export const SectorTabs = ({
 
   const getSectorStats = (sectorId) => {
     const sec = sectors.find(s => s.id === sectorId);
-    const isExt = !!sec?.isExterno || sectorId === 'sec-dtin' || sectorId === 'sec-ditin' || (sec?.name || '').toUpperCase().trim() === 'DITIN';
-    const sectorAssets = isExt
+    const isDitinSector = sectorId === 'sec-dtin' || sectorId === 'sec-ditin' || (sec?.name || '').toUpperCase().trim() === 'DITIN';
+    const sectorAssets = isDitinSector
       ? assets.filter(a => a.setorId === sectorId || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin)
       : assets.filter(a => a.setorId === sectorId);
     const total = sectorAssets.length;
@@ -167,7 +167,22 @@ export const SectorTabs = ({
                     onSelectFilterMode('MY_SECTOR');
                     onSelectSector(sec.id);
                   }}
-                  style={sec.isExterno ? { filter: 'saturate(0.7)', fontSize: '85%' } : undefined}
+                  style={
+                    sec.isExterno
+                      ? {
+                          fontSize: '80%',
+                          ...(!isSelected
+                            ? {
+                                opacity: 0.7,
+                                filter: 'saturate(0.6)',
+                                fontWeight: 400
+                              }
+                            : {
+                                filter: 'saturate(0.85)'
+                              })
+                        }
+                      : undefined
+                  }
                   className={`shrink-0 px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${colorClass}`}
                 >
                   {/* Quando selecionado: exibe ícone (ou check se 100% conferido) */}
@@ -184,9 +199,13 @@ export const SectorTabs = ({
                       - Ativo: Nome do Setor - Responsável
                   */}
                   <span className="whitespace-nowrap tracking-wide flex items-center gap-1.5">
-                    <strong className={isSelected ? 'font-bold' : 'font-medium'}>{sec.name}</strong>
+                    <strong className={isSelected ? 'font-bold' : (sec.isExterno ? 'font-normal text-amber-200/70' : 'font-medium')}>{sec.name}</strong>
                     {sec.isExterno && (
-                      <span className="text-[9px] uppercase font-black px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                      <span className={`text-[8px] uppercase px-1.5 py-0.2 rounded-full shrink-0 ${
+                        isSelected
+                          ? 'font-black bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'font-normal bg-amber-500/10 text-amber-300/60 border border-amber-500/20'
+                      }`}>
                         Externo
                       </span>
                     )}

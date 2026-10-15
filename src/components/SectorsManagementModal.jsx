@@ -525,7 +525,8 @@ export const SectorsManagementModal = ({
           {sortedSectors.map((sector, idx) => {
             const isExt = !!sector.isExterno;
             const isFirstExt = isExt && idx > 0 && !sortedSectors[idx - 1].isExterno;
-            const linkedCount = isExt
+            const isDitinSector = sector.id === 'sec-dtin' || sector.id === 'sec-ditin' || (sector.name || '').toUpperCase().trim() === 'DITIN';
+            const linkedCount = isDitinSector
               ? assets.filter(a => a.setorId === sector.id || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin).length
               : assets.filter(a => a.setorId === sector.id).length;
 
@@ -537,7 +538,7 @@ export const SectorsManagementModal = ({
                   </div>
                 )}
                 <div
-                  style={isExt ? { filter: 'saturate(0.7)', fontSize: '85%' } : undefined}
+                  style={isExt ? { filter: 'saturate(0.7)', fontSize: '80%' } : undefined}
                   className={`py-2.5 px-3 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                     isExt
                       ? 'bg-amber-950/20 border-2 border-amber-500/50 hover:border-amber-400 shadow-md shadow-amber-950/20'

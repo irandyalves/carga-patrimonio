@@ -1657,12 +1657,13 @@ export function App() {
         // Sector filter: quando estiver no modo setor, filtra sempre pelo setor selecionado OU transferência recebida pendente
         const isIncoming = incomingTransfersByAssetId.has(item.id);
         if (filterMode === 'MY_SECTOR') {
-          const isExternalSector = !!activeSector?.isExterno || activeSectorId === 'sec-dtin' || activeSectorId === 'sec-ditin' || (activeSector?.name || '').toUpperCase().trim() === 'DITIN';
-          if (isExternalSector) {
-            // Setor externo (DITIN): tudo que o Santana TI mandar para lá!
+          const isDitinSector = activeSectorId === 'sec-dtin' || activeSectorId === 'sec-ditin' || (activeSector?.name || '').toUpperCase().trim() === 'DITIN';
+          if (isDitinSector) {
+            // Setor DITIN: bens vinculados diretamente ou enviados para lá
             const isEnviadoAoDtin = item.status === 'ENVIADO_DTIN' || !!item.enviadoDtin || item.setorId === activeSectorId;
             if (!isEnviadoAoDtin && !isIncoming) return false;
           } else {
+            // Demais setores (incluindo novos setores externos como PLAS): apenas seus próprios bens
             const isMySector = item.setorId === activeSectorId;
             if (!isMySector && !isIncoming) return false;
           }
