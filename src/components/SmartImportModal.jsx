@@ -107,66 +107,6 @@ export const SmartImportModal = ({
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleProcessFile(file);
-    }
-  };
-
-  // Setores ordenados
-  const sortedSectors = useMemo(() => {
-    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
-  }, [sectors]);
-
-  const currentTargetSector = useMemo(() => {
-    return sectors.find(s => s.id === selectedSectorId) || sectors[0] || null;
-  }, [sectors, selectedSectorId]);
-
-  // Histórico por setor atual vs todos
-  const sectorHistoryCount = useMemo(() => {
-    if (!currentTargetSector) return 0;
-    return importHistory.filter(h => 
-      h.sectorId === currentTargetSector.id ||
-      (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
-    ).length;
-  }, [importHistory, currentTargetSector]);
-
-  const displayedHistory = useMemo(() => {
-    if (historyFilterMode === 'SECTOR' && currentTargetSector) {
-      return importHistory.filter(h => 
-        h.sectorId === currentTargetSector.id ||
-        (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
-      );
-    }
-    return importHistory;
-  }, [importHistory, historyFilterMode, currentTargetSector]);
-
-  if (!isOpen) return null;
-
-  // Reseta ao fechar
-  const handleClose = () => {
-    setStep('SETUP_AND_UPLOAD');
-    setSelectedFile(null);
-    setParsedHeaders([]);
-    setParsedRows([]);
-    setColumnMapping({});
-    setErrorMessage('');
-    onClose();
-  };
-
   // Processa o arquivo selecionado
   const handleProcessFile = async (file) => {
     if (!file) return;
@@ -202,12 +142,70 @@ export const SmartImportModal = ({
     }
   }, [isOpen, initialFile]);
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleProcessFile(file);
+    }
+  };
+
   const handleFileInputChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       handleProcessFile(file);
     }
   };
+
+  // Reseta ao fechar
+  const handleClose = () => {
+    setStep('SETUP_AND_UPLOAD');
+    setSelectedFile(null);
+    setParsedHeaders([]);
+    setParsedRows([]);
+    setColumnMapping({});
+    setErrorMessage('');
+    onClose();
+  };
+
+  // Setores ordenados
+  const sortedSectors = useMemo(() => {
+    return [...sectors].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }));
+  }, [sectors]);
+
+  const currentTargetSector = useMemo(() => {
+    return sectors.find(s => s.id === selectedSectorId) || sectors[0] || null;
+  }, [sectors, selectedSectorId]);
+
+  // Histórico por setor atual vs todos
+  const sectorHistoryCount = useMemo(() => {
+    if (!currentTargetSector) return 0;
+    return importHistory.filter(h => 
+      h.sectorId === currentTargetSector.id ||
+      (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
+    ).length;
+  }, [importHistory, currentTargetSector]);
+
+  const displayedHistory = useMemo(() => {
+    if (historyFilterMode === 'SECTOR' && currentTargetSector) {
+      return importHistory.filter(h => 
+        h.sectorId === currentTargetSector.id ||
+        (h.sectorName && h.sectorName.toLowerCase() === currentTargetSector.name.toLowerCase())
+      );
+    }
+    return importHistory;
+  }, [importHistory, historyFilterMode, currentTargetSector]);
 
   // Alterna aceitar / rejeitar coluna
   const toggleColumnAccepted = (sourceHeader) => {
@@ -300,6 +298,8 @@ export const SmartImportModal = ({
   };
 
   const acceptedCount = Object.values(columnMapping).filter(c => c.isAccepted && c.targetField).length;
+
+  if (!isOpen) return null;
 
   return (
     <div 

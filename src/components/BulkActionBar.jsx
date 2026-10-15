@@ -126,6 +126,8 @@ export const BulkActionBar = ({
   const cautelaRef = useRef(null);
   const cautelaNomeRef = useRef(null);
 
+  const effectiveCount = selectedCount || 0;
+
   // Fecha dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -277,8 +279,6 @@ export const BulkActionBar = ({
     if (currentServidoresNames.length <= 2) return currentServidoresNames.join(', ');
     return `${currentServidoresNames.slice(0, 2).join(', ')} +${currentServidoresNames.length - 2}`;
   }, [currentServidoresNames]);
-
-  const effectiveCount = selectedCount || 0;
 
   // Lista filtrada de servidores para o campo de cautela
   const cautelaFiltered = useMemo(() => {
