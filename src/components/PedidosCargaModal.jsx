@@ -31,9 +31,10 @@ export const PedidosCargaModal = ({
   onCancelarPedido,
   currentUserName = '',
   userSectorIds = [],
-  activeSectorId = null
+  activeSectorId = null,
+  initialTab = 'pendentes'
 }) => {
-  const [activeTab, setActiveTab] = useState('pendentes'); // 'pendentes' | 'historico'
+  const [activeTab, setActiveTab] = useState(initialTab || 'pendentes');
   const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [showConfirmDeleteAll, setShowConfirmDeleteAll] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,15 +60,19 @@ export const PedidosCargaModal = ({
   const aceitaveis = pendingPedidos.filter(podeAceitar);
   const pastPedidos = pedidos.filter(p => p.status !== 'PENDENTE');
 
-  // Ajusta a aba inicial ao abrir o modal com base na existência de pendências
+  // Ajusta a aba inicial ao abrir o modal com base na prop initialTab ou existência de pendências
   useEffect(() => {
     if (isOpen) {
-      const hasPending = pedidos.some(p => p.status === 'PENDENTE');
-      setActiveTab(hasPending ? 'pendentes' : 'historico');
+      if (initialTab) {
+        setActiveTab(initialTab);
+      } else {
+        const hasPending = pedidos.some(p => p.status === 'PENDENTE');
+        setActiveTab(hasPending ? 'pendentes' : 'historico');
+      }
       setShowConfirmAll(false);
       setShowConfirmDeleteAll(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialTab]);
 
   // ESC fecha o modal (ou primeiro a confirmação aberta, se houver)
   useEffect(() => {

@@ -565,8 +565,19 @@ export function App() {
   const [isSolicitacaoModalOpen, setIsSolicitacaoModalOpen] = useState(false);
   const [assetForSolicitacao, setAssetForSolicitacao] = useState(null);
   const [isPedidosModalOpen, setIsPedidosModalOpen] = useState(false);
+  const [pedidosModalInitialTab, setPedidosModalInitialTab] = useState('pendentes');
   const [isPendenciasDtinOpen, setIsPendenciasDtinOpen] = useState(false);
   const [isServidoresModalOpen, setIsServidoresModalOpen] = useState(false);
+
+  const handleOpenPedidos = () => {
+    setPedidosModalInitialTab('pendentes');
+    setIsPedidosModalOpen(true);
+  };
+
+  const handleOpenHistoricos = () => {
+    setPedidosModalInitialTab('historico');
+    setIsPedidosModalOpen(true);
+  };
 
   // Servidores & Pessoas onde os bens estão alocados
   const [servidores, setServidores] = useState(() => {
@@ -3444,7 +3455,8 @@ export function App() {
         onScrollToConferidos={handleScrollToConferidos}
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onOpenPedidos={() => setIsPedidosModalOpen(true)}
+        onOpenPedidos={handleOpenPedidos}
+        onOpenHistoricos={handleOpenHistoricos}
         pedidosCount={pedidosCarga.filter(p => p.status === 'PENDENTE' && (
           effectiveUserRole === 'admin' ||
           effectiveUserSectorIds.includes(p.setorDestinoId) ||
@@ -4635,6 +4647,7 @@ export function App() {
       <PedidosCargaModal
         isOpen={isPedidosModalOpen}
         onClose={() => setIsPedidosModalOpen(false)}
+        initialTab={pedidosModalInitialTab}
         pedidos={pedidosCarga}
         isAdmin={effectiveUserRole === 'admin'}
         onAprovarPedido={handleAprovarPedido}

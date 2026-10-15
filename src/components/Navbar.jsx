@@ -26,7 +26,8 @@ import {
   Bell,
   Server,
   Building2,
-  Laptop
+  Laptop,
+  History
 } from 'lucide-react';
 import { 
   startVoiceRecognition, 
@@ -57,6 +58,7 @@ export const Navbar = ({
   isSidebarOpen = false,
   onToggleSidebar,
   onOpenPedidos,
+  onOpenHistoricos,
   pedidosCount = 0,
   onOpenServidores,
   servidoresCount = 0,
@@ -388,8 +390,8 @@ export const Navbar = ({
               </button>
             )}
 
-            {/* Sino / Notificações de Envio ao DITIN (Administrador e Responsável de TI) */}
-            {canSeeTiDtin && (
+            {/* Sino / Notificações de Envio ao DITIN: Admin sempre vê; Usuário só vê se > 0 */}
+            {canSeeTiDtin && (isAdmin || (dtinPendenciasCount || 0) > 0) && (
             <button
               type="button"
               onClick={onOpenDtinPendencias}
@@ -420,7 +422,8 @@ export const Navbar = ({
             {/* Ações Desktop (Visíveis apenas em telas maiores / md+) */}
             <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
               
-              {/* Pedidos & Solicitações de Carga */}
+              {/* Pedidos & Solicitações de Carga: Admin sempre vê; Usuário só vê se > 0 */}
+              {(isAdmin || (pedidosCount || 0) > 0) && (
               <button
                 type="button"
                 onClick={onOpenPedidos}
@@ -444,8 +447,10 @@ export const Navbar = ({
                   </span>
                 </span>
               </button>
+              )}
 
-              {/* Cautelas / Empréstimos Button with Badge */}
+              {/* Cautelas / Empréstimos: Admin sempre vê; Usuário só vê se > 0 */}
+              {(isAdmin || (cautelasCount || 0) > 0) && (
               <button
                 type="button"
                 onClick={onOpenCautelas}
@@ -462,6 +467,20 @@ export const Navbar = ({
                   {cautelasCount || 0}
                 </span>
               </button>
+              )}
+
+              {/* Botão Históricos: Visível para usuário quando Pendentes e Cautelas forem 0; Admin sempre vê */}
+              {(isAdmin || ((pedidosCount || 0) === 0 && (cautelasCount || 0) === 0)) && (
+              <button
+                type="button"
+                onClick={onOpenHistoricos}
+                title="Histórico de Pedidos e Transferências de Carga"
+                className="relative px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              >
+                <History className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span className="hidden md:inline">Históricos</span>
+              </button>
+              )}
 
               {/* Servidores & Pessoas do Setor */}
               <button
