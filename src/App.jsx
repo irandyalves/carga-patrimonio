@@ -689,6 +689,113 @@ export function App() {
     });
   };
 
+  // Helper essencial: Garante restauração do setor ADMINISTRATIVO (Alex) e retorno dos 464 bens
+  const syncAdministrativoAndAssets = (rawSectors, rawAssets) => {
+    let sectorsChanged = false;
+    let nextSectors = Array.isArray(rawSectors) ? [...rawSectors] : [];
+
+    // 1. Garante que ADMINISTRATIVO exista e seu responsável seja Alex
+    const admIndex = nextSectors.findIndex(s => 
+      s.id === 'sec-adm' || (s.name || '').toUpperCase().trim() === 'ADMINISTRATIVO'
+    );
+
+    let admSectorId = 'sec-adm';
+    if (admIndex === -1) {
+      const newAdm = {
+        id: 'sec-adm',
+        name: 'ADMINISTRATIVO',
+        responsavel: 'Alex',
+        email: 'alex@empresa.gov.br',
+        sala: 'Administrativo',
+        cor: 'blue',
+        isExterno: false
+      };
+      nextSectors.push(newAdm);
+      sectorsChanged = true;
+      saveSectorToCloud(newAdm).catch(console.warn);
+    } else {
+      admSectorId = nextSectors[admIndex].id;
+      if (nextSectors[admIndex].responsavel !== 'Alex' || nextSectors[admIndex].isExterno || (nextSectors[admIndex].name || '').toUpperCase().trim() !== 'ADMINISTRATIVO') {
+        nextSectors[admIndex] = {
+          ...nextSectors[admIndex],
+          name: 'ADMINISTRATIVO',
+          responsavel: 'Alex',
+          isExterno: false
+        };
+        sectorsChanged = true;
+        saveSectorToCloud(nextSectors[admIndex]).catch(console.warn);
+      }
+    }
+
+    // 2. Garante que DITIN exista como setor externo (Elder)
+    const ditinIndex = nextSectors.findIndex(s => 
+      s.id === 'sec-ditin' || (s.name || '').toUpperCase().trim() === 'DITIN'
+    );
+    if (ditinIndex === -1) {
+      const newDitin = {
+        id: 'sec-ditin',
+        name: 'DITIN',
+        responsavel: 'Elder',
+        email: 'ditin@empresa.gov.br',
+        sala: 'Diretoria de TI Externa',
+        cor: 'amber',
+        isExterno: true
+      };
+      nextSectors.push(newDitin);
+      sectorsChanged = true;
+      saveSectorToCloud(newDitin).catch(console.warn);
+    } else {
+      const d = nextSectors[ditinIndex];
+      const curResp = (d.responsavel || '').trim();
+      const targetResp = (!curResp || curResp === 'DITIN Central') ? 'Elder' : curResp;
+      if (!d.isExterno || d.responsavel !== targetResp) {
+        nextSectors[ditinIndex] = {
+          ...d,
+          responsavel: targetResp,
+          isExterno: true
+        };
+        sectorsChanged = true;
+        saveSectorToCloud(nextSectors[ditinIndex]).catch(console.warn);
+      }
+    }
+
+    if (sectorsChanged) {
+      saveLocalSectors(nextSectors);
+    }
+
+    // 3. Devolve os 464 itens de DITIN para ADMINISTRATIVO (Alex)
+    let assetsChanged = false;
+    const assetsToCloud = [];
+    const updatedAssets = (Array.isArray(rawAssets) ? rawAssets : []).map(item => {
+      const isDitin = item.setorId === 'sec-ditin' || (item.setorNome || '').toUpperCase().trim() === 'DITIN';
+      // Se pertence a DITIN e não é um envio legítimo pendente/em trânsito ao DITIN:
+      if (isDitin && item.status !== 'ENVIADO_DTIN' && !item.enviadoDtin) {
+        assetsChanged = true;
+        const restoredItem = {
+          ...item,
+          setorId: admSectorId,
+          setorNome: 'ADMINISTRATIVO',
+          responsavel: 'Alex'
+        };
+        assetsToCloud.push(restoredItem);
+        return restoredItem;
+      }
+      return item;
+    });
+
+    if (assetsChanged) {
+      saveLocalAssets(updatedAssets);
+      if (assetsToCloud.length > 0) {
+        saveAssetsBatchToCloud(assetsToCloud).catch(console.warn);
+      }
+    }
+
+    return {
+      sectors: sortSectorsList(nextSectors),
+      assets: updatedAssets
+    };
+  };
+
   // 1. Initial Load & Auth Listener
   useEffect(() => {
     try {
@@ -704,13 +811,13 @@ export function App() {
     setIsFirebaseActive(isConfigured);
 
     const { assets: initialAssets, cautelas: initialCautelas, sectors: initialSectors } = loadLocalData();
-    const sortedSectors = sortSectorsList(initialSectors);
-    setSectors(sortedSectors);
-    setAssets(initialAssets);
+    const synced = syncAdministrativoAndAssets(initialSectors, initialAssets);
+    setSectors(synced.sectors);
+    setAssets(synced.assets);
     setCautelas(initialCautelas);
 
-    if (sortedSectors.length > 0) {
-      setActiveSectorId(sortedSectors[0].id);
+    if (synced.sectors.length > 0) {
+      setActiveSectorId(synced.sectors[0].id);
     }
 
     // Subscriptions to Firebase Realtime listeners
@@ -725,14 +832,15 @@ export function App() {
     if (isConfigured) {
       unsubSectors = subscribeToCloudSectors((cloudSectors) => {
         if (cloudSectors && cloudSectors.length > 0) {
-          const sorted = sortSectorsList(cloudSectors);
-          setSectors(sorted);
+          const syncedCloud = syncAdministrativoAndAssets(cloudSectors, initialAssets);
+          setSectors(syncedCloud.sectors);
         }
       });
 
       unsubAssets = subscribeToCloudAssets((cloudAssets) => {
         if (cloudAssets && cloudAssets.length > 0) {
-          setAssets(cloudAssets);
+          const syncedAssets = syncAdministrativoAndAssets(initialSectors, cloudAssets);
+          setAssets(syncedAssets.assets);
         }
       });
 

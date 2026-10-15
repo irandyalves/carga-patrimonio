@@ -11,7 +11,8 @@ export const SECTORS = [
   { id: 'sec-reunioes', name: 'Sala de Reuniões', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Sala de Reuniões Principal', cor: 'violet' },
   { id: 'sec-studio', name: 'Studio', responsavel: 'Tadeu', email: 'tadeu@empresa.gov.br', sala: 'Studio de Gravação', cor: 'purple' },
   { id: 'sec-ti', name: 'TI', responsavel: 'Santana', email: 'santana.ti@empresa.gov.br', sala: 'Data Center & TI', cor: 'indigo' },
-  { id: 'sec-ditin', name: 'DITIN', responsavel: 'DITIN Central', email: 'ditin@empresa.gov.br', sala: 'Diretoria de TI Externa', cor: 'amber', isExterno: true },
+  { id: 'sec-adm', name: 'ADMINISTRATIVO', responsavel: 'Alex', email: 'alex@empresa.gov.br', sala: 'Administrativo', cor: 'blue' },
+  { id: 'sec-ditin', name: 'DITIN', responsavel: 'Elder', email: 'ditin@empresa.gov.br', sala: 'Diretoria de TI Externa', cor: 'amber', isExterno: true },
 ];
 
 export const CATEGORIES = [

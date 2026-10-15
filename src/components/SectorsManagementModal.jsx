@@ -522,21 +522,28 @@ export const SectorsManagementModal = ({
 
         {/* Sectors List */}
         <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-          {sortedSectors.map((sector) => {
+          {sortedSectors.map((sector, idx) => {
             const isExt = !!sector.isExterno;
+            const isFirstExt = isExt && idx > 0 && !sortedSectors[idx - 1].isExterno;
             const linkedCount = isExt
               ? assets.filter(a => a.setorId === sector.id || a.status === 'ENVIADO_DTIN' || !!a.enviadoDtin).length
               : assets.filter(a => a.setorId === sector.id).length;
 
             return (
-              <div
-                key={sector.id}
-                className={`py-2.5 px-3 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                  isExt
-                    ? 'bg-amber-950/20 border-2 border-amber-500/50 hover:border-amber-400 shadow-md shadow-amber-950/20'
-                    : 'bg-slate-850 border border-slate-800 hover:border-slate-700'
-                }`}
-              >
+              <React.Fragment key={sector.id}>
+                {isFirstExt && (
+                  <div className="pt-2 pb-1">
+                    <div className="border-t-2 border-dotted border-slate-600/70" />
+                  </div>
+                )}
+                <div
+                  style={isExt ? { filter: 'saturate(0.7)', fontSize: '85%' } : undefined}
+                  className={`py-2.5 px-3 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                    isExt
+                      ? 'bg-amber-950/20 border-2 border-amber-500/50 hover:border-amber-400 shadow-md shadow-amber-950/20'
+                      : 'bg-slate-850 border border-slate-800 hover:border-slate-700'
+                  }`}
+                >
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`font-bold text-sm ${isExt ? 'text-amber-200' : 'text-white'}`}>{sector.name}</span>
@@ -609,8 +616,9 @@ export const SectorsManagementModal = ({
                   </button>
                 </div>
               </div>
-            );
-          })}
+            </React.Fragment>
+          );
+        })}
         </div>
 
       </div>

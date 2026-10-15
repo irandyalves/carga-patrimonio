@@ -16,6 +16,7 @@ import {
   Flame,
   BookOpen,
   Volume2,
+  Laptop,
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
@@ -108,6 +109,7 @@ export const SectorSidebar = ({
       className: `w-4 h-4 shrink-0 transition-all duration-200 ${colorClass}`
     };
 
+    if (secId === 'sec-ditin' || secId === 'sec-dtin' || name.includes('ditin') || name.includes('dtin')) return <Laptop {...iconProps} />;
     if (secId === 'sec-studio' || name.includes('studio')) return <Tv {...iconProps} />;
     if (secId === 'sec-auditorio' || name.includes('audit')) return <Volume2 {...iconProps} />;
     if (secId === 'sec-foyer' || name.includes('foyer')) return <Monitor {...iconProps} />;
@@ -115,9 +117,10 @@ export const SectorSidebar = ({
     if (secId === 'sec-lab-inovacao' || name.includes('inova')) return <Sparkles {...iconProps} />;
     if (secId === 'sec-revista-jmu' || name.includes('revista')) return <BookOpen {...iconProps} />;
     if (secId === 'sec-sacadi' || secId === 'sec-cadmi' || secId === 'sec-sacadi-cadmi' || secId === 'sec-reunioes' || name.includes('sacadi') || name.includes('cadmi') || name.includes('reuni')) return <Users {...iconProps} />;
-    if (secId === 'sec-ti' || name.includes('ti') || name.includes('informt')) return <Server {...iconProps} />;
-    if (secId === 'sec-copa-1piso' || name.includes('1 piso') || name.includes('1 piso')) return <Flame {...iconProps} />;
+    if (secId === 'sec-ti' || name.includes('ti') || name.includes('informát') || name.includes('informat')) return <Server {...iconProps} />;
+    if (secId === 'sec-copa-1piso' || name.includes('1º piso') || name.includes('1 piso')) return <Flame {...iconProps} />;
     if (secId === 'sec-copa-terreo' || name.includes('copa')) return <Coffee {...iconProps} />;
+    if (secId === 'sec-adm' || name.includes('administra')) return <Building2 {...iconProps} />;
     return <Building2 {...iconProps} />;
   };
 
@@ -191,29 +194,28 @@ export const SectorSidebar = ({
     return false;
   };
 
-  // Separação dos setores: Setores do Usuário Logado (primeiro) e Demais Setores (depois)
-  const { userSectors, otherSectors } = useMemo(() => {
+  // Separação dos setores: Setores do Usuário Logado (primeiro), Demais Setores Internos, e Setor Externo (com linha pontilhada)
+  const { userSectors, otherSectors, externalSectors } = useMemo(() => {
     const my = [];
     const others = [];
+    const ext = [];
 
     sectors.forEach(sec => {
-      if (isUserOwnedSector(sec)) {
+      if (sec.isExterno) {
+        ext.push(sec);
+      } else if (isUserOwnedSector(sec)) {
         my.push(sec);
       } else {
         others.push(sec);
       }
     });
 
-    const sortFn = (a, b) => {
-      const aExt = !!a.isExterno;
-      const bExt = !!b.isExterno;
-      if (aExt !== bExt) return aExt ? 1 : -1;
-      return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
-    };
+    const sortFn = (a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
     my.sort(sortFn);
     others.sort(sortFn);
+    ext.sort(sortFn);
 
-    return { userSectors: my, otherSectors: others };
+    return { userSectors: my, otherSectors: others, externalSectors: ext };
   }, [sectors, userSectorIds, userSectorId, userLinkedSectorIds, currentUser]);
 
   return (
@@ -431,6 +433,7 @@ export const SectorSidebar = ({
                       onSelectSector(sec.id);
                       onSelectStatusFilter('ALL');
                     }}
+                    style={isExt ? { filter: 'saturate(0.7)', fontSize: '85%' } : undefined}
                     className={`group w-full px-3 py-2 text-xs flex items-center justify-between gap-2 transition-all cursor-pointer text-left rounded-xl ${
                       isSelected
                         ? (isExt 
@@ -501,7 +504,8 @@ export const SectorSidebar = ({
                   <div className={`curtain-menu ${isSelected ? 'is-open' : ''}`}>
                     <div className="curtain-content">
                       <div className="ml-3 pl-2.5 my-1 border-l-2 border-indigo-500/50 space-y-0.5">
-                        {[
+                        {/* Pendentes, Conferidos, Em Cautela, Baixados: ocultos para setor externo */}
+                        {!isExt && [
                           { id: 'PENDENTES', label: 'Pendentes', count: stats.pendentes, color: 'text-amber-400', dot: 'bg-amber-400' },
                           { id: 'CONFERIDOS', label: 'Conferidos', count: stats.conferidos, color: 'text-emerald-400', dot: 'bg-emerald-400' },
                           { id: 'CAUTELAS', label: 'Em Cautela', count: stats.cautelas, color: 'text-blue-400', dot: 'bg-blue-400' },
@@ -547,8 +551,8 @@ export const SectorSidebar = ({
                           </button>
                         )}
 
-                        {/* Botão Importar diretamente para este Setor */}
-                        {canManageSector && onOpenImport && (
+                        {/* Botão Importar diretamente para este Setor: oculto para setor externo */}
+                        {!isExt && canManageSector && onOpenImport && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -566,8 +570,8 @@ export const SectorSidebar = ({
                           </button>
                         )}
 
-                        {/* Menu de Enviados para a DTIN: Oculta se tiver 0 */}
-                        {(() => {
+                        {/* Menu de Enviados para a DTIN: Oculta se tiver 0 ou for setor externo */}
+                        {!isExt && (() => {
                           const isTiSector = sec.id === 'sec-ti' || (sec.name || '').toUpperCase().trim() === 'TI' || (sec.name || '').toLowerCase().includes('tecnologia');
                           const dtinCount = isTiSector
                             ? assets.filter(a => a.status === 'ENVIADO_DTIN' || a.enviadoDtin).length
@@ -601,8 +605,8 @@ export const SectorSidebar = ({
                           );
                         })()}
 
-                        {/* Botão Limpar Dados do Setor: Oculta se tiver 0 | Ícone Borracha Vermelhinha */}
-                        {(() => {
+                        {/* Botão Limpar Dados do Setor: Oculta se tiver 0 ou for setor externo | Ícone Borracha Vermelhinha */}
+                        {!isExt && (() => {
                           const sectorAssetsCount = assets.filter(a => a.setorId === sec.id).length;
                           if (!canManageSector || !onClearSectorAssets || sectorAssetsCount === 0) return null;
 
@@ -627,8 +631,8 @@ export const SectorSidebar = ({
                           );
                         })()}
 
-                        {/* Ações em Lote para este Setor: Só exibe se houver itens para alterar */}
-                        {(() => {
+                        {/* Ações em Lote para este Setor: Oculto para setor externo */}
+                        {!isExt && (() => {
                           if (!canManageSector || !onOpenBatchStatusChange) return null;
                           const conferidosCount = assets.filter(a => a.setorId === sec.id && a.status === 'CONFERIDO').length;
                           const pendentesCount = assets.filter(a => a.setorId === sec.id && a.status !== 'CONFERIDO' && a.status !== 'BAIXADO').length;
@@ -714,8 +718,18 @@ export const SectorSidebar = ({
                   </div>
                 )}
 
-                {/* 3. Demais Setores */}
+                {/* 3. Demais Setores Internos */}
                 {otherSectors.map((sec) => renderSectorItem(sec, false))}
+
+                {/* 4. Linha pontilhada acima do Setor Externo para o separar dos setores */}
+                {externalSectors.length > 0 && (
+                  <div className="pt-2.5 pb-1 px-3">
+                    <div className="border-t-2 border-dotted border-slate-600/70" />
+                  </div>
+                )}
+
+                {/* 5. Setores Externos (DITIN) */}
+                {externalSectors.map((sec) => renderSectorItem(sec, false))}
               </>
             );
           })()}

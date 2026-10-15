@@ -18,6 +18,7 @@ import {
   PenTool,
   BookOpen,
   Volume2,
+  Laptop,
   Settings
 } from 'lucide-react';
 
@@ -43,6 +44,9 @@ export const SectorTabs = ({
   // Ícones representativos para as abas ativas dos setores
   const getSectorIcon = (secId) => {
     switch (secId) {
+      case 'sec-ditin':
+      case 'sec-dtin':
+        return <Laptop className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-studio': return <Tv className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-auditorio': return <Volume2 className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-foyer': return <Monitor className="w-3.5 h-3.5 shrink-0" />;
@@ -56,6 +60,7 @@ export const SectorTabs = ({
       case 'sec-reunioes': return <Users className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-copa-terreo': return <Coffee className="w-3.5 h-3.5 shrink-0" />;
       case 'sec-copa-1piso': return <Flame className="w-3.5 h-3.5 shrink-0" />;
+      case 'sec-adm': return <Building2 className="w-3.5 h-3.5 shrink-0" />;
       default: return <Building2 className="w-3.5 h-3.5 shrink-0" />;
     }
   };
@@ -150,45 +155,56 @@ export const SectorTabs = ({
             const stats = getSectorStats(sec.id);
             const isSelected = filterMode === 'MY_SECTOR' && activeSectorId === sec.id;
             const colorClass = getTabColor(idx, isSelected, !!sec.isExterno);
+            const isFirstExt = !!sec.isExterno && idx > 0 && !sortedSectors[idx - 1].isExterno;
 
             return (
-              <button
-                key={sec.id}
-                onClick={() => {
-                  onSelectFilterMode('MY_SECTOR');
-                  onSelectSector(sec.id);
-                }}
-                className={`shrink-0 px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${colorClass}`}
-              >
-                {/* Quando selecionado: exibe ícone (ou check se 100% conferido) */}
-                {isSelected && (
-                  stats.isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                  ) : (
-                    getSectorIcon(sec.id)
-                  )
+              <React.Fragment key={sec.id}>
+                {isFirstExt && (
+                  <div className="h-6 w-px border-l-2 border-dotted border-slate-600/70 self-center mx-1 shrink-0" title="Setor Externo" />
                 )}
-
-                {/* Texto da Aba:
-                    - Inativo: nome direto do setor
-                    - Ativo: Nome do Setor - Responsável
-                */}
-                <span className="whitespace-nowrap tracking-wide">
-                  <strong className={isSelected ? 'font-bold' : 'font-medium'}>{sec.name}</strong>
-                  {isSelected && sec.responsavel && (
-                    <span className="opacity-90 font-normal ml-1.5">
-                      - {sec.responsavel}
-                    </span>
+                <button
+                  onClick={() => {
+                    onSelectFilterMode('MY_SECTOR');
+                    onSelectSector(sec.id);
+                  }}
+                  style={sec.isExterno ? { filter: 'saturate(0.7)', fontSize: '85%' } : undefined}
+                  className={`shrink-0 px-3.5 py-2 rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-all duration-150 ${colorClass}`}
+                >
+                  {/* Quando selecionado: exibe ícone (ou check se 100% conferido) */}
+                  {isSelected && (
+                    stats.isCompleted ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                    ) : (
+                      getSectorIcon(sec.id)
+                    )
                   )}
-                </span>
 
-                {/* Contador de itens */}
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black' : 'bg-black/30 text-white/90'
-                }`}>
-                  {stats.total}
-                </span>
-              </button>
+                  {/* Texto da Aba:
+                      - Inativo: nome direto do setor
+                      - Ativo: Nome do Setor - Responsável
+                  */}
+                  <span className="whitespace-nowrap tracking-wide flex items-center gap-1.5">
+                    <strong className={isSelected ? 'font-bold' : 'font-medium'}>{sec.name}</strong>
+                    {sec.isExterno && (
+                      <span className="text-[9px] uppercase font-black px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                        Externo
+                      </span>
+                    )}
+                    {isSelected && sec.responsavel && (
+                      <span className="opacity-90 font-normal ml-0.5">
+                        - {sec.responsavel}
+                      </span>
+                    )}
+                  </span>
+
+                  {/* Contador de itens */}
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    isSelected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-black' : 'bg-black/30 text-white/90'
+                  }`}>
+                    {stats.total}
+                  </span>
+                </button>
+              </React.Fragment>
             );
           })}
 
