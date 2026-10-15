@@ -903,6 +903,12 @@ const AssetTableRowCardComponent = ({
     if (!isDtinPopupOpen) return null;
     const hasAnexos = asset.dadosDtin?.anexos && asset.dadosDtin.anexos.length > 0;
     const directUrl = asset.dadosDtin?.documentoUrl || (hasAnexos ? asset.dadosDtin.anexos[0].url : null);
+    const setorOrigemNome = asset.dadosDtin?.setorOrigemNome 
+      || sectors.find(s => s.id === asset.setorId)?.name 
+      || asset.setorNome 
+      || '---';
+    const enviadoPor = asset.dadosDtin?.responsavel || 'Santana';
+    const dataEnvio = asset.dadosDtin?.data || '---';
 
     return (
       <>
@@ -915,7 +921,7 @@ const AssetTableRowCardComponent = ({
         />
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute ${positionClass} top-full mt-1.5 z-50 w-80 bg-slate-950/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-xl p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150 cursor-default whitespace-normal select-text`}
+          className={`absolute ${positionClass} top-full mt-1.5 z-50 w-84 sm:w-96 max-w-[92vw] bg-slate-950/98 backdrop-blur-xl border border-cyan-500/60 shadow-2xl shadow-cyan-950/80 rounded-xl p-3 text-left animate-in fade-in slide-in-from-top-1 duration-150 cursor-default whitespace-normal select-text`}
         >
           <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800">
             <span className="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -931,30 +937,47 @@ const AssetTableRowCardComponent = ({
           </div>
 
           <div className="space-y-2 text-xs">
-            <div>
-              <span className="text-[9.5px] text-slate-400 uppercase font-semibold block mb-0.5">Motivo:</span>
+            {/* Topo: PATRIMONIO (BOLD EM AZUL) • DESCRIÇÃO ITEM (LETRA PEQUENA) */}
+            <div className="pb-1.5 border-b border-slate-800/80">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-blue-400 font-bold font-mono text-sm tracking-wide">
+                  {formattedXX || asset.numeroPatrimonio}
+                </span>
+                <span className="text-slate-500 font-medium text-[11px]">•</span>
+                <span className="text-slate-300 text-[10.5px] leading-tight font-medium" title={asset.descricao}>
+                  {asset.descricao}
+                </span>
+              </div>
+            </div>
+
+            {/* Setor origem: xxxx  enviado por: xxxx  Data: xxx */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] py-0.5">
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400 text-[10px]">Setor origem:</span>
+                <strong className="text-slate-200 font-semibold">{setorOrigemNome}</strong>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400 text-[10px]">enviado por:</span>
+                <strong className="text-cyan-300 font-semibold">{enviadoPor}</strong>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400 text-[10px]">Data:</span>
+                <span className="text-slate-200 font-mono font-semibold">{dataEnvio}</span>
+              </div>
+            </div>
+
+            {/* Motivo / obs: xxxxx xxxxx \n xxxxxxxxxxxxxx */}
+            <div className="pt-1 border-t border-slate-800/60">
+              <span className="text-[10px] text-slate-400 font-semibold block mb-0.5">Motivo / obs:</span>
               <p className="text-slate-100 font-semibold leading-tight text-xs">
                 {asset.dadosDtin?.motivo || 'Recolhimento / Manutenção'}
               </p>
+              {asset.dadosDtin?.observacoes && asset.dadosDtin.observacoes !== asset.dadosDtin.motivo && (
+                <p className="text-slate-300 text-[11px] leading-snug mt-1 whitespace-pre-wrap">
+                  {asset.dadosDtin.observacoes}
+                </p>
+              )}
             </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-              <div>
-                <span className="text-[9px] text-slate-400 block">Enviado por:</span>
-                <strong className="text-cyan-300 font-bold truncate block">{asset.dadosDtin?.responsavel || 'Santana'}</strong>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block">Data do Envio:</span>
-                <span className="text-slate-200 font-mono font-semibold block">{asset.dadosDtin?.data || '---'}</span>
-              </div>
-            </div>
-
-            {asset.dadosDtin?.observacoes && (
-              <div className="pt-1">
-                <span className="text-[9px] text-slate-400 block mb-0.5">Observações:</span>
-                <p className="text-slate-300 text-[11px] leading-snug">{asset.dadosDtin.observacoes}</p>
-              </div>
-            )}
 
             {/* Ações rápidas */}
             <div className="flex items-center gap-1.5 pt-2 mt-1">
