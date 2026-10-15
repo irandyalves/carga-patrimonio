@@ -390,35 +390,6 @@ export const Navbar = ({
               </button>
             )}
 
-            {/* Sino / Notificações de Envio ao DITIN: Admin sempre vê; Usuário só vê se > 0 */}
-            {canSeeTiDtin && (isAdmin || (dtinPendenciasCount || 0) > 0) && (
-            <button
-              type="button"
-              onClick={onOpenDtinPendencias}
-              title={`Avisos e Autorizações de Envio ao DITIN (${dtinPendenciasCount || 0} pendente${dtinPendenciasCount === 1 ? '' : 's'})`}
-              className={`relative px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
-                dtinPendenciasCount > 0
-                  ? 'bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/70 shadow-lg shadow-cyan-950/60'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-              }`}
-            >
-              <div className="relative flex items-center justify-center">
-                <Bell className={`w-4 h-4 shrink-0 transition-transform ${dtinPendenciasCount > 0 ? 'text-cyan-400 animate-pulse scale-110' : 'text-slate-400'}`} />
-                {dtinPendenciasCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                )}
-              </div>
-              <span className="hidden lg:inline">DITIN</span>
-              <span className={`px-1.5 py-0.5 font-mono font-bold rounded-full text-[10px] leading-none transition-all ${
-                dtinPendenciasCount > 0 
-                  ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/40 font-black' 
-                  : 'bg-slate-800/90 text-slate-400 border border-slate-700/60'
-              }`}>
-                {dtinPendenciasCount || 0}
-              </span>
-            </button>
-            )}
-
             {/* Ações Desktop (Visíveis apenas em telas maiores / md+) */}
             <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
               

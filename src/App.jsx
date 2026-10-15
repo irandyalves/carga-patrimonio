@@ -4526,6 +4526,7 @@ export function App() {
         asset={assetForTransfer}
         sectors={sectors}
         onConfirmTransfer={handleInitiateTransfer}
+        onOpenDtin={handleOpenDtin}
       />
 
       <SectorsManagementModal

@@ -2603,77 +2603,61 @@ const AssetTableRowCardComponent = ({
                       </div>
 
                       {/* Opção DTIN para Equipamentos de Informática ou dentro de TI */}
-                      {!isBaixado && isInformática && (
-                        isEnviadoDtin ? (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsActionsOpen(false);
-                                setIsDtinResumoOpen(true);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
-                            >
-                              <Server className="w-3.5 h-3.5 text-cyan-400" />
-                              <span>Ver Detalhes DTIN</span>
-                            </button>
+                      {!isBaixado && isInformática && isEnviadoDtin && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsActionsOpen(false);
+                              setIsDtinResumoOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
+                          >
+                            <Server className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Ver Detalhes DTIN</span>
+                          </button>
 
-                            {canManageAsset && onReturnDtin && (
-                              showReturnDtinConfirm ? (
-                                <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
-                                  <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsActionsOpen(false);
-                                        setShowReturnDtinConfirm(false);
-                                        onReturnDtin && onReturnDtin(asset.id);
-                                      }}
-                                      className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
-                                    >
-                                      Retornar
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowReturnDtinConfirm(false);
-                                      }}
-                                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
-                                    >
-                                      Cancelar
-                                    </button>
-                                  </div>
+                          {canManageAsset && onReturnDtin && (
+                            showReturnDtinConfirm ? (
+                              <div className="p-2 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-center my-1">
+                                <p className="text-[11px] text-cyan-300 font-medium mb-1.5">Confirma o retorno do item?</p>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIsActionsOpen(false);
+                                      setShowReturnDtinConfirm(false);
+                                      onReturnDtin && onReturnDtin(asset.id);
+                                    }}
+                                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                                  >
+                                    Retornar
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowReturnDtinConfirm(false);
+                                    }}
+                                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
                                 </div>
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowReturnDtinConfirm(true);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5" />
-                                  <span>Confirmar o Retorno do Item</span>
-                                </button>
-                              )
-                            )}
-                          </>
-                        ) : (
-                          canManageAsset && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsActionsOpen(false);
-                                onOpenDtin && onOpenDtin(asset);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition-colors cursor-pointer text-left font-medium"
-                            >
-                              <Server className="w-3.5 h-3.5 text-cyan-400" />
-                              <span>Enviar DTIN</span>
-                            </button>
-                          )
-                        )
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowReturnDtinConfirm(true);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-left"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Confirmar o Retorno do Item</span>
+                              </button>
+                            )
+                          )}
+                        </>
                       )}
 
                       {isBaixado ? (
@@ -3322,32 +3306,18 @@ const AssetTableRowCardComponent = ({
                   )}
 
                   {/* DTIN */}
-                  {!isBaixado && isInformática && (
-                    isEnviadoDtin ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsActionsOpen(false);
-                          setIsDtinResumoOpen(true);
-                        }}
-                        className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-cyan-300 hover:bg-cyan-950/60 bg-cyan-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
-                      >
-                        <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <span className="truncate">Ver DTIN</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsActionsOpen(false);
-                          onOpenDtin && onOpenDtin(asset);
-                        }}
-                        className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-cyan-300 hover:bg-cyan-950/60 bg-cyan-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
-                      >
-                        <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <span className="truncate">Enviar DTIN</span>
-                      </button>
-                    )
+                  {!isBaixado && isInformática && isEnviadoDtin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsActionsOpen(false);
+                        setIsDtinResumoOpen(true);
+                      }}
+                      className="flex items-center gap-2 p-2 rounded-xl text-[11.5px] text-cyan-300 hover:bg-cyan-950/60 bg-cyan-950/30 font-medium transition-all cursor-pointer active:scale-95 truncate"
+                    >
+                      <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span className="truncate">Ver DTIN</span>
+                    </button>
                   )}
 
                   {/* Baixa */}

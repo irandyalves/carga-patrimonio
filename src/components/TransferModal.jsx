@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ArrowRightLeft, Building2, User, MapPin, CheckCircle2 } from 'lucide-react';
 
 export const TransferModal = ({
@@ -6,22 +6,72 @@ export const TransferModal = ({
   onClose,
   asset,
   sectors = [],
-  onConfirmTransfer
+  onConfirmTransfer,
+  onOpenDtin
 }) => {
   const [destSectorId, setDestSectorId] = useState('');
   const [novaLocalizacao, setNovaLocalizacao] = useState('');
   const [motivoTransferencia, setMotivoTransferencia] = useState('');
 
+  // Identifica DITIN ou Setor Externo
+  const isDitinOrExternal = (s) => {
+    if (!s) return false;
+    const name = (s.name || '').toUpperCase().trim();
+    const id = (s.id || '').toLowerCase().trim();
+    return (
+      id === 'sec-dtin' ||
+      id === 'sec-ditin' ||
+      id === 'ditin' ||
+      id === 'dtin' ||
+      id === 'sec-ti' ||
+      name.includes('DITIN') ||
+      name.includes('DTIN') ||
+      Boolean(s.isExterno)
+    );
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      setDestSectorId('');
+      setNovaLocalizacao('');
+      setMotivoTransferencia('');
+    }
+  }, [isOpen, asset?.id]);
+
   if (!isOpen || !asset) return null;
 
   const availableSectors = sectors.filter(s => s.id !== asset.setorId);
   const currentSector = sectors.find(s => s.id === asset.setorId) || { name: asset.setorNome, responsavel: asset.responsavel };
-  const effectiveDestId = destSectorId || availableSectors[0]?.id || '';
-  const targetSector = availableSectors.find(s => s.id === effectiveDestId) || availableSectors[0];
+  const targetSector = availableSectors.find(s => s.id === destSectorId);
+
+  const handleSelectSector = (secId) => {
+    setDestSectorId(secId);
+    const s = availableSectors.find(sec => sec.id === secId);
+    if (!s) return;
+
+    // Se selecionou DITIN ou setor externo, abre o modal de envio ao DITIN
+    if (isDitinOrExternal(s)) {
+      onClose();
+      if (onOpenDtin) {
+        onOpenDtin(asset);
+      }
+      return;
+    }
+
+    setNovaLocalizacao(s.sala || '');
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!targetSector) return;
+
+    if (isDitinOrExternal(targetSector)) {
+      onClose();
+      if (onOpenDtin) {
+        onOpenDtin(asset);
+      }
+      return;
+    }
 
     onConfirmTransfer(asset.id, {
       setorId: targetSector.id,
@@ -52,7 +102,7 @@ export const TransferModal = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -77,22 +127,30 @@ export const TransferModal = ({
               Setor de Destino (Novo Proprietário da Carga) *
             </label>
             <select
-              value={effectiveDestId}
-              onChange={(e) => {
-                setDestSectorId(e.target.value);
-                const s = availableSectors.find(sec => sec.id === e.target.value);
-                if (s) setNovaLocalizacao(s.sala || '');
-              }}
+              value={destSectorId}
+              onChange={(e) => handleSelectSector(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
             >
-              {availableSectors.map(s => (
-                <option key={s.id} value={s.id} className="bg-slate-900 text-emerald-400 font-semibold py-1">
-                  🏢 {s.name} — Resp: {s.responsavel}
-                </option>
-              ))}
+              <option value="" disabled className="bg-slate-900 text-slate-400 font-normal">
+                -- Selecione o setor de destino --
+              </option>
+              {availableSectors.map(s => {
+                const isExt = isDitinOrExternal(s);
+                return (
+                  <option 
+                    key={s.id} 
+                    value={s.id} 
+                    className={`bg-slate-900 font-semibold py-1 ${isExt ? 'text-cyan-400 font-bold' : 'text-emerald-400'}`}
+                  >
+                    {isExt 
+                      ? `🖥️ ${s.name} (Setor Externo / DITIN)` 
+                      : `🏢 ${s.name} — Resp: ${s.responsavel}`}
+                  </option>
+                );
+              })}
             </select>
             <p className="text-[10.5px] text-amber-400/90 mt-1 flex items-center gap-1 font-medium">
-              ℹ️ O item aguardará o aceite do responsável de carga do setor de destino.
+              ℹ️ O item aguardará o aceite do responsável de carga do setor de destino (ou confirmação de envio ao DITIN).
             </p>
           </div>
 
@@ -129,7 +187,12 @@ export const TransferModal = ({
           <div className="pt-3 border-t border-slate-800 flex gap-2.5">
             <button
               type="submit"
-              className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              disabled={!destSectorId}
+              className={`flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                destSectorId
+                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              }`}
             >
               <ArrowRightLeft className="w-4 h-4" />
               <span>Enviar Transferência p/ Aceite</span>
@@ -137,7 +200,7 @@ export const TransferModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancelar
             </button>
